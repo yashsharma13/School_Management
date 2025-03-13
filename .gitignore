@@ -1,0 +1,94 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# IDE-related files
+.idea/
+.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+build/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Ignore the upload folder
+/upload/
+/api/node_modules
+# Ignore assets folder
+/sms/assets/
+
+# Ignore Firebase-related files (e.g., firebase config, keys)
+firebase-config.json
+firebase.json
+
+# Ignore Firebase and authentication files
+/sms/lib/firebase_options.dart
+/sms/lib/pages/auth/phone_auth.dart 
+
+# Flutter build files
+.android/
+.ios/
+linux/
+macos/
+windows/
+
+# Dart package files
+.dart_tool/
+.packages
+
+# VS Code settings
+.vscode/
+
+# Generated files
+*.iml
+*.log
+pubspec.lock
+"sms/build/" 
+*.apk
+
+# Ignore uploaded files
+api/uploads/
+
+# Ignore build and generated files
+sms/android/app/.cxx/
+sms/.metadata
+
+# Ignore specific folders and files inside sms
+/sms/android/
+/sms/ios/
+/sms/test/
+/sms/web/
+/sms/analysis_options.yaml
+/sms/pubspec.yaml
