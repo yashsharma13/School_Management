@@ -55,7 +55,7 @@ firebase.json
 
 # Ignore Firebase and authentication files
 /sms/lib/firebase_options.dart
-/sms/lib/pages/auth/phone_auth.dart 
+/sms/lib/pages/auth/phone_auth.dart
 
 # Flutter build files
 .android/
