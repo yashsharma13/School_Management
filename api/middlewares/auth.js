@@ -1,8 +1,12 @@
 // middlewares/auth.js
 import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
+
+dotenv.config(); // Load .env variables
+
 
 // JWT Secret Key (store this securely in environment variables in production)
-const JWT_SECRET = 'Pass1212';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // Middleware to verify JWT token
 export const verifyToken = (req, res, next) => {

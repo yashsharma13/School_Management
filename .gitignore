@@ -80,6 +80,7 @@ pubspec.lock
 
 # Ignore uploaded files
 api/uploads/
+api/.env
 
 # Ignore build and generated files
 sms/android/app/.cxx/
