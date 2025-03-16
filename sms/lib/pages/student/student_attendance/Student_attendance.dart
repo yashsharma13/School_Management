@@ -87,7 +87,7 @@ class _AttendancePageState extends State<AttendancePage> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:1000/students/$encodedClass'),
+        Uri.parse('http://localhost:1000/api/students/$encodedClass'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -170,7 +170,7 @@ class _AttendancePageState extends State<AttendancePage> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:1000/attendance'),
+        Uri.parse('http://localhost:1000/api/attendance'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',

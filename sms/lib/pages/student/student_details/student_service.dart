@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'student_model.dart';
 
-const String baseUrl = 'http://localhost:1000';
+const String baseUrl = 'http://localhost:1000/api';
 
 class StudentService {
   // Helper method to get the JWT token from shared_preferences

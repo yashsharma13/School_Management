@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:sms/pages/admin/student/student_attendance/Student_attendance.dart';
-import 'package:sms/pages/admin/student/student_details/Student_details.dart';
-import 'package:sms/pages/admin/student/student_registration/student_registration_page.dart';
-import 'package:sms/pages/admin/student/student_report/Student_reports.dart';
+import 'package:sms/pages/student/student_attendance/Student_attendance.dart';
+import 'package:sms/pages/student/student_details/Student_details.dart';
+import 'package:sms/pages/student/student_registration/student_registration_page.dart';
+import 'package:sms/pages/student/student_report/Student_reports.dart';
+import 'package:sms/pages/teacher/teacher_registration/teacher_registration.dart';
 import 'package:sms/widgets/dashboard_card.dart';
 import 'package:sms/widgets/drawer_item.dart';
 import 'package:http/http.dart' as http;
@@ -19,35 +20,43 @@ class AdminDashboard extends StatefulWidget {
 
 class _AdminDashboardState extends State<AdminDashboard> {
   int totalStudents = 0; // Student count initialized at 0
+  int totalTeachers = 0;
   bool isLoading = false; // To show loading state
 
   @override
   void initState() {
     super.initState();
-    _fetchTotalStudents(); // Fetch total students when the dashboard is loaded
+    _fetchCounts(); // Fetch total students when the dashboard is loaded
   }
 
-  // Function to fetch total students from the backend
-  Future<void> _fetchTotalStudents() async {
+  // Function to fetch total students and teachers from the backend
+  Future<void> _fetchCounts() async {
     try {
-      final response = await http.get(
+      final studentResponse = await http.get(
         Uri.parse(
-            'http://localhost:1000/api/students/count'), // Replace with your API endpoint
+            'http://localhost:1000/api/api/students/count'), // Replace with your API
+      );
+      final teacherResponse = await http.get(
+        Uri.parse(
+            'http://localhost:1000/api/api/teachers/count'), // Replace with your API
       );
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+      if (studentResponse.statusCode == 200 &&
+          teacherResponse.statusCode == 200) {
+        final studentData = json.decode(studentResponse.body);
+        final teacherData = json.decode(teacherResponse.body);
+
         setState(() {
-          totalStudents =
-              data['totalStudents']; // Update the total student count
+          totalStudents = studentData['totalStudents']; // Update student count
+          totalTeachers = teacherData['totalTeachers']; // Update teacher count
         });
       } else {
-        throw Exception('Failed to load student count');
+        throw Exception('Failed to load counts');
       }
     } catch (e) {
-      print('Error fetching student count: $e');
+      print('Error fetching counts: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to fetch student count: $e')),
+        SnackBar(content: Text('Failed to fetch counts: $e')),
       );
     }
   }
@@ -56,6 +65,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
   void incrementStudentCount() {
     setState(() {
       totalStudents += 1; // Increment student count
+    });
+  }
+
+  // Function to update teacher count
+  void incrementTeacherCount() {
+    setState(() {
+      totalTeachers += 1; // Increment teacher count
     });
   }
 
@@ -210,7 +226,67 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ),
               ],
             ),
-            buildDrawerItem(Icons.person, "Teachers", context),
+            ExpansionTile(
+              leading: const Icon(Icons.person, color: Colors.black87),
+              title: const Text("Teacher",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.add, color: Colors.black54),
+                  title: const Text("Add New Teacher"),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TeacherRegistrationPage(
+                          onTeacherRegistered:
+                              incrementStudentCount, // Pass callback
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.view_agenda_rounded,
+                      color: Colors.black54),
+                  title: const Text("View Teacher details"),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => StudentProfileManagementPage()),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading:
+                      const Icon(Icons.calendar_month, color: Colors.black54),
+                  title: const Text("Teacher attendance"),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => AttendancePage()),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.report, color: Colors.black54),
+                  title: const Text("Teacher Reports"),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => StudentReportPage()),
+                    );
+                  },
+                ),
+              ],
+            ),
+
             buildDrawerItem(Icons.family_restroom, "Parents", context),
             buildDrawerItem(Icons.announcement, "Notices", context),
           ],
@@ -240,7 +316,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: buildDashboardCard(
-                            "Total Teachers", "0", Icons.person, Colors.green),
+                            "Total Teachers",
+                            totalTeachers.toString(),
+                            Icons.person,
+                            Colors.green),
                       ),
                       const SizedBox(width: 10),
                       Expanded(

@@ -8,6 +8,9 @@ import 'student_service.dart';
 import 'student_photo_widget.dart';
 import 'pdf_viewer_widget.dart';
 
+const String baseUrl =
+    'http://localhost:1000/uploads'; // Base URL for serving static files
+
 class StudentProfileManagementPage extends StatefulWidget {
   @override
   _StudentProfileManagementPageState createState() =>

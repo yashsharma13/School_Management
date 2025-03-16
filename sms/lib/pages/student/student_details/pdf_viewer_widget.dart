@@ -21,8 +21,23 @@ class PDFViewerScreen extends StatelessWidget {
       return Center(child: Text('No PDF available'));
     }
 
-    final urlPath = 'uploads/${pdfData.replaceAll('\\', '/')}';
-    final fullUrl = '$baseUrl/$urlPath';
+    // Clean up the PDF path by removing any backslashes and ensuring it's a clean filename
+    final cleanPdfPath = pdfData.replaceAll('\\', '/').split('/').last;
+
+    // Ensure the baseUrl doesn't end with a slash
+    final cleanBaseUrl = baseUrl.endsWith('/')
+        ? baseUrl.substring(0, baseUrl.length - 1)
+        : baseUrl;
+
+    // Construct the full URL
+    final fullUrl = '$cleanBaseUrl/$cleanPdfPath';
+
+    print('PDF Viewer Debug Info:');
+    print('Original PDF data: $pdfData');
+    print('Base URL: $baseUrl');
+    print('Clean base URL: $cleanBaseUrl');
+    print('Clean PDF path: $cleanPdfPath');
+    print('Full URL: $fullUrl');
 
     return Center(
       child: Column(
@@ -38,6 +53,8 @@ class PDFViewerScreen extends StatelessWidget {
             onPressed: () async {
               try {
                 final Uri url = Uri.parse(fullUrl);
+                print('Attempting to open URL: $url');
+
                 if (!await launchUrl(
                   url,
                   mode: LaunchMode.externalApplication,
@@ -52,6 +69,7 @@ class PDFViewerScreen extends StatelessWidget {
                 }
               } catch (e) {
                 print('Error launching URL: $e');
+                print('URL that failed: $fullUrl');
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text('Error opening PDF: $e'),

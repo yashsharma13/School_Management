@@ -82,7 +82,7 @@ class _StudentReportPageState extends State<StudentReportPage> {
 
       final response = await http.get(
         Uri.parse(
-            'http://localhost:1000/attendance/${Uri.encodeComponent(selectedClass!)}/$formattedDate'),
+            'http://localhost:1000/api/attendance/${Uri.encodeComponent(selectedClass!)}/$formattedDate'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
