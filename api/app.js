@@ -6,8 +6,6 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import multer from 'multer';
 import fs from 'fs';
-
-// Import routes
 import authRoutes from './routes/authRoutes.js';
 import studentRoutes from './routes/studentRoutes.js';
 import attendanceRoutes from './routes/attendanceRoutes.js';
@@ -32,7 +30,7 @@ app.use((req, res, next) => {
 
 // Serve static files from the uploads directory
 const uploadsPath = path.join(__dirname, 'uploads');
-console.log('Serving static files from:', uploadsPath);
+// console.log('Serving static files from:', uploadsPath);
 
 // Ensure uploads directory exists
 if (!fs.existsSync(uploadsPath)) {
@@ -40,7 +38,7 @@ if (!fs.existsSync(uploadsPath)) {
 }
 
 // Log all files in uploads directory
-console.log('Files in uploads directory:', fs.readdirSync(uploadsPath));
+// console.log('Files in uploads directory:', fs.readdirSync(uploadsPath));
 
 // Serve static files with proper headers and error handling
 app.use('/uploads', express.static(uploadsPath, {
@@ -64,7 +62,7 @@ app.use('/uploads', express.static(uploadsPath, {
 // Error handler for static file serving
 app.use('/uploads', (err, req, res, next) => {
   if (err) {
-    console.error('Error serving static file:', err);
+    // console.error('Error serving static file:', err);
     const filePath = path.join(uploadsPath, req.url);
     console.log('File request details:', {
       url: req.url,

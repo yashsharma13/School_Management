@@ -12,6 +12,8 @@ const String baseUrl =
     'http://localhost:1000/uploads'; // Base URL for serving static files
 
 class StudentProfileManagementPage extends StatefulWidget {
+  const StudentProfileManagementPage({super.key});
+
   @override
   _StudentProfileManagementPageState createState() =>
       _StudentProfileManagementPageState();
@@ -82,24 +84,24 @@ class _StudentProfileManagementPageState
 
   // Edit Student Functionality
   Future<void> _editStudent(Student student) async {
-    final _nameController = TextEditingController(text: student.name);
-    final _registrationController =
+    final nameController = TextEditingController(text: student.name);
+    final registrationController =
         TextEditingController(text: student.registrationNumber);
-    final _dobController = TextEditingController(text: student.dateOfBirth);
-    final _genderController = TextEditingController(text: student.gender);
-    final _addressController = TextEditingController(text: student.address);
-    final _fatherNameController =
+    final dobController = TextEditingController(text: student.dateOfBirth);
+    final genderController = TextEditingController(text: student.gender);
+    final addressController = TextEditingController(text: student.address);
+    final fatherNameController =
         TextEditingController(text: student.fatherName);
-    final _motherNameController =
+    final motherNameController =
         TextEditingController(text: student.motherName);
-    final _emailController = TextEditingController(text: student.email);
-    final _phoneController = TextEditingController(text: student.phone);
-    final _classController = TextEditingController(text: student.assignedClass);
-    final _sectionController =
+    final emailController = TextEditingController(text: student.email);
+    final phoneController = TextEditingController(text: student.phone);
+    final classController = TextEditingController(text: student.assignedClass);
+    final sectionController =
         TextEditingController(text: student.assignedSection);
 
-    String? _profilePhoto;
-    Uint8List? _photoBytes;
+    String? profilePhoto;
+    Uint8List? photoBytes;
 
     await showDialog(
       context: context,
@@ -111,47 +113,47 @@ class _StudentProfileManagementPageState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 TextField(
-                  controller: _nameController,
+                  controller: nameController,
                   decoration: InputDecoration(labelText: 'Name'),
                 ),
                 TextField(
-                  controller: _registrationController,
+                  controller: registrationController,
                   decoration: InputDecoration(labelText: 'Registration Number'),
                 ),
                 TextField(
-                  controller: _dobController,
+                  controller: dobController,
                   decoration: InputDecoration(labelText: 'Date of Birth'),
                 ),
                 TextField(
-                  controller: _genderController,
+                  controller: genderController,
                   decoration: InputDecoration(labelText: 'Gender'),
                 ),
                 TextField(
-                  controller: _addressController,
+                  controller: addressController,
                   decoration: InputDecoration(labelText: 'Address'),
                 ),
                 TextField(
-                  controller: _fatherNameController,
+                  controller: fatherNameController,
                   decoration: InputDecoration(labelText: 'Father Name'),
                 ),
                 TextField(
-                  controller: _motherNameController,
+                  controller: motherNameController,
                   decoration: InputDecoration(labelText: 'Mother Name'),
                 ),
                 TextField(
-                  controller: _emailController,
+                  controller: emailController,
                   decoration: InputDecoration(labelText: 'Email'),
                 ),
                 TextField(
-                  controller: _phoneController,
+                  controller: phoneController,
                   decoration: InputDecoration(labelText: 'Phone'),
                 ),
                 TextField(
-                  controller: _classController,
+                  controller: classController,
                   decoration: InputDecoration(labelText: 'Assigned Class'),
                 ),
                 TextField(
-                  controller: _sectionController,
+                  controller: sectionController,
                   decoration: InputDecoration(labelText: 'Assigned Section'),
                 ),
                 ElevatedButton(
@@ -163,26 +165,26 @@ class _StudentProfileManagementPageState
                         // For web: read bytes immediately
                         final bytes = await pickedFile.readAsBytes();
                         setState(() {
-                          _photoBytes = bytes;
-                          _profilePhoto = base64Encode(bytes);
+                          photoBytes = bytes;
+                          profilePhoto = base64Encode(bytes);
                         });
                       } else {
                         // For mobile: store the path
                         setState(() {
-                          _profilePhoto = pickedFile.path;
+                          profilePhoto = pickedFile.path;
                         });
                       }
                     }
                   },
                   child: Text('Edit Profile Photo'),
                 ),
-                if (_profilePhoto != null)
+                if (profilePhoto != null)
                   Padding(
                     padding: EdgeInsets.only(top: 10),
                     child: kIsWeb
-                        ? Image.memory(_photoBytes!, width: 100, height: 100)
+                        ? Image.memory(photoBytes!, width: 100, height: 100)
                         : Image.file(
-                            File(_profilePhoto!),
+                            File(profilePhoto!),
                           ),
                   )
               ],
@@ -194,24 +196,24 @@ class _StudentProfileManagementPageState
                 try {
                   // Prepare updated data
                   final updatedStudent = {
-                    'student_name': _nameController.text,
-                    'registration_number': _registrationController.text,
-                    'date_of_birth': _dobController.text,
-                    'gender': _genderController.text,
-                    'address': _addressController.text,
-                    'father_name': _fatherNameController.text,
-                    'mother_name': _motherNameController.text,
-                    'email': _emailController.text,
-                    'phone': _phoneController.text,
-                    'assigned_class': _classController.text,
-                    'assigned_section': _sectionController.text,
+                    'student_name': nameController.text,
+                    'registration_number': registrationController.text,
+                    'date_of_birth': dobController.text,
+                    'gender': genderController.text,
+                    'address': addressController.text,
+                    'father_name': fatherNameController.text,
+                    'mother_name': motherNameController.text,
+                    'email': emailController.text,
+                    'phone': phoneController.text,
+                    'assigned_class': classController.text,
+                    'assigned_section': sectionController.text,
                     'birth_certificate': student.birthCertificate,
                   };
 
                   // Add photo data only if a new photo is selected
-                  if (_profilePhoto != null &&
-                      _profilePhoto != student.studentPhoto) {
-                    updatedStudent['student_photo'] = _profilePhoto!;
+                  if (profilePhoto != null &&
+                      profilePhoto != student.studentPhoto) {
+                    updatedStudent['student_photo'] = profilePhoto!;
                   } else {
                     updatedStudent['student_photo'] = student.studentPhoto;
                   }

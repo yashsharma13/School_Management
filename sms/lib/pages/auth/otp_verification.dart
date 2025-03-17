@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class OTPVerificationPage extends StatefulWidget {
+  const OTPVerificationPage({super.key});
+
   @override
   _OTPVerificationPageState createState() => _OTPVerificationPageState();
 }

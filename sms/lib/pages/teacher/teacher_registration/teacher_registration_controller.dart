@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -137,7 +136,7 @@ class TeacherRegistrationController {
       String formattedjoinDate =
           DateFormat('yyyy-MM-dd').format(parsedjoinDate);
 
-      String guardian = guardianController.text;
+      String guardian_name = guardianController.text;
       String qualification = teacherqualificationController.text;
       String experience = teacherexperienceController.text;
       String salary = teachersalaryController.text;
@@ -158,7 +157,7 @@ class TeacherRegistrationController {
         dob: formattedDate,
         doj: formattedjoinDate, // Corrected here
         gender: gender ?? 'Male',
-        guardian_name: guardian,
+        guardian_name: guardian_name,
         qualification: qualification,
         experience: experience,
         salary: salary,

@@ -205,7 +205,7 @@ class ApiService {
       request.fields['date_of_birth'] = dob; // Use formatted DOB
       request.fields['date_of_joining'] = doj; // Use formatted DOJ
       request.fields['gender'] = gender;
-      request.fields['guardian'] = guardian_name;
+      request.fields['guardian_name'] = guardian_name;
       request.fields['qualification'] = qualification;
       request.fields['experience'] = experience;
       request.fields['salary'] = salary;

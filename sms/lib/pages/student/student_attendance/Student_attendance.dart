@@ -10,6 +10,8 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -20,6 +22,8 @@ class MyApp extends StatelessWidget {
 }
 
 class AttendancePage extends StatefulWidget {
+  const AttendancePage({super.key});
+
   @override
   _AttendancePageState createState() => _AttendancePageState();
 }
@@ -287,7 +291,7 @@ class _AttendancePageState extends State<AttendancePage> {
                 ElevatedButton.icon(
                   onPressed: () => _selectDate(context),
                   icon: Icon(Icons.calendar_today),
-                  label: Text(DateFormat.yMd().format(selectedDate)),
+                  label: Text(DateFormat('dd/MM/yyyy').format(selectedDate)),
                 ),
               ],
             ),
@@ -329,7 +333,7 @@ class _AttendancePageState extends State<AttendancePage> {
                     ? Center(
                         child: selectedClass == null
                             ? Text('Please select a class to view students')
-                            : Text('No students found for ${selectedClass}'),
+                            : Text('No students found for $selectedClass'),
                       )
                     : ListView(
                         children: students
@@ -355,17 +359,17 @@ class _AttendancePageState extends State<AttendancePage> {
                       ),
               ),
             SizedBox(height: 10),
-            Container(
+            SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: students.isEmpty ? null : saveAttendance,
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  child: Text('Save Attendance'),
-                ),
                 style: ElevatedButton.styleFrom(
                   foregroundColor: Colors.white,
                   backgroundColor: Colors.blue,
+                ),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Text('Save Attendance'),
                 ),
               ),
             ),

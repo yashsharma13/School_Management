@@ -3,7 +3,10 @@ import 'package:sms/pages/student/student_attendance/Student_attendance.dart';
 import 'package:sms/pages/student/student_details/Student_details.dart';
 import 'package:sms/pages/student/student_registration/student_registration_page.dart';
 import 'package:sms/pages/student/student_report/Student_reports.dart';
+import 'package:sms/pages/teacher/teacher_attendance/teacher_attendance.dart';
+import 'package:sms/pages/teacher/teacher_details/teacher_details.dart';
 import 'package:sms/pages/teacher/teacher_registration/teacher_registration.dart';
+import 'package:sms/pages/teacher/teacher_report/teacher_report.dart';
 import 'package:sms/widgets/dashboard_card.dart';
 import 'package:sms/widgets/drawer_item.dart';
 import 'package:http/http.dart' as http;
@@ -241,7 +244,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       MaterialPageRoute(
                         builder: (context) => TeacherRegistrationPage(
                           onTeacherRegistered:
-                              incrementStudentCount, // Pass callback
+                              incrementTeacherCount, // Pass callback
                         ),
                       ),
                     );
@@ -256,7 +259,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => StudentProfileManagementPage()),
+                          builder: (context) => TeacherProfileManagementPage()),
                     );
                   },
                 ),
@@ -268,7 +271,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     Navigator.pop(context);
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => AttendancePage()),
+                      MaterialPageRoute(
+                          builder: (context) => TeacherAttendancePage()),
                     );
                   },
                 ),
@@ -280,7 +284,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => StudentReportPage()),
+                          builder: (context) => TeacherReportPage()),
                     );
                   },
                 ),

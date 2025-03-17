@@ -1,7 +1,7 @@
 // student_photo_widget.dart
 import 'package:flutter/material.dart';
 
-Widget buildStudentPhoto(String? photoData, String baseUrl) {
+Widget buildTeacherPhoto(String? photoData, String baseUrl) {
   if (photoData == null || photoData.isEmpty) {
     return _buildDefaultAvatar();
   }

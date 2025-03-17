@@ -4,31 +4,16 @@ import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class StudentReportPage extends StatefulWidget {
-  const StudentReportPage({super.key});
+class TeacherReportPage extends StatefulWidget {
+  const TeacherReportPage({super.key});
 
   @override
-  _StudentReportPageState createState() => _StudentReportPageState();
+  _TeacherReportPageState createState() => _TeacherReportPageState();
 }
 
-class _StudentReportPageState extends State<StudentReportPage> {
-  String? selectedClass;
+class _TeacherReportPageState extends State<TeacherReportPage> {
   DateTime selectedDate = DateTime.now();
-  List<String> classes = [
-    'Class 1',
-    'Class 2',
-    'Class 3',
-    'Class 4',
-    'Class 5',
-    'Class 6',
-    'Class 7',
-    'Class 8',
-    'Class 9',
-    'Class 10',
-    'Class 11',
-    'Class 12'
-  ];
-  List<StudentAttendance> studentAttendanceRecords = [];
+  List<TeacherAttendance> teacherAttendanceRecords = [];
   String? token;
   bool isLoading = false;
   bool isError = false;
@@ -49,16 +34,8 @@ class _StudentReportPageState extends State<StudentReportPage> {
     print('Token loaded: ${token != null ? 'Yes' : 'No'}');
   }
 
-  // Function to fetch attendance data from the backend
+  // Function to fetch attendance data for teachers
   Future<void> fetchAttendance() async {
-    if (selectedClass == null) {
-      setState(() {
-        errorMessage = 'Please select a class';
-        isError = true;
-      });
-      return;
-    }
-
     if (token == null) {
       setState(() {
         errorMessage = 'No token found. Please log in.';
@@ -78,16 +55,15 @@ class _StudentReportPageState extends State<StudentReportPage> {
     final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
 
     try {
-      print('Fetching attendance data for $selectedClass on $formattedDate');
+      print('Fetching teacher attendance data for $formattedDate');
       print('Using token: ${token != null ? 'Yes' : 'No'}');
 
       final response = await http.get(
-        Uri.parse(
-            'http://localhost:1000/api/attendance/${Uri.encodeComponent(selectedClass!)}/$formattedDate'),
+        Uri.parse('http://localhost:1000/api/attendance/$formattedDate'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
-          'Authorization': token!, // Include the token without 'Bearer ' prefix
+          'Authorization': token!,
         },
       );
 
@@ -95,15 +71,16 @@ class _StudentReportPageState extends State<StudentReportPage> {
       print('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> data =
-            json.decode(response.body); // Decode as a Map
-        final List<dynamic> studentsData =
-            data['students']; // Access the students list
+        final Map<String, dynamic> data = json.decode(response.body);
+
+        // Now access the 'teachers' list from the response
+        final List<dynamic> teacherData =
+            data['teachers']; // Get the teachers list
 
         setState(() {
-          studentAttendanceRecords = studentsData.map((item) {
-            return StudentAttendance(
-              item['student_name'],
+          teacherAttendanceRecords = teacherData.map((item) {
+            return TeacherAttendance(
+              item['teacher_name'],
               item['is_present'] == 1, // Convert from 1 or 0 to boolean
             );
           }).toList();
@@ -111,7 +88,6 @@ class _StudentReportPageState extends State<StudentReportPage> {
         });
       } else if (response.statusCode == 401 || response.statusCode == 403) {
         print('Token is invalid or expired.');
-        // Clear invalid token
         final prefs = await SharedPreferences.getInstance();
         await prefs.remove('token');
         setState(() {
@@ -121,16 +97,15 @@ class _StudentReportPageState extends State<StudentReportPage> {
           errorMessage = 'Session expired. Please login again.';
         });
 
-        // Show message to user
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Session expired. Please login again.')),
         );
       } else {
-        print('Failed to load attendance: ${response.statusCode}');
+        print('Failed to load teacher attendance: ${response.statusCode}');
         setState(() {
           isLoading = false;
           isError = true;
-          errorMessage = 'Failed to load attendance data';
+          errorMessage = 'Failed to load teacher attendance data';
         });
       }
     } catch (error) {
@@ -156,9 +131,7 @@ class _StudentReportPageState extends State<StudentReportPage> {
       setState(() {
         selectedDate = picked;
       });
-      if (selectedClass != null) {
-        fetchAttendance(); // Fetch attendance after date selection
-      }
+      fetchAttendance(); // Fetch attendance after date selection
     }
   }
 
@@ -166,11 +139,11 @@ class _StudentReportPageState extends State<StudentReportPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Student Attendance Report'),
+        title: Text('Teacher Attendance Report'),
         actions: [
           IconButton(
             icon: Icon(Icons.refresh),
-            onPressed: selectedClass != null ? fetchAttendance : null,
+            onPressed: fetchAttendance,
           ),
         ],
       ),
@@ -186,48 +159,19 @@ class _StudentReportPageState extends State<StudentReportPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Select Class and Date',
+                    Text('Select Date',
                         style: TextStyle(
                             fontSize: 16, fontWeight: FontWeight.bold)),
                     SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            value: selectedClass,
-                            decoration: InputDecoration(
-                              labelText: 'Class',
-                              border: OutlineInputBorder(),
-                              contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 12),
-                            ),
-                            onChanged: (String? newValue) {
-                              setState(() {
-                                selectedClass = newValue;
-                              });
-                              fetchAttendance(); // Fetch attendance after class selection
-                            },
-                            items: classes.map<DropdownMenuItem<String>>(
-                                (String classItem) {
-                              return DropdownMenuItem<String>(
-                                value: classItem,
-                                child: Text(classItem),
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                        SizedBox(width: 12),
-                        ElevatedButton.icon(
-                          onPressed: () => _selectDate(context),
-                          icon: Icon(Icons.calendar_today),
-                          label: Text(
-                              DateFormat('dd/MM/yyyy').format(selectedDate)),
-                          style: ElevatedButton.styleFrom(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 12),
-                          ),
-                        ),
-                      ],
+                    ElevatedButton.icon(
+                      onPressed: () => _selectDate(context),
+                      icon: Icon(Icons.calendar_today),
+                      label:
+                          Text(DateFormat('dd/MM/yyyy').format(selectedDate)),
+                      style: ElevatedButton.styleFrom(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      ),
                     ),
                   ],
                 ),
@@ -271,12 +215,10 @@ class _StudentReportPageState extends State<StudentReportPage> {
               )
             else
               Expanded(
-                child: studentAttendanceRecords.isEmpty
+                child: teacherAttendanceRecords.isEmpty
                     ? Center(
                         child: Text(
-                          selectedClass == null
-                              ? 'Please select a class to view attendance'
-                              : 'No attendance records found for $selectedClass on ${DateFormat.yMd().format(selectedDate)}',
+                          'No teacher attendance records found for ${DateFormat.yMd().format(selectedDate)}',
                           style: TextStyle(fontSize: 16),
                         ),
                       )
@@ -289,7 +231,7 @@ class _StudentReportPageState extends State<StudentReportPage> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  'Attendance for $selectedClass',
+                                  'Attendance for Teachers',
                                   style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold),
@@ -313,7 +255,7 @@ class _StudentReportPageState extends State<StudentReportPage> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('Student Name',
+                                Text('Teacher Name',
                                     style:
                                         TextStyle(fontWeight: FontWeight.bold)),
                                 Text('Status',
@@ -324,16 +266,16 @@ class _StudentReportPageState extends State<StudentReportPage> {
                           ),
                           Expanded(
                             child: ListView.separated(
-                              itemCount: studentAttendanceRecords.length,
+                              itemCount: teacherAttendanceRecords.length,
                               separatorBuilder: (context, index) => Divider(
                                 height: 1,
                                 color: Colors.grey[300],
                               ),
                               itemBuilder: (context, index) {
                                 final attendance =
-                                    studentAttendanceRecords[index];
+                                    teacherAttendanceRecords[index];
                                 return ListTile(
-                                  title: Text(attendance.studentName),
+                                  title: Text(attendance.teacherName),
                                   trailing: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
@@ -369,21 +311,21 @@ class _StudentReportPageState extends State<StudentReportPage> {
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 Text(
-                                  'Present: ${studentAttendanceRecords.where((a) => a.isPresent).length}',
+                                  'Present: ${teacherAttendanceRecords.where((a) => a.isPresent).length}',
                                   style: TextStyle(
                                       color: Colors.green,
                                       fontWeight: FontWeight.bold),
                                 ),
                                 SizedBox(width: 16),
                                 Text(
-                                  'Absent: ${studentAttendanceRecords.where((a) => !a.isPresent).length}',
+                                  'Absent: ${teacherAttendanceRecords.where((a) => !a.isPresent).length}',
                                   style: TextStyle(
                                       color: Colors.red,
                                       fontWeight: FontWeight.bold),
                                 ),
                                 SizedBox(width: 16),
                                 Text(
-                                  'Total: ${studentAttendanceRecords.length}',
+                                  'Total: ${teacherAttendanceRecords.length}',
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                               ],
@@ -399,9 +341,9 @@ class _StudentReportPageState extends State<StudentReportPage> {
   }
 }
 
-class StudentAttendance {
-  final String studentName;
+class TeacherAttendance {
+  final String teacherName;
   final bool isPresent;
 
-  StudentAttendance(this.studentName, this.isPresent);
+  TeacherAttendance(this.teacherName, this.isPresent);
 }

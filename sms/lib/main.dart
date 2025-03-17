@@ -11,7 +11,7 @@ void main() async {
     );
     runApp(const MyApp());
   } catch (e) {
-    print("Firebase initialization failed: $e");
+    // print("Firebase initialization failed: $e");
     // Handle the error (maybe show an error message to the user)
   }
 }

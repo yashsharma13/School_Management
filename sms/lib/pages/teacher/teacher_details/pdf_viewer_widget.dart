@@ -46,7 +46,7 @@ class PDFViewerScreen extends StatelessWidget {
         children: [
           Icon(Icons.picture_as_pdf, size: 64, color: Colors.red),
           SizedBox(height: 16),
-          Text('Birth Certificate PDF'),
+          Text('Qualification Certificate PDF'),
           SizedBox(height: 16),
           ElevatedButton.icon(
             icon: Icon(Icons.open_in_new),
