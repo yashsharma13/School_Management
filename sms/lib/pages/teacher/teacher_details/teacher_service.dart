@@ -89,21 +89,21 @@ class TeacherService {
         request.fields['teacher_photo'] = teacher.teacherPhoto;
       }
 
-      print('Sending request to: ${request.url}');
-      print('Fields: ${request.fields}');
-      print('Files: ${request.files.length}');
+      //print('Sending request to: ${request.url}');
+      // print('Fields: ${request.fields}');
+      // print('Files: ${request.files.length}');
 
       final response = await request.send();
       final responseBody = await response.stream.bytesToString();
 
-      print('Response status: ${response.statusCode}');
-      print('Response body: $responseBody');
+      // print('Response status: ${response.statusCode}');
+      // print('Response body: $responseBody');
 
       if (response.statusCode != 200) {
         throw Exception('Failed to update student: $responseBody');
       }
     } catch (e) {
-      print('Error updating student: $e');
+      //print('Error updating student: $e');
       throw Exception('Failed to update student: $e');
     }
   }

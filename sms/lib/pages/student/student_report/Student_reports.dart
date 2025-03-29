@@ -46,7 +46,7 @@ class _StudentReportPageState extends State<StudentReportPage> {
     setState(() {
       token = prefs.getString('token');
     });
-    print('Token loaded: ${token != null ? 'Yes' : 'No'}');
+    // print('Token loaded: ${token != null ? 'Yes' : 'No'}');
   }
 
   // Function to fetch attendance data from the backend
@@ -78,8 +78,8 @@ class _StudentReportPageState extends State<StudentReportPage> {
     final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
 
     try {
-      print('Fetching attendance data for $selectedClass on $formattedDate');
-      print('Using token: ${token != null ? 'Yes' : 'No'}');
+      // print('Fetching attendance data for $selectedClass on $formattedDate');
+      // print('Using token: ${token != null ? 'Yes' : 'No'}');
 
       final response = await http.get(
         Uri.parse(
@@ -91,8 +91,8 @@ class _StudentReportPageState extends State<StudentReportPage> {
         },
       );
 
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
+      // print('Response status: ${response.statusCode}');
+      // print('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data =
@@ -126,7 +126,7 @@ class _StudentReportPageState extends State<StudentReportPage> {
           SnackBar(content: Text('Session expired. Please login again.')),
         );
       } else {
-        print('Failed to load attendance: ${response.statusCode}');
+        // print('Failed to load attendance: ${response.statusCode}');
         setState(() {
           isLoading = false;
           isError = true;
@@ -134,7 +134,7 @@ class _StudentReportPageState extends State<StudentReportPage> {
         });
       }
     } catch (error) {
-      print('Error: $error');
+      // print('Error: $error');
       setState(() {
         isLoading = false;
         isError = true;

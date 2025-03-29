@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:sms/pages/student/student_attendance/Student_attendance.dart';
+import 'package:sms/pages/classes/all_class.dart';
+import 'package:sms/pages/classes/new_class.dart';
+import 'package:sms/pages/student/student_attendance/student_attendance.dart';
 import 'package:sms/pages/student/student_details/Student_details.dart';
 import 'package:sms/pages/student/student_registration/student_registration_page.dart';
 import 'package:sms/pages/student/student_report/Student_reports.dart';
+import 'package:sms/pages/subjects/assign_subjects.dart';
+import 'package:sms/pages/subjects/class_with_subjects.dart';
 import 'package:sms/pages/teacher/teacher_attendance/teacher_attendance.dart';
 import 'package:sms/pages/teacher/teacher_details/teacher_details.dart';
 import 'package:sms/pages/teacher/teacher_registration/teacher_registration.dart';
@@ -57,7 +61,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         throw Exception('Failed to load counts');
       }
     } catch (e) {
-      print('Error fetching counts: $e');
+      // print('Error fetching counts: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to fetch counts: $e')),
       );
@@ -168,6 +172,79 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ],
               ),
             ),
+
+            // ExpansionTile for classes
+            ExpansionTile(
+              leading: const Icon(Icons.class_, color: Colors.black87),
+              title: const Text("Classes",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.add, color: Colors.black54),
+                  title: const Text("New Class"),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => (AddClassPage()),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.view_agenda_rounded,
+                      color: Colors.black54),
+                  title: const Text("All Classes"),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            AllClassesPage(), // Create a page to view classes
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+            // ExpansionTile for Subjects
+            ExpansionTile(
+              leading: const Icon(Icons.subject, color: Colors.black87),
+              title: const Text("Subjects",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.add, color: Colors.black54),
+                  title: const Text("Classes with Subjects"),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => (ClassWithSubjectsPage()),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.view_agenda_rounded,
+                      color: Colors.black54),
+                  title: const Text("Assign Subjects"),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            AssignSubjectPage(), // Create a page to view classes
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
             // ExpansionTile for Students
             ExpansionTile(
               leading: const Icon(Icons.school, color: Colors.black87),
@@ -229,6 +306,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ),
               ],
             ),
+            // ExpansionTile for teacher
             ExpansionTile(
               leading: const Icon(Icons.person, color: Colors.black87),
               title: const Text("Teacher",

@@ -265,4 +265,364 @@ class ApiService {
       rethrow;
     }
   }
+
+  static const String apiUrlRegisterClass = 'http://localhost:1000/api/classes';
+  static Future<bool> registerClass({
+    required String className,
+    required String tuitionFees,
+    required String teacherName, // Changed parameter name
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null) {
+        throw Exception('No token found. Please log in.');
+      }
+
+      final response = await http.post(
+        Uri.parse(apiUrlRegisterClass),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token,
+        },
+        body: json.encode({
+          'class_name': className,
+          'tuition_fees': tuitionFees,
+          'teacher_name': teacherName, // Match backend expectation
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return true;
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['error'] ?? 'Failed to register class');
+      }
+    } catch (e) {
+      print('Error during class registration: $e');
+      rethrow;
+    }
+  }
+
+  static const String baseUrl = 'http://localhost:1000/api';
+
+  // Get token from SharedPreferences
+  static Future<String?> getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('token');
+  }
+
+  // Fetch all classes for the logged-in user
+  static Future<List<Map<String, dynamic>>> fetchClasses() async {
+    final token = await getToken();
+
+    if (token == null) {
+      throw Exception('No token found. Please log in.');
+    }
+
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/classes'),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': token, // Include the token in the header
+        },
+      );
+
+      if (response.statusCode == 200) {
+        List<dynamic> data = json.decode(response.body);
+        return data
+            .map((classData) => classData as Map<String, dynamic>)
+            .toList();
+      } else {
+        throw Exception('Failed to load classes: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching classes: $e');
+    }
+  }
+
+  static Future<bool> updateClass({
+    required String classId,
+    required String className,
+    required String tuitionFees,
+    required String teacherName,
+  }) async {
+    try {
+      print('[DEBUG] Starting updateClass with ID: $classId'); // Add this
+
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null) {
+        throw Exception('Token is not available.');
+      }
+
+      if (classId.isEmpty) {
+        throw Exception('Class ID cannot be empty');
+      }
+
+      // Use const for baseUrl to prevent accidental modification
+      const String baseUrl = 'http://localhost:1000/api';
+      final url = '$baseUrl/classes/$classId';
+
+      print('[DEBUG] Full update URL: $url'); // Add this
+
+      final response = await http.put(
+        Uri.parse(url),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': token,
+        },
+        body: json.encode({
+          'class_name': className,
+          'tuition_fees': tuitionFees,
+          'teacher_name': teacherName,
+        }),
+      );
+
+      print('[DEBUG] Update response: ${response.statusCode}'); // Add this
+      print('[DEBUG] Response body: ${response.body}'); // Add this
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        throw Exception('Update failed with status: ${response.statusCode}');
+      }
+    } catch (error) {
+      print('[ERROR] in updateClass: $error');
+      rethrow;
+    }
+  }
+
+  static Future<bool> deleteClass(String classId) async {
+    try {
+      print('[DEBUG] Starting deleteClass with ID: $classId'); // Add this
+
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null) {
+        throw Exception('Token is not available.');
+      }
+
+      if (classId.isEmpty) {
+        throw Exception('Class ID cannot be empty');
+      }
+
+      const String baseUrl = 'http://localhost:1000/api';
+      final url = '$baseUrl/classes/$classId';
+
+      print('[DEBUG] Full delete URL: $url'); // Add this
+
+      final response = await http.delete(
+        Uri.parse(url),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': token,
+        },
+      );
+
+      print('[DEBUG] Delete response: ${response.statusCode}'); // Add this
+      print('[DEBUG] Response body: ${response.body}'); // Add this
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        throw Exception('Delete failed with status: ${response.statusCode}');
+      }
+    } catch (error) {
+      print('[ERROR] in deleteClass: $error');
+      rethrow;
+    }
+  }
+
+  static const String apiUrlRegisterSubject =
+      'http://localhost:1000/api/registersubject';
+
+  static Future<bool> registerSubject({
+    required String className,
+    required List<Map<String, dynamic>> subjectsData,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null) {
+        throw Exception('No token found. Please log in.');
+      }
+
+      // Prepare comma-separated subject names and marks
+      String subjectNames =
+          subjectsData.map((subject) => subject['subject_name']).join(', ');
+      String marks = subjectsData.map((subject) => subject['marks']).join(', ');
+
+      final response = await http.post(
+        Uri.parse(apiUrlRegisterSubject),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token,
+        },
+        body: json.encode({
+          'class_name': className,
+          'subject_name': subjectNames, // Send comma-separated subject names
+          'marks': marks, // Send comma-separated marks
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return true;
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to register subject');
+      }
+    } catch (e) {
+      print('Error during subject registration: $e');
+      rethrow;
+    }
+  }
+
+  static const String apiUrlgetSubject =
+      'http://localhost:1000/api/getallsubjects';
+  static Future<List<dynamic>> fetchClassesWithSubjects() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null) {
+        throw Exception('No token found. Please log in.');
+      }
+
+      final response = await http.get(
+        Uri.parse(apiUrlgetSubject),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token,
+        },
+      );
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseBody = json.decode(response.body);
+
+        // Ensure data is a list
+        final data = responseBody['data'];
+        if (data is List) {
+          return data;
+        } else {
+          throw Exception('Invalid data format');
+        }
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(
+          errorData['message'] ?? 'Failed to load classes with subjects',
+        );
+      }
+    } catch (e) {
+      print('Error fetching classes with subjects: $e');
+      rethrow;
+    }
+  }
+
+  // static const String apiUrlUpdateSubject =
+  //     'http://localhost:1000/api/updatesubject';
+
+  // static Future<bool> updateSubject({
+  //   required String subjectId,
+  //   required List<Map<String, dynamic>> subjectsData,
+  //   required String token, // Add token parameter
+  // }) async {
+  //   try {
+  //     final response = await http.post(
+  //       Uri.parse('apiUrlUpdateSubject'), // Replace with your actual endpoint
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         'Authorization': token, // Add authorization header
+  //       },
+  //       body: json.encode({
+  //         'subject_id': subjectId,
+  //         'subjects': subjectsData,
+  //       }),
+  //     );
+
+  //     print('Update Subject Request Body: ${json.encode({
+  //           'subject_id': subjectId,
+  //           'subjects': subjectsData,
+  //         })}');
+  //     print('Update Subject Response Status: ${response.statusCode}');
+  //     print('Update Subject Response Body: ${response.body}');
+
+  //     if (response.statusCode == 200) {
+  //       return true;
+  //     } else {
+  //       throw Exception('Failed to update subject: ${response.body}');
+  //     }
+  //   } catch (e) {
+  //     print('Error during subject update: $e');
+  //     throw e;
+  //   }
+  // }
+  static const String apiUrlUpdateSubject =
+      'http://localhost:1000/api/updatesubject';
+
+  static Future<bool> updateSubject({
+    required String subjectId,
+    required List<Map<String, dynamic>> subjectsData,
+  }) async {
+    try {
+      print('[DEBUG] Starting updateSubject with ID: $subjectId');
+
+      // 1. Get token from SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null || token.isEmpty) {
+        throw Exception('Authentication token not found');
+      }
+
+      if (subjectId.isEmpty) {
+        throw Exception('Subject ID cannot be empty');
+      }
+
+      // 2. Prepare the request
+      print('[DEBUG] Full update URL: $apiUrlUpdateSubject');
+      print('[DEBUG] Request payload: ${{
+        'subject_id': subjectId,
+        'subjects': subjectsData
+      }}');
+
+      // 3. Make the request
+      final response = await http.put(
+        Uri.parse(apiUrlUpdateSubject),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token, // Important: Add Bearer prefix
+        },
+        body: json.encode({
+          'subject_id': subjectId,
+          'subjects': subjectsData,
+        }),
+      );
+
+      // 4. Handle response
+      print('[DEBUG] Response status: ${response.statusCode}');
+      print('[DEBUG] Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        throw Exception(
+            'Failed to update subject: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      print('[ERROR] in updateSubject: $e');
+      rethrow;
+    }
+  }
 }

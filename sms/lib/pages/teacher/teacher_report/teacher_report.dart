@@ -31,7 +31,7 @@ class _TeacherReportPageState extends State<TeacherReportPage> {
     setState(() {
       token = prefs.getString('token');
     });
-    print('Token loaded: ${token != null ? 'Yes' : 'No'}');
+    // print('Token loaded: ${token != null ? 'Yes' : 'No'}');
   }
 
   // Function to fetch attendance data for teachers
@@ -55,8 +55,8 @@ class _TeacherReportPageState extends State<TeacherReportPage> {
     final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
 
     try {
-      print('Fetching teacher attendance data for $formattedDate');
-      print('Using token: ${token != null ? 'Yes' : 'No'}');
+      // print('Fetching teacher attendance data for $formattedDate');
+      // print('Using token: ${token != null ? 'Yes' : 'No'}');
 
       final response = await http.get(
         Uri.parse('http://localhost:1000/api/attendance/$formattedDate'),
@@ -67,8 +67,8 @@ class _TeacherReportPageState extends State<TeacherReportPage> {
         },
       );
 
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
+      // print('Response status: ${response.statusCode}');
+      // print('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
@@ -87,7 +87,7 @@ class _TeacherReportPageState extends State<TeacherReportPage> {
           isLoading = false;
         });
       } else if (response.statusCode == 401 || response.statusCode == 403) {
-        print('Token is invalid or expired.');
+        // print('Token is invalid or expired.');
         final prefs = await SharedPreferences.getInstance();
         await prefs.remove('token');
         setState(() {
@@ -101,7 +101,7 @@ class _TeacherReportPageState extends State<TeacherReportPage> {
           SnackBar(content: Text('Session expired. Please login again.')),
         );
       } else {
-        print('Failed to load teacher attendance: ${response.statusCode}');
+        // print('Failed to load teacher attendance: ${response.statusCode}');
         setState(() {
           isLoading = false;
           isError = true;
@@ -109,7 +109,7 @@ class _TeacherReportPageState extends State<TeacherReportPage> {
         });
       }
     } catch (error) {
-      print('Error: $error');
+      // print('Error: $error');
       setState(() {
         isLoading = false;
         isError = true;

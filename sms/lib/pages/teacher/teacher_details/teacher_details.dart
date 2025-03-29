@@ -219,7 +219,7 @@ class _TeacherProfileManagementPageState
                     updatedTeacher['teacher_photo'] = teacher.teacherPhoto;
                   }
 
-                  print('Updating teacher with data: $updatedTeacher');
+                  // print('Updating teacher with data: $updatedTeacher');
 
                   // Update student
                   await _teacherService.updateTeacher(teacher, updatedTeacher);
@@ -229,7 +229,7 @@ class _TeacherProfileManagementPageState
                   Navigator.of(context).pop();
                   _fetchTeachers(); // Refresh the list
                 } catch (e) {
-                  print('Error updating teacher: $e');
+                  // print('Error updating teacher: $e');
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Failed to update teacher: $e')),
                   );

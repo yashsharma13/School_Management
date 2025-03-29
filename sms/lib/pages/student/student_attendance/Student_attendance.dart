@@ -62,18 +62,18 @@ class _AttendancePageState extends State<AttendancePage> {
     setState(() {
       token = prefs.getString('token');
     });
-    print('Token loaded: ${token != null ? 'Yes' : 'No'}');
+    // print('Token loaded: ${token != null ? 'Yes' : 'No'}');
   }
 
   // Fetch students from backend
   Future<void> fetchStudents() async {
     if (selectedClass == null) {
-      print('No class selected. Please select a class.');
+      // print('No class selected. Please select a class.');
       return;
     }
 
     if (token == null) {
-      print('No token found. Please log in.');
+      // print('No token found. Please log in.');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Please login to continue')),
       );
@@ -84,7 +84,7 @@ class _AttendancePageState extends State<AttendancePage> {
       isLoading = true;
     });
 
-    print('Using token: $token');
+    // print('Using token: $token');
 
     // Ensure class name is properly encoded for URL
     final encodedClass = Uri.encodeComponent(selectedClass!);
@@ -100,8 +100,8 @@ class _AttendancePageState extends State<AttendancePage> {
         },
       );
 
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
+      // print('Response status: ${response.statusCode}');
+      // print('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final List<dynamic> studentData = json.decode(response.body);
@@ -115,7 +115,7 @@ class _AttendancePageState extends State<AttendancePage> {
               .toList();
         });
       } else if (response.statusCode == 401) {
-        print('Token is invalid or expired. Redirecting to login...');
+        // print('Token is invalid or expired. Redirecting to login...');
         // Clear invalid token
         final prefs = await SharedPreferences.getInstance();
         await prefs.remove('token');
@@ -128,8 +128,8 @@ class _AttendancePageState extends State<AttendancePage> {
           SnackBar(content: Text('Session expired. Please login again.')),
         );
       } else {
-        print('Failed to load students. Status code: ${response.statusCode}');
-        print('Response body: ${response.body}');
+        // print('Failed to load students. Status code: ${response.statusCode}');
+        // print('Response body: ${response.body}');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content:
@@ -137,7 +137,7 @@ class _AttendancePageState extends State<AttendancePage> {
         );
       }
     } catch (error) {
-      print('Error fetching students: $error');
+      // print('Error fetching students: $error');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text(
@@ -153,7 +153,7 @@ class _AttendancePageState extends State<AttendancePage> {
   // Function to submit attendance
   Future<void> saveAttendance() async {
     if (token == null) {
-      print('No token found. Please log in.');
+      // print('No token found. Please log in.');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Please login to continue')),
       );
@@ -187,8 +187,8 @@ class _AttendancePageState extends State<AttendancePage> {
         }),
       );
 
-      print('Save attendance response: ${response.statusCode}');
-      print('Response body: ${response.body}');
+      // print('Save attendance response: ${response.statusCode}');
+      // print('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         // Successfully saved attendance
@@ -201,7 +201,7 @@ class _AttendancePageState extends State<AttendancePage> {
           MaterialPageRoute(builder: (context) => AdminDashboard()),
         );
       } else if (response.statusCode == 401) {
-        print('Token is invalid or expired. Redirecting to login...');
+        // print('Token is invalid or expired. Redirecting to login...');
         // Clear invalid token
         final prefs = await SharedPreferences.getInstance();
         await prefs.remove('token');
@@ -215,8 +215,8 @@ class _AttendancePageState extends State<AttendancePage> {
         );
       } else {
         // Error occurred while saving attendance
-        print('Failed to save attendance. Status code: ${response.statusCode}');
-        print('Response body: ${response.body}');
+        // print('Failed to save attendance. Status code: ${response.statusCode}');
+        // print('Response body: ${response.body}');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content:
@@ -225,7 +225,7 @@ class _AttendancePageState extends State<AttendancePage> {
       }
     } catch (error) {
       // Handle network errors or other issues
-      print('Error saving attendance: $error');
+      // print('Error saving attendance: $error');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text(

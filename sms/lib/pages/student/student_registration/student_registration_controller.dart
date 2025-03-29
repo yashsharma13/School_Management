@@ -52,9 +52,9 @@ class StudentRegistrationController {
               (studentPhoto!.path.endsWith('.jpg') ||
                   studentPhoto!.path.endsWith('.jpeg') ||
                   studentPhoto!.path.endsWith('.png'))) {
-            print("Valid image selected: ${studentPhoto!.path}");
+            // print("Valid image selected: ${studentPhoto!.path}");
           } else {
-            print("Invalid image selected.");
+            // print("Invalid image selected.");
             ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Selected image is invalid.')));
             return;
@@ -62,7 +62,7 @@ class StudentRegistrationController {
 
           // Check image size
           final fileSize = await studentPhoto!.length();
-          print("Selected photo file size: $fileSize bytes");
+          // print("Selected photo file size: $fileSize bytes");
 
           // Validate file size
           if (fileSize < 100) {
@@ -78,9 +78,9 @@ class StudentRegistrationController {
         if (result != null) {
           studentPhoto = XFile.fromData(result.files.single.bytes!);
 
-          print("Web image selected: ${studentPhoto?.name}");
+          // print("Web image selected: ${studentPhoto?.name}");
           final fileSize = result.files.single.bytes!.length;
-          print("Selected photo file size (web): $fileSize bytes");
+          // print("Selected photo file size (web): $fileSize bytes");
 
           // Validate file size
           if (fileSize < 100) {
@@ -97,14 +97,14 @@ class StudentRegistrationController {
             .pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
         if (result != null) {
           birthCertificate = XFile.fromData(result.files.single.bytes!);
-          print("Birth certificate selected: ${birthCertificate?.name}");
+          // print("Birth certificate selected: ${birthCertificate?.name}");
         }
       } else {
         FilePickerResult? result = await FilePicker.platform
             .pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
         if (result != null) {
           birthCertificate = XFile(result.files.single.path!);
-          print("Birth certificate selected: ${birthCertificate?.path}");
+          // print("Birth certificate selected: ${birthCertificate?.path}");
         }
       }
     }
@@ -134,8 +134,8 @@ class StudentRegistrationController {
       String formattedDate = DateFormat('yyyy-MM-dd').format(parsedDate);
 
       // Debug print to verify date conversion
-      print('Original DOB: $dob');
-      print('Formatted DOB: $formattedDate');
+      // print('Original DOB: $dob');
+      // print('Formatted DOB: $formattedDate');
 
       String address = addressController.text;
       String fatherName = fathersNameController.text;
@@ -202,7 +202,7 @@ class StudentRegistrationController {
       }
     } catch (e) {
       isLoading = false;
-      print('Error processing date: $e');
+      // print('Error processing date: $e');
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error processing date of birth')));
       return false;

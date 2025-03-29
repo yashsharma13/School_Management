@@ -33,12 +33,12 @@ class PDFViewerScreen extends StatelessWidget {
     // Construct the full URL
     final fullUrl = '$cleanBaseUrl/$cleanPdfPath';
 
-    print('PDF Viewer Debug Info:');
-    print('Original PDF data: $pdfData');
-    print('Base URL: $baseUrl');
-    print('Clean base URL: $cleanBaseUrl');
-    print('Clean PDF path: $cleanPdfPath');
-    print('Full URL: $fullUrl');
+    // print('PDF Viewer Debug Info:');
+    // print('Original PDF data: $pdfData');
+    // print('Base URL: $baseUrl');
+    // print('Clean base URL: $cleanBaseUrl');
+    // print('Clean PDF path: $cleanPdfPath');
+    // print('Full URL: $fullUrl');
 
     return Center(
       child: Column(
@@ -54,7 +54,7 @@ class PDFViewerScreen extends StatelessWidget {
             onPressed: () async {
               try {
                 final Uri url = Uri.parse(fullUrl);
-                print('Attempting to open URL: $url');
+                // print('Attempting to open URL: $url');
 
                 if (!await launchUrl(
                   url,
@@ -69,8 +69,8 @@ class PDFViewerScreen extends StatelessWidget {
                   );
                 }
               } catch (e) {
-                print('Error launching URL: $e');
-                print('URL that failed: $fullUrl');
+                // print('Error launching URL: $e');
+                // print('URL that failed: $fullUrl');
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text('Error opening PDF: $e'),

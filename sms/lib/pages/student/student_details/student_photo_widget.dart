@@ -17,11 +17,11 @@ Widget buildStudentPhoto(String? photoData, String baseUrl) {
   // Construct the full URL
   final fullUrl = '$cleanBaseUrl/$cleanPhotoPath';
 
-  print('Attempting to load image from: $fullUrl'); // Debug print to verify URL
-  print('Original photo data: $photoData');
-  print('Base URL: $baseUrl');
-  print('Clean base URL: $cleanBaseUrl');
-  print('Clean photo path: $cleanPhotoPath');
+  // print('Attempting to load image from: $fullUrl'); // Debug print to verify URL
+  // print('Original photo data: $photoData');
+  // print('Base URL: $baseUrl');
+  // print('Clean base URL: $cleanBaseUrl');
+  // print('Clean photo path: $cleanPhotoPath');
 
   return SizedBox(
     width: 60,
@@ -30,13 +30,13 @@ Widget buildStudentPhoto(String? photoData, String baseUrl) {
       radius: 30,
       backgroundImage: NetworkImage(fullUrl),
       onBackgroundImageError: (exception, stackTrace) {
-        print('Error loading network image: $exception');
-        print('Stack trace: $stackTrace');
-        print('URL that failed: $fullUrl');
-        print('Original photo data: $photoData');
-        print('Base URL: $baseUrl');
-        print('Clean base URL: $cleanBaseUrl');
-        print('Clean photo path: $cleanPhotoPath');
+        // print('Error loading network image: $exception');
+        // print('Stack trace: $stackTrace');
+        // print('URL that failed: $fullUrl');
+        // print('Original photo data: $photoData');
+        // print('Base URL: $baseUrl');
+        // print('Clean base URL: $cleanBaseUrl');
+        // print('Clean photo path: $cleanPhotoPath');
       },
       backgroundColor: Colors.grey[300],
       child: photoData.isNotEmpty ? null : Icon(Icons.person),

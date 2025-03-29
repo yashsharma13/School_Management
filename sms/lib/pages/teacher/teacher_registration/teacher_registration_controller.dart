@@ -64,7 +64,7 @@ class TeacherRegistrationController {
               (teacherPhoto!.path.endsWith('.jpg') ||
                   teacherPhoto!.path.endsWith('.jpeg') ||
                   teacherPhoto!.path.endsWith('.png'))) {
-            print("Valid image selected: ${teacherPhoto!.path}");
+            // print("Valid image selected: ${teacherPhoto!.path}");
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Selected image is invalid.')));
@@ -85,7 +85,7 @@ class TeacherRegistrationController {
             await FilePicker.platform.pickFiles(type: FileType.image);
         if (result != null) {
           teacherPhoto = XFile.fromData(result.files.single.bytes!);
-          print("Web image selected: ${teacherPhoto?.name}");
+          // print("Web image selected: ${teacherPhoto?.name}");
           final fileSize = result.files.single.bytes!.length;
           if (fileSize < 100) {
             // 100 KB size check
@@ -101,7 +101,7 @@ class TeacherRegistrationController {
           .pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
       if (result != null) {
         qualificationCertificate = XFile(result.files.single.path!);
-        print("Certificate selected: ${qualificationCertificate?.path}");
+        // print("Certificate selected: ${qualificationCertificate?.path}");
       }
     }
   }
@@ -183,7 +183,7 @@ class TeacherRegistrationController {
         return false;
       }
     } catch (e) {
-      print('Error processing date: $e');
+      // print('Error processing date: $e');
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Error processing date of birth or joining date')));
       return false;

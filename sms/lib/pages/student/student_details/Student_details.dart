@@ -218,7 +218,7 @@ class _StudentProfileManagementPageState
                     updatedStudent['student_photo'] = student.studentPhoto;
                   }
 
-                  print('Updating student with data: $updatedStudent');
+                  // print('Updating student with data: $updatedStudent');
 
                   // Update student
                   await _studentService.updateStudent(student, updatedStudent);
@@ -228,7 +228,7 @@ class _StudentProfileManagementPageState
                   Navigator.of(context).pop();
                   _fetchStudents(); // Refresh the list
                 } catch (e) {
-                  print('Error updating student: $e');
+                  // print('Error updating student: $e');
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Failed to update student: $e')),
                   );

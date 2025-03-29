@@ -10,7 +10,8 @@ import authRoutes from './routes/authRoutes.js';
 import studentRoutes from './routes/studentRoutes.js';
 import attendanceRoutes from './routes/attendanceRoutes.js';
 import teacherRoutes from './routes/teacherRoutes.js';
-
+import classRoutes from './routes/classRoutes.js';
+import subjectRoutes from './routes/subjectRoutes.js';
 // Setup for file path management
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -24,7 +25,7 @@ app.use(bodyParser.json());
 
 // Log all requests
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.url}`);
+  // console.log(`${req.method} ${req.url}`);
   next();
 });
 
@@ -64,12 +65,12 @@ app.use('/uploads', (err, req, res, next) => {
   if (err) {
     // console.error('Error serving static file:', err);
     const filePath = path.join(uploadsPath, req.url);
-    console.log('File request details:', {
-      url: req.url,
-      fullPath: filePath,
-      exists: fs.existsSync(filePath),
-      availableFiles: fs.readdirSync(uploadsPath)
-    });
+    // console.log('File request details:', {
+    //   url: req.url,
+    //   fullPath: filePath,
+    //   exists: fs.existsSync(filePath),
+    //   availableFiles: fs.readdirSync(uploadsPath)
+    // });
     res.status(404).json({
       message: 'File not found',
       requestedPath: req.url,
@@ -86,10 +87,12 @@ app.use('/api/auth', authRoutes);
 app.use('/api', studentRoutes);
 app.use('/api', attendanceRoutes);
 app.use('/api',teacherRoutes);
+app.use('/api',classRoutes);
+app.use('/api',subjectRoutes);
 
 // If no route matches, return 404
 app.use((req, res) => {
-  console.log('404 for route:', req.url);
+  // console.log('404 for route:', req.url);
   res.status(404).json({ 
     message: 'Route not found',
     path: req.url
