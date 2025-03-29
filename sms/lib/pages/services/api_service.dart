@@ -330,7 +330,8 @@ class ApiService {
           'Authorization': token, // Include the token in the header
         },
       );
-
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
       if (response.statusCode == 200) {
         List<dynamic> data = json.decode(response.body);
         return data
@@ -568,6 +569,7 @@ class ApiService {
   //     throw e;
   //   }
   // }
+
   static const String apiUrlUpdateSubject =
       'http://localhost:1000/api/updatesubject';
 

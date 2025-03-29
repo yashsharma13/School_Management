@@ -1,27 +1,121 @@
+import connection from '../config/mysqlconnectivity.js';
 import { createSubject,getSubjectsByUser,updateSubjectById } from '../models/subjectModel.js';
 
+// export const registerSubject = (req, res) => {
+//   const { class_name, subject_name, marks } = req.body;
+//   const user_email = req.user_email;
+
+//   console.log('Received request body:', req.body);  // Log incoming data for debugging
+
+//   if (!class_name || !subject_name || !marks || !user_email) {
+//     return res.status(400).json({ message: 'Missing required fields' });
+//   }
+//   // Insert the data into the database
+//   createSubject({ class_name, subject_name, marks, user_email }, (err, results) => {
+//     if (err) {
+//       console.error('Error registering subjects:', err);
+//       return res.status(500).json({ message: 'Error registering subjects' });
+//     }
+
+//     res.status(201).json({
+//       success: true,
+//       message: 'Subjects registered successfully',
+//     });
+//   });
+// };
 export const registerSubject = (req, res) => {
   const { class_name, subject_name, marks } = req.body;
   const user_email = req.user_email;
 
-  console.log('Received request body:', req.body);  // Log incoming data for debugging
+  console.log('Received request body:', req.body);
 
   if (!class_name || !subject_name || !marks || !user_email) {
-    return res.status(400).json({ message: 'Missing required fields' });
+    return res.status(400).json({ 
+      success: false,
+      message: 'Missing required fields' 
+    });
   }
-  // Insert the data into the database
-  createSubject({ class_name, subject_name, marks, user_email }, (err, results) => {
-    if (err) {
-      console.error('Error registering subjects:', err);
-      return res.status(500).json({ message: 'Error registering subjects' });
+
+  // First check if the class already exists for this user
+  const checkQuery = 'SELECT id FROM subjects WHERE class_name = ? AND user_email = ?';
+  
+  connection.query(checkQuery, [class_name, user_email], (checkErr, checkResults) => {
+    if (checkErr) {
+      console.error('Error checking existing subjects:', checkErr);
+      return res.status(500).json({ 
+        success: false,
+        message: 'Error checking existing subjects' 
+      });
     }
 
-    res.status(201).json({
-      success: true,
-      message: 'Subjects registered successfully',
+    if (checkResults.length > 0) {
+      return res.status(409).json({ 
+        success: false,
+        message: 'This class already has subjects assigned. Please use update instead.',
+        existingClass: class_name
+      });
+    }
+
+    // If class doesn't exist, proceed with registration
+    createSubject({ class_name, subject_name, marks, user_email }, (err, results) => {
+      if (err) {
+        console.error('Error registering subjects:', err);
+        return res.status(500).json({ 
+          success: false,
+          message: 'Error registering subjects' 
+        });
+      }
+
+      res.status(201).json({
+        success: true,
+        message: 'Subjects registered successfully',
+        data: {
+          class_name,
+          subject_name,
+          marks
+        }
+      });
     });
   });
 };
+// export const getAllSubjects = (req, res) => {
+//   const user_email = req.user_email;
+
+//   if (!user_email) {
+//     return res.status(400).json({ message: 'User email is required' });
+//   }
+
+//   getSubjectsByUser(user_email, (err, results) => {
+//     if (err) {
+//       console.error('Error fetching subjects:', err);
+//       return res.status(500).json({ message: 'Error fetching subjects' });
+//     }
+
+//     // Group subjects by class
+//     const classSubjectsMap = {};
+//     results.forEach(subject => {
+//       if (!classSubjectsMap[subject.class_name]) {
+//         classSubjectsMap[subject.class_name] = {
+//           _id: subject.id, // You might want to generate a unique ID
+//           class_name: subject.class_name,
+//           user_email: subject.user_email, // Include user email
+//           subjects: []
+//         };
+//       }
+//       classSubjectsMap[subject.class_name].subjects.push({
+//         subject_name: subject.subject_name,
+//         marks: subject.marks
+//       });
+//     });
+
+//     // Convert map to array
+//     const classSubjectsArray = Object.values(classSubjectsMap);
+
+//     res.status(200).json({
+//       data: classSubjectsArray
+//     });
+//   });
+// };
 export const getAllSubjects = (req, res) => {
   const user_email = req.user_email;
 
@@ -29,136 +123,124 @@ export const getAllSubjects = (req, res) => {
     return res.status(400).json({ message: 'User email is required' });
   }
 
-  getSubjectsByUser(user_email, (err, results) => {
-    if (err) {
-      console.error('Error fetching subjects:', err);
-      return res.status(500).json({ message: 'Error fetching subjects' });
+  // First get all valid classes for this user
+  const getClassesQuery = 'SELECT class_name FROM classes WHERE user_email = ?';
+  
+  connection.query(getClassesQuery, [user_email], (classErr, classResults) => {
+    if (classErr) {
+      console.error('Error fetching classes:', classErr);
+      return res.status(500).json({ message: 'Error fetching classes' });
     }
 
-    // Group subjects by class
-    const classSubjectsMap = {};
-    results.forEach(subject => {
-      if (!classSubjectsMap[subject.class_name]) {
-        classSubjectsMap[subject.class_name] = {
-          _id: '', // You might want to generate a unique ID
-          class_name: subject.class_name,
-          subjects: []
-        };
+    const validClasses = classResults.map(c => c.class_name);
+
+    // Now get subjects only for valid classes
+    getSubjectsByUser(user_email, (err, results) => {
+      if (err) {
+        console.error('Error fetching subjects:', err);
+        return res.status(500).json({ message: 'Error fetching subjects' });
       }
-      classSubjectsMap[subject.class_name].subjects.push({
-        subject_name: subject.subject_name,
-        marks: subject.marks
+
+      // Filter subjects to only include those for valid classes
+      const filteredResults = results.filter(subject => 
+        validClasses.includes(subject.class_name)
+      );
+
+      // Group subjects by class
+      const classSubjectsMap = {};
+      filteredResults.forEach(subject => {
+        if (!classSubjectsMap[subject.class_name]) {
+          classSubjectsMap[subject.class_name] = {
+            _id: subject.id,
+            class_name: subject.class_name,
+            user_email: subject.user_email,
+            subjects: []
+          };
+        }
+        classSubjectsMap[subject.class_name].subjects.push({
+          subject_name: subject.subject_name,
+          marks: subject.marks
+        });
       });
-    });
 
-    // Convert map to array
-    const classSubjectsArray = Object.values(classSubjectsMap);
+      // Convert map to array
+      const classSubjectsArray = Object.values(classSubjectsMap);
 
-    res.status(200).json({
-      data: classSubjectsArray
+      res.status(200).json({
+        data: classSubjectsArray
+      });
     });
   });
 };
+// Update a specific subject by its ID
 
-// // Update a specific subject by its ID
-// export const updateSubject = (req, res) => {
-//   const { subject_id, subject_name, marks } = req.body;
-//   const user_email = req.user_email;
+export const updateSubject = async (req, res) => {
+  try {
+    const { subject_id, subjects } = req.body;
+    const user_email = req.user_email;
 
-//   // Ensure subject_id, subject_name, and marks are provided
-//   if (!subject_id || !subject_name || !marks || !user_email) {
-//     return res.status(400).json({ message: 'Missing required fields' });
-//   }
-
-//   // Call the model function to update the subject
-//   updateSubjectById(subject_id, { subject_name, marks }, user_email, (err, result) => {
-//     if (err) {
-//       console.error('Error updating subject:', err);
-//       return res.status(500).json({ message: 'Error updating subject' });
-//     }
-
-//     if (!result) {
-//       return res.status(404).json({ message: 'Subject not found' });
-//     }
-
-//     res.status(200).json({
-//       success: true,
-//       message: 'Subject updated successfully',
-//     });
-//   });
-// };
-// Subject Update Debugging Strategy
-
-// Enhanced debugging middleware
-export const updateSubject = (req, res) => {
-  // Extensive logging for debugging
-  console.log('Full Request Headers:', req.headers);
-  console.log('Full Request Body:', req.body);
-  console.log('User Email from Request:', req.user_email);
-
-  // Destructure with additional checks
-  const subject_id = req.body?.subject_id;
-  const subject_name = req.body?.subject_name;
-  const marks = req.body?.marks;
-  const user_email = req.user_email;
-
-  // Detailed field validation logging
-  console.log('Extracted Fields:');
-  console.log('Subject ID:', subject_id);
-  console.log('Subject Name:', subject_name);
-  console.log('Marks:', marks);
-  console.log('User Email:', user_email);
-
-  // Comprehensive field validation
-  const missingFields = [];
-  if (!subject_id) missingFields.push('subject_id');
-  if (!subject_name) missingFields.push('subject_name');
-  if (!marks && marks !== 0) missingFields.push('marks');
-  if (!user_email) missingFields.push('user_email');
-
-  // Detailed error response if fields are missing
-  if (missingFields.length > 0) {
-    return res.status(400).json({
-      message: 'Missing required fields',
-      missingFields: missingFields,
-      receivedBody: req.body
-    });
-  }
-
-  // Proceed with update if all fields are present
-  updateSubjectById(subject_id, { subject_name, marks }, user_email, (err, result) => {
-    if (err) {
-      console.error('Detailed Error updating subject:', err);
-      return res.status(500).json({ 
-        message: 'Error updating subject',
-        errorDetails: err 
+    if (!subject_id || !subjects || !user_email) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Missing required fields'
       });
     }
 
-    if (!result) {
-      return res.status(404).json({ 
-        message: 'Subject not found',
-        subject_id: subject_id 
-      });
-    }
+    // Combine all subjects into comma-separated strings
+    const combinedSubjectNames = subjects.map(s => s.subject_name).join(', ');
+    const combinedMarks = subjects.map(s => s.marks).join(', ');
+    const class_name = subjects[0].class_name; // All should have same class
 
-    res.status(200).json({
-      success: true,
-      message: 'Subject updated successfully',
-      updatedSubject: { subject_id, subject_name, marks }
+    // Update the single record with all subjects
+    const updateQuery = `
+      UPDATE subjects 
+      SET 
+        class_name = ?,
+        subject_name = ?,
+        marks = ?
+      WHERE id = ? AND user_email = ?
+    `;
+
+    connection.query(
+      updateQuery,
+      [class_name, combinedSubjectNames, combinedMarks, subject_id, user_email],
+      (error, results) => {
+        if (error) {
+          console.error('Database error:', error);
+          return res.status(500).json({
+            success: false,
+            message: 'Database operation failed'
+          });
+        }
+
+        if (results.affectedRows === 0) {
+          return res.status(404).json({
+            success: false,
+            message: 'No subject found with that ID for this user'
+          });
+        }
+
+        res.status(200).json({
+          success: true,
+          message: 'Subjects updated successfully',
+          data: {
+            id: subject_id,
+            class_name,
+            subject_name: combinedSubjectNames,
+            marks: combinedMarks,
+            user_email
+          }
+        });
+      }
+    );
+
+  } catch (error) {
+    console.error('Error updating subjects:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message
     });
-  });
+  }
 };
 
-// Example of how to set up middleware to ensure user_email
-export const ensureUserEmail = (req, res, next) => {
-  // If using authentication middleware
-  if (req.user && req.user.email) {
-    req.user_email = req.user.email;
-  } else {
-    // Fallback or error handling
-    console.error('No user email found in request');
-    return res.status(401).json({ message: 'Authentication required' });
-  }
-  next();
-};

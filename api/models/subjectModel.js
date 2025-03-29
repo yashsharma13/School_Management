@@ -28,7 +28,7 @@ export const getSubjectsByUser = (user_email, callback) => {
 // Assuming you are using a database like MySQL or MongoDB, adapt the query accordingly
 
 // Update subject by ID in the database
-export const updateSubjectById = (subjectId, updatedData, userEmail, callback) => {
+export const updateSubjectById = (id, updatedData, userEmail, callback) => {
   // Assuming you're using a MySQL-like database
   const { subject_name, marks } = updatedData;
 
@@ -36,11 +36,11 @@ export const updateSubjectById = (subjectId, updatedData, userEmail, callback) =
   const query = `
     UPDATE subjects 
     SET subject_name = ?, marks = ?
-    WHERE _id = ? AND user_email = ?
+    WHERE id = ? AND user_email = ?
   `;
 
   // Execute the update query
-  connection.query(query, [subject_name, marks, subjectId, userEmail], (err, result) => {
+  connection.query(query, [subject_name, marks, id, userEmail], (err, result) => {
     if (err) {
       return callback(err, null);
     }

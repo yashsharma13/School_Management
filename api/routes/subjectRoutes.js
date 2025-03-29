@@ -5,7 +5,6 @@ import {
   registerSubject,
   getAllSubjects,
   updateSubject,
-  ensureUserEmail 
 } from '../controllers/subjectController.js';
 
 const router = express.Router();
@@ -15,8 +14,7 @@ router.post('/registersubject', verifyToken,registerSubject);
 router.get('/getallsubjects', verifyToken, getAllSubjects);
 // router.put('/updatesubject',updateSubject)
 router.put('/updatesubject',
-  verifyToken, 
-  ensureUserEmail,  // Ensure user email is present
+  verifyToken,
   updateSubject,
      // Your update controller
 );
