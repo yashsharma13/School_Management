@@ -531,45 +531,6 @@ class ApiService {
     }
   }
 
-  // static const String apiUrlUpdateSubject =
-  //     'http://localhost:1000/api/updatesubject';
-
-  // static Future<bool> updateSubject({
-  //   required String subjectId,
-  //   required List<Map<String, dynamic>> subjectsData,
-  //   required String token, // Add token parameter
-  // }) async {
-  //   try {
-  //     final response = await http.post(
-  //       Uri.parse('apiUrlUpdateSubject'), // Replace with your actual endpoint
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //         'Authorization': token, // Add authorization header
-  //       },
-  //       body: json.encode({
-  //         'subject_id': subjectId,
-  //         'subjects': subjectsData,
-  //       }),
-  //     );
-
-  //     print('Update Subject Request Body: ${json.encode({
-  //           'subject_id': subjectId,
-  //           'subjects': subjectsData,
-  //         })}');
-  //     print('Update Subject Response Status: ${response.statusCode}');
-  //     print('Update Subject Response Body: ${response.body}');
-
-  //     if (response.statusCode == 200) {
-  //       return true;
-  //     } else {
-  //       throw Exception('Failed to update subject: ${response.body}');
-  //     }
-  //   } catch (e) {
-  //     print('Error during subject update: $e');
-  //     throw e;
-  //   }
-  // }
-
   static const String apiUrlUpdateSubject =
       'http://localhost:1000/api/updatesubject';
 
@@ -625,6 +586,47 @@ class ApiService {
     } catch (e) {
       print('[ERROR] in updateSubject: $e');
       rethrow;
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>>
+      modelgetStudentCountByClass() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null) {
+        throw Exception('Authentication required');
+      }
+
+      final url = '$baseUrl/api/students/count-by-class';
+      print('Fetching counts from: $url');
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Authorization': token,
+          'Accept': 'application/json',
+        },
+      );
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+
+        // Handle the response format
+        if (responseData is Map && responseData['data'] is List) {
+          return (responseData['data'] as List).cast<Map<String, dynamic>>();
+        }
+        return []; // Return empty list if format unexpected
+      } else {
+        throw Exception('Failed with status ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error in modelgetStudentCountByClass: $e');
+      return []; // Return empty list on error
     }
   }
 }

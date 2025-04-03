@@ -131,3 +131,36 @@ export const getStudentCount = (callback) => {
   const query = 'SELECT COUNT(*) as totalStudents FROM students';
   connection.query(query, callback);
 };
+
+
+export const getStudentCountByClass = (user_email, callback) => {
+  // Use the exact same query that works in your direct SQL
+  const query = `
+    SELECT 
+      LOWER(TRIM(assigned_class)) as class_name, 
+      COUNT(*) as student_count
+    FROM 
+      students
+    WHERE 
+      user_email = ?
+      AND assigned_class IS NOT NULL
+      AND assigned_class != ''
+    GROUP BY 
+      LOWER(TRIM(assigned_class))
+    ORDER BY 
+      LOWER(TRIM(assigned_class))
+  `;
+  
+  console.log('Executing count query with email:', user_email);
+  console.log('Full query:', query);
+
+  connection.query(query, [user_email], (err, results) => {
+    if (err) {
+      console.error('Database error:', err);
+      return callback(err, null);
+    }
+    
+    console.log('Query results:', results);
+    callback(null, results);
+  });
+};

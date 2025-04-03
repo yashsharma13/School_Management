@@ -88,6 +88,7 @@ class _AttendancePageState extends State<AttendancePage> {
 
     // Ensure class name is properly encoded for URL
     final encodedClass = Uri.encodeComponent(selectedClass!);
+    print('Fetching students for encoded class: $encodedClass');
 
     try {
       final response = await http.get(

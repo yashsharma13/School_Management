@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sms/pages/classes/all_class.dart';
 import 'package:sms/pages/classes/new_class.dart';
+import 'package:sms/pages/fees/fees_student_search.dart';
 import 'package:sms/pages/student/student_attendance/student_attendance.dart';
 import 'package:sms/pages/student/student_details/Student_details.dart';
 import 'package:sms/pages/student/student_registration/student_registration_page.dart';
@@ -304,6 +305,30 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     );
                   },
                 ),
+              ],
+            ),
+            ExpansionTile(
+              leading: const Icon(
+                Icons.payment,
+                color: Colors.black87,
+              ),
+              title: const Text(
+                "Fees",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.add, color: Colors.black54),
+                  title: const Text("Collect Fees"),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => FeesStudentSearchPage()),
+                    );
+                  },
+                )
               ],
             ),
             // ExpansionTile for teacher

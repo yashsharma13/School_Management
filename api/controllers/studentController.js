@@ -1,7 +1,7 @@
 // controllers/studentController.js
 import path from 'path';
 import fs from 'fs';
-import { createStudent, getStudentsByUser, updateStudent, getStudentById, deleteStudent, getStudentsByClass, getStudentCount } from '../models/studentModel.js';
+import { createStudent, getStudentsByUser, updateStudent, getStudentById, deleteStudent, getStudentsByClass, getStudentCount, getStudentCountByClass } from '../models/studentModel.js';
 import { deleteAttendanceByStudentId } from '../models/attendanceModel.js';
 import { uploadDir } from '../middlewares/upload.js';
 
@@ -197,5 +197,39 @@ export const getTotalStudentCount = (req, res) => {
       return res.status(500).json({ error: 'Failed to fetch student count' });
     }
     res.json({ totalStudents: results[0].totalStudents });
+  });
+};
+
+// In your studentController.js
+export const modelgetStudentCountByClass = (req, res) => {
+  // Make sure user_email is properly extracted from JWT
+  const user_email = req.user_email;;
+  
+  // if (!user_email) {
+  //   console.error('No user email found in JWT');
+  //   return res.status(400).json({ 
+  //     success: false,
+  //     message: 'Authentication required',
+  //     data: []
+  //   });
+  // }
+
+  // console.log('Fetching counts for user:', user_email);
+
+  getStudentCountByClass(user_email, (err, results) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).json({
+        success: false,
+        message: 'Database error',
+        data: []
+      });
+    }
+
+    console.log('Sending response with', results.length, 'records');
+    res.status(200).json({
+      success: true,
+      data: results
+    });
   });
 };
