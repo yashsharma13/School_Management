@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sms/pages/admission/admission_letter.dart';
 import 'student_registration_controller.dart';
 import 'student_form_sections/student_info_section.dart';
 import 'student_form_sections/parent_info_section.dart';
@@ -62,6 +63,11 @@ class _StudentRegistrationFormState extends State<StudentRegistrationForm> {
                     if (await _controller.registerStudent(context)) {
                       widget.onRegistered();
                       Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => AdmissionLetterPage()),
+                      );
                     }
                   });
                 },

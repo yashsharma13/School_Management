@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sms/pages/student/student_registration/student_registration_controller.dart';
 
 class ApiService {
   // API URLs
@@ -45,7 +47,36 @@ class ApiService {
     }
   }
 
-  // User login
+  // // User login
+  // static Future<Map<String, dynamic>> login(
+  //     String email, String password) async {
+  //   try {
+  //     final response = await http.post(
+  //       Uri.parse(apiUrlLogin),
+  //       headers: {'Content-Type': 'application/json'},
+  //       body: jsonEncode({'email': email, 'password': password}),
+  //     );
+
+  //     if (response.statusCode == 200) {
+  //       final responseData = jsonDecode(response.body);
+  //       if (responseData['success'] == true) {
+  //         return {
+  //           'success': true,
+  //           'token': responseData['token'], // Return the token
+  //         };
+  //       } else {
+  //         return {'success': false, 'message': 'Invalid Credentials'};
+  //       }
+  //     } else {
+  //       return {'success': false, 'message': 'Login failed'};
+  //     }
+  //   } catch (error) {
+  //     print('Error: $error');
+  //     return {'success': false, 'message': 'Something went wrong'};
+  //   }
+  // }
+
+  // Regular login (without role specification)
   static Future<Map<String, dynamic>> login(
       String email, String password) async {
     try {
@@ -60,7 +91,8 @@ class ApiService {
         if (responseData['success'] == true) {
           return {
             'success': true,
-            'token': responseData['token'], // Return the token
+            'token': responseData['token'],
+            'role': responseData['role'],
           };
         } else {
           return {'success': false, 'message': 'Invalid Credentials'};
@@ -74,7 +106,81 @@ class ApiService {
     }
   }
 
-  static Future<bool> registerStudent({
+  // Login with role specification
+  static Future<Map<String, dynamic>> loginWithRole(
+      String email, String password, String role) async {
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrlLogin),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'password': password, 'role': role}),
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        if (responseData['success'] == true) {
+          // Check if the returned role matches the requested role
+          if (responseData['role'].toLowerCase() == role.toLowerCase()) {
+            return {
+              'success': true,
+              'token': responseData['token'],
+              'role': responseData['role'],
+            };
+          } else {
+            return {
+              'success': false,
+              'message': 'User role mismatch. Please select the correct role.'
+            };
+          }
+        } else {
+          return {
+            'success': false,
+            'message': responseData['message'] ?? 'Invalid Credentials'
+          };
+        }
+      } else {
+        return {'success': false, 'message': 'Login failed'};
+      }
+    } catch (error) {
+      print('Error: $error');
+      return {'success': false, 'message': 'Something went wrong'};
+    }
+  }
+
+// Add to your ApiService class
+  static Future<Map<String, dynamic>> studentLogin(
+      String username, String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/student-login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'username': username, 'password': password}),
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        if (responseData['success'] == true) {
+          return {
+            'success': true,
+            'token': responseData['token'],
+            'role': 'student',
+          };
+        } else {
+          return {
+            'success': false,
+            'message': responseData['message'] ?? 'Invalid username or password'
+          };
+        }
+      } else {
+        return {'success': false, 'message': 'Login failed'};
+      }
+    } catch (error) {
+      print('Error: $error');
+      return {'success': false, 'message': 'Something went wrong'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> registerStudent({
     required String studentName,
     required String registrationNumber,
     required String dob,
@@ -96,7 +202,13 @@ class ApiService {
       if (token == null) {
         throw Exception('No token found. Please log in.');
       }
-
+// Generate username and password
+      final StudentRegistrationController tempController =
+          StudentRegistrationController();
+      final credentials =
+          tempController.generateCredentials(studentName, registrationNumber);
+      final username = credentials['username'];
+      final password = credentials['password'];
       var uri = Uri.parse('http://localhost:1000/api/registerstudent');
       var request = http.MultipartRequest('POST', uri);
 
@@ -116,6 +228,8 @@ class ApiService {
       request.fields['phone'] = phone;
       request.fields['assigned_class'] = assignedClass;
       request.fields['assigned_section'] = assignedSection;
+      request.fields['username'] = username!;
+      request.fields['password'] = password!;
 
       // Add files (student photo)
       if (studentPhoto is File) {
@@ -159,14 +273,64 @@ class ApiService {
 
       // Send request
       var response = await request.send();
-      if (response.statusCode == 200) {
-        return true;
+      final responseBody = await response.stream.bytesToString();
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final jsonResponse = jsonDecode(responseBody);
+        return {
+          'success': true,
+          'data': jsonResponse['data'],
+          'message': jsonResponse['message'],
+        };
       } else {
-        throw Exception('Failed to register student: ${response.statusCode}');
+        final errorResponse = jsonDecode(responseBody);
+        throw Exception(
+            errorResponse['message'] ?? 'Failed to register student');
       }
     } catch (e) {
       print('Error during student registration: $e');
       rethrow;
+    }
+  }
+
+  static Future<String?> getLastRegistrationNumber() async {
+    try {
+      print("Fetching last registration number..."); // Debug print
+
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null) {
+        print("No token found");
+        return null;
+      }
+
+      final uri =
+          Uri.parse('http://localhost:1000/api/last-registration-number');
+      print("Request URL: $uri"); // Debug print
+
+      final response = await http.get(
+        uri,
+        headers: {
+          'Authorization': token,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      print("Response status: ${response.statusCode}"); // Debug print
+      print("Response body: ${response.body}"); // Debug print
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['lastRegistrationNumber']?.toString();
+      } else {
+        print("Error response: ${response.body}");
+        return null;
+      }
+    } catch (e) {
+      print("Error in getLastRegistrationNumber: $e"); // Detailed error print
+      return null;
     }
   }
 

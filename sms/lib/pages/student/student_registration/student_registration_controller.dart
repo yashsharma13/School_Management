@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -134,8 +135,8 @@ class StudentRegistrationController {
       String formattedDate = DateFormat('yyyy-MM-dd').format(parsedDate);
 
       // Debug print to verify date conversion
-      // print('Original DOB: $dob');
-      // print('Formatted DOB: $formattedDate');
+      print('Original DOB: $dob');
+      print('Formatted DOB: $formattedDate');
 
       String address = addressController.text;
       String fatherName = fathersNameController.text;
@@ -169,10 +170,11 @@ class StudentRegistrationController {
       isLoading = true;
 
       // Call the API service with the correctly formatted date
-      bool success = await ApiService.registerStudent(
+      // Call the API service with the correctly formatted date
+      var response = await ApiService.registerStudent(
         studentName: studentName,
         registrationNumber: registrationNumber,
-        dob: formattedDate, // Send the MySQL formatted date
+        dob: formattedDate,
         gender: gender ?? 'Male',
         address: address,
         fatherName: fatherName,
@@ -189,6 +191,8 @@ class StudentRegistrationController {
             : File(birthCertificate?.path ?? ''),
       );
 
+      bool success = response['success'] ?? false;
+
       isLoading = false;
 
       if (success) {
@@ -196,13 +200,14 @@ class StudentRegistrationController {
             SnackBar(content: Text('Student registered successfully')));
         return true;
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to register student')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content:
+                Text(response['message'] ?? 'Failed to register student')));
         return false;
       }
     } catch (e) {
       isLoading = false;
-      // print('Error processing date: $e');
+      print('Error processing date: $e');
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error processing date of birth')));
       return false;
@@ -236,5 +241,40 @@ class StudentRegistrationController {
         );
       },
     );
+  }
+
+  // Add this method to your StudentRegistrationController class
+
+  Map<String, String> generateCredentials(
+      String studentName, String registrationNumber) {
+    // Generate username based on student name and registration
+    // Convert name to lowercase, remove spaces, take first 5 chars + last 4 digits of reg
+    String username = studentName.toLowerCase().replaceAll(RegExp(r'\s+'), '');
+    if (username.length > 5) {
+      username = username.substring(0, 5);
+    }
+
+    // Add last 4 chars of registration number (or all if less than 4)
+    String regSuffix = '';
+    if (registrationNumber.length > 4) {
+      regSuffix = registrationNumber.substring(registrationNumber.length - 4);
+    } else {
+      regSuffix = registrationNumber;
+    }
+
+    username = "$username$regSuffix";
+
+    // Generate random password (8 characters)
+    String password = '';
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    final random = Random();
+    for (int i = 0; i < 8; i++) {
+      password += chars[random.nextInt(chars.length)];
+    }
+
+    return {
+      'username': username,
+      'password': password,
+    };
   }
 }

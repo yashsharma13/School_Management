@@ -9,7 +9,8 @@ import {
   deleteStudentById, 
   getStudentsByClassName,
   getTotalStudentCount,
-  modelgetStudentCountByClass
+  modelgetStudentCountByClass,
+  ggetLastRegistrationNumber
 } from '../controllers/studentController.js';
 
 const router = express.Router();
@@ -22,6 +23,7 @@ router.delete('/students/:id', verifyToken, deleteStudentById);
 router.get('/students/:class', verifyToken, getStudentsByClassName);
 router.get('/api/students/count', getTotalStudentCount);
 router.get('/api/students/count-by-class', verifyToken,modelgetStudentCountByClass);
+router.get('/last-registration-number', verifyToken, ggetLastRegistrationNumber);
 // Make sure this exactly matches your frontend request
 // In your studentRoutes.js
 // router.get('/api/students/count-by-class', verifyToken, async (req, res) => {

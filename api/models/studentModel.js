@@ -16,7 +16,10 @@ export const createStudent = (studentData, callback) => {
     assigned_section,
     birthCertificatePath,
     studentPhotoPath,
-    user_email
+    username,
+    password,
+    user_email,
+    role
   } = studentData;
 
   const sql = `INSERT INTO students (
@@ -33,8 +36,11 @@ export const createStudent = (studentData, callback) => {
     assigned_section,
     birth_certificate,
     student_photo,
-    user_email
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    username,
+    password,
+    user_email,
+    role
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?)`;
 
   connection.query(sql, [
     student_name,
@@ -50,7 +56,10 @@ export const createStudent = (studentData, callback) => {
     assigned_section,
     birthCertificatePath,
     studentPhotoPath,
-    user_email
+    username,
+    password,
+    user_email,
+    'student' // Always set this to 'student'
   ], callback);
 };
 
@@ -162,5 +171,27 @@ export const getStudentCountByClass = (user_email, callback) => {
     
     console.log('Query results:', results);
     callback(null, results);
+  });
+};
+
+export const getLastRegistrationNumber = (callback) => {
+  const query = `
+    SELECT registration_number 
+    FROM students 
+    ORDER BY created_at DESC 
+    LIMIT 1
+  `;
+  
+  connection.query(query, (err, results) => {
+    if (err) {
+      console.error('Database error:', err);
+      return callback(err, null);
+    }
+    
+    if (results.length === 0) {
+      return callback(null, null);
+    }
+    
+    callback(null, results[0].registration_number);
   });
 };

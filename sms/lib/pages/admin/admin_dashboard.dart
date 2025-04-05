@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sms/pages/admission/admission_letter.dart';
 import 'package:sms/pages/classes/all_class.dart';
 import 'package:sms/pages/classes/new_class.dart';
 import 'package:sms/pages/fees/fees_student_search.dart';
@@ -302,6 +303,19 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       context,
                       MaterialPageRoute(
                           builder: (context) => StudentReportPage()),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.insert_drive_file,
+                      color: Colors.black54),
+                  title: const Text("Admission Letter"),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => AdmissionLetterPage()),
                     );
                   },
                 ),
