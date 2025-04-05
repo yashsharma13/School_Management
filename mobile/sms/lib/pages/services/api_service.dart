@@ -38,11 +38,11 @@ class ApiService {
         final responseData = jsonDecode(response.body);
         return responseData['success'] ?? false; // Return success status
       } else {
-        print('Registration failed with status code: ${response.statusCode}');
+        // print('Registration failed with status code: ${response.statusCode}');
         return false;
       }
     } catch (error) {
-      print('Error: $error');
+      // print('Error: $error');
       return false;
     }
   }
@@ -101,7 +101,7 @@ class ApiService {
         return {'success': false, 'message': 'Login failed'};
       }
     } catch (error) {
-      print('Error: $error');
+      // print('Error: $error');
       return {'success': false, 'message': 'Something went wrong'};
     }
   }
@@ -142,7 +142,7 @@ class ApiService {
         return {'success': false, 'message': 'Login failed'};
       }
     } catch (error) {
-      print('Error: $error');
+      // print('Error: $error');
       return {'success': false, 'message': 'Something went wrong'};
     }
   }
@@ -175,7 +175,7 @@ class ApiService {
         return {'success': false, 'message': 'Login failed'};
       }
     } catch (error) {
-      print('Error: $error');
+      // print('Error: $error');
       return {'success': false, 'message': 'Something went wrong'};
     }
   }
@@ -288,26 +288,26 @@ class ApiService {
             errorResponse['message'] ?? 'Failed to register student');
       }
     } catch (e) {
-      print('Error during student registration: $e');
+      // print('Error during student registration: $e');
       rethrow;
     }
   }
 
   static Future<String?> getLastRegistrationNumber() async {
     try {
-      print("Fetching last registration number..."); // Debug print
+      // print("Fetching last registration number..."); // Debug print
 
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
 
       if (token == null) {
-        print("No token found");
+        // print("No token found");
         return null;
       }
 
       final uri =
           Uri.parse('http://localhost:1000/api/last-registration-number');
-      print("Request URL: $uri"); // Debug print
+      // print("Request URL: $uri"); // Debug print
 
       final response = await http.get(
         uri,
@@ -318,18 +318,18 @@ class ApiService {
         },
       ).timeout(const Duration(seconds: 10));
 
-      print("Response status: ${response.statusCode}"); // Debug print
-      print("Response body: ${response.body}"); // Debug print
+      // // print("Response status: ${response.statusCode}"); // Debug print
+      // print("Response body: ${response.body}"); // Debug print
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         return data['lastRegistrationNumber']?.toString();
       } else {
-        print("Error response: ${response.body}");
+        // print("Error response: ${response.body}");
         return null;
       }
     } catch (e) {
-      print("Error in getLastRegistrationNumber: $e"); // Detailed error print
+      // print("Error in getLastRegistrationNumber: $e"); // Detailed error print
       return null;
     }
   }
@@ -425,7 +425,7 @@ class ApiService {
         throw Exception('Failed to register teacher: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error during teacher registration: $e');
+      // print('Error during teacher registration: $e');
       rethrow;
     }
   }
@@ -464,7 +464,7 @@ class ApiService {
         throw Exception(errorData['error'] ?? 'Failed to register class');
       }
     } catch (e) {
-      print('Error during class registration: $e');
+      // print('Error during class registration: $e');
       rethrow;
     }
   }
@@ -494,8 +494,8 @@ class ApiService {
           'Authorization': token, // Include the token in the header
         },
       );
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
+      // print('Response status: ${response.statusCode}');
+      // print('Response body: ${response.body}');
       if (response.statusCode == 200) {
         List<dynamic> data = json.decode(response.body);
         return data
@@ -516,7 +516,7 @@ class ApiService {
     required String teacherName,
   }) async {
     try {
-      print('[DEBUG] Starting updateClass with ID: $classId'); // Add this
+      // print('[DEBUG] Starting updateClass with ID: $classId'); // Add this
 
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
@@ -533,7 +533,7 @@ class ApiService {
       const String baseUrl = 'http://localhost:1000/api';
       final url = '$baseUrl/classes/$classId';
 
-      print('[DEBUG] Full update URL: $url'); // Add this
+      // print('[DEBUG] Full update URL: $url'); // Add this
 
       final response = await http.put(
         Uri.parse(url),
@@ -549,8 +549,8 @@ class ApiService {
         }),
       );
 
-      print('[DEBUG] Update response: ${response.statusCode}'); // Add this
-      print('[DEBUG] Response body: ${response.body}'); // Add this
+      // print('[DEBUG] Update response: ${response.statusCode}'); // Add this
+      // print('[DEBUG] Response body: ${response.body}'); // Add this
 
       if (response.statusCode == 200) {
         return true;
@@ -558,14 +558,14 @@ class ApiService {
         throw Exception('Update failed with status: ${response.statusCode}');
       }
     } catch (error) {
-      print('[ERROR] in updateClass: $error');
+      // print('[ERROR] in updateClass: $error');
       rethrow;
     }
   }
 
   static Future<bool> deleteClass(String classId) async {
     try {
-      print('[DEBUG] Starting deleteClass with ID: $classId'); // Add this
+      // print('[DEBUG] Starting deleteClass with ID: $classId'); // Add this
 
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
@@ -581,7 +581,7 @@ class ApiService {
       const String baseUrl = 'http://localhost:1000/api';
       final url = '$baseUrl/classes/$classId';
 
-      print('[DEBUG] Full delete URL: $url'); // Add this
+      // print('[DEBUG] Full delete URL: $url'); // Add this
 
       final response = await http.delete(
         Uri.parse(url),
@@ -592,8 +592,8 @@ class ApiService {
         },
       );
 
-      print('[DEBUG] Delete response: ${response.statusCode}'); // Add this
-      print('[DEBUG] Response body: ${response.body}'); // Add this
+      // print('[DEBUG] Delete response: ${response.statusCode}'); // Add this
+      // print('[DEBUG] Response body: ${response.body}'); // Add this
 
       if (response.statusCode == 200) {
         return true;
@@ -601,7 +601,7 @@ class ApiService {
         throw Exception('Delete failed with status: ${response.statusCode}');
       }
     } catch (error) {
-      print('[ERROR] in deleteClass: $error');
+      // print('[ERROR] in deleteClass: $error');
       rethrow;
     }
   }
@@ -646,7 +646,7 @@ class ApiService {
         throw Exception(errorData['message'] ?? 'Failed to register subject');
       }
     } catch (e) {
-      print('Error during subject registration: $e');
+      // print('Error during subject registration: $e');
       rethrow;
     }
   }
@@ -670,8 +670,8 @@ class ApiService {
         },
       );
 
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
+      // print('Response status: ${response.statusCode}');
+      // print('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseBody = json.decode(response.body);
@@ -690,7 +690,7 @@ class ApiService {
         );
       }
     } catch (e) {
-      print('Error fetching classes with subjects: $e');
+      // print('Error fetching classes with subjects: $e');
       rethrow;
     }
   }
@@ -703,7 +703,7 @@ class ApiService {
     required List<Map<String, dynamic>> subjectsData,
   }) async {
     try {
-      print('[DEBUG] Starting updateSubject with ID: $subjectId');
+      // print('[DEBUG] Starting updateSubject with ID: $subjectId');
 
       // 1. Get token from SharedPreferences
       final prefs = await SharedPreferences.getInstance();
@@ -718,11 +718,11 @@ class ApiService {
       }
 
       // 2. Prepare the request
-      print('[DEBUG] Full update URL: $apiUrlUpdateSubject');
-      print('[DEBUG] Request payload: ${{
-        'subject_id': subjectId,
-        'subjects': subjectsData
-      }}');
+      // print('[DEBUG] Full update URL: $apiUrlUpdateSubject');
+      // print('[DEBUG] Request payload: ${{
+      //   'subject_id': subjectId,
+      //   'subjects': subjectsData
+      // }}');
 
       // 3. Make the request
       final response = await http.put(
@@ -738,8 +738,8 @@ class ApiService {
       );
 
       // 4. Handle response
-      print('[DEBUG] Response status: ${response.statusCode}');
-      print('[DEBUG] Response body: ${response.body}');
+      // print('[DEBUG] Response status: ${response.statusCode}');
+      // print('[DEBUG] Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         return true;
@@ -748,7 +748,7 @@ class ApiService {
             'Failed to update subject: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-      print('[ERROR] in updateSubject: $e');
+      // print('[ERROR] in updateSubject: $e');
       rethrow;
     }
   }
@@ -764,7 +764,7 @@ class ApiService {
       }
 
       final url = '$baseUrl/api/students/count-by-class';
-      print('Fetching counts from: $url');
+      // print('Fetching counts from: $url');
 
       final response = await http.get(
         Uri.parse(url),
@@ -774,8 +774,8 @@ class ApiService {
         },
       );
 
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
+      // print('Response status: ${response.statusCode}');
+      // print('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
@@ -789,7 +789,7 @@ class ApiService {
         throw Exception('Failed with status ${response.statusCode}');
       }
     } catch (e) {
-      print('Error in modelgetStudentCountByClass: $e');
+      // print('Error in modelgetStudentCountByClass: $e');
       return []; // Return empty list on error
     }
   }
