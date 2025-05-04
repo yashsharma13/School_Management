@@ -1,61 +1,4 @@
 // import 'package:flutter/material.dart';
-// import '../student_registration_controller.dart';
-
-// class StudentInfoSection extends StatefulWidget {
-//   final StudentRegistrationController controller;
-
-//   const StudentInfoSection({super.key, required this.controller});
-
-//   @override
-//   _StudentInfoSectionState createState() => _StudentInfoSectionState();
-// }
-
-// class _StudentInfoSectionState extends State<StudentInfoSection> {
-//   @override
-//   Widget build(BuildContext context) {
-//     return ExpansionTile(
-//       title: Text("Student Information",
-//           style: TextStyle(fontWeight: FontWeight.bold)),
-//       children: [
-//         TextFormField(
-//             controller: widget.controller.studentNameController,
-//             decoration: InputDecoration(labelText: 'Student Name*'),
-//             validator: (value) =>
-//                 value!.isEmpty ? 'Please enter student name' : null),
-//         TextFormField(
-//             controller: widget.controller.registrationController,
-//             decoration: InputDecoration(
-//                 labelText: 'Registration Number*',
-//                 hintText: 'e.g., REG2024001'),
-//             validator: (value) =>
-//                 value!.isEmpty ? 'Please enter registration number' : null),
-//         TextFormField(
-//           controller: widget.controller.dobController,
-//           decoration: InputDecoration(
-//               labelText: 'Date of Birth*',
-//               suffixIcon: Icon(Icons.calendar_today)),
-//           readOnly: true,
-//           onTap: () => widget.controller.selectDate(context),
-//         ),
-//         DropdownButtonFormField<String>(
-//           value: widget.controller.gender,
-//           decoration: InputDecoration(labelText: 'Gender*'),
-//           items: ['Male', 'Female', 'Other']
-//               .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-//               .toList(),
-//           onChanged: (value) =>
-//               setState(() => widget.controller.gender = value),
-//         ),
-//         TextFormField(
-//             controller: widget.controller.addressController,
-//             decoration: InputDecoration(labelText: 'Address*'),
-//             validator: (value) =>
-//                 value!.isEmpty ? 'Please enter address' : null),
-//       ],
-//     );
-//   }
-// }
-// import 'package:flutter/material.dart';
 // import 'package:sms/pages/services/api_service.dart';
 // import '../student_registration_controller.dart';
 
@@ -102,24 +45,42 @@
 //           validator: (value) =>
 //               value!.isEmpty ? 'Please enter student name' : null,
 //         ),
-//         TextFormField(
-//           controller: widget.controller.registrationController,
-//           decoration: InputDecoration(
-//             labelText: 'Registration Number*',
-//             hintText: _lastRegistrationNumber != null
-//                 ? 'Last: $_lastRegistrationNumber'
-//                 : 'e.g., REG2024001',
-//             suffixIcon: _isLoading
-//                 ? const SizedBox(
-//                     width: 20,
-//                     height: 20,
-//                     child: CircularProgressIndicator(strokeWidth: 2),
-//                   )
-//                 : null,
-//           ),
-//           validator: (value) =>
-//               value!.isEmpty ? 'Please enter registration number' : null,
+
+//         // Registration Number Field with last number reference below
+//         Column(
+//           crossAxisAlignment: CrossAxisAlignment.start,
+//           children: [
+//             TextFormField(
+//               controller: widget.controller.registrationController,
+//               decoration: InputDecoration(
+//                 labelText: 'Registration Number*',
+//                 hintText: 'e.g., REG2024001',
+//                 suffixIcon: _isLoading
+//                     ? const SizedBox(
+//                         width: 20,
+//                         height: 20,
+//                         child: CircularProgressIndicator(strokeWidth: 2),
+//                       )
+//                     : null,
+//               ),
+//               validator: (value) =>
+//                   value!.isEmpty ? 'Please enter registration number' : null,
+//             ),
+//             if (_lastRegistrationNumber != null)
+//               Padding(
+//                 padding: const EdgeInsets.only(top: 4.0, left: 12.0),
+//                 child: Text(
+//                   'Last registration: $_lastRegistrationNumber',
+//                   style: TextStyle(
+//                     fontSize: 12,
+//                     color: Colors.grey[600],
+//                     fontStyle: FontStyle.italic,
+//                   ),
+//                 ),
+//               ),
+//           ],
 //         ),
+
 //         TextFormField(
 //           controller: widget.controller.dobController,
 //           decoration: const InputDecoration(
@@ -146,6 +107,7 @@
 //     );
 //   }
 // }
+
 import 'package:flutter/material.dart';
 import 'package:sms/pages/services/api_service.dart';
 import '../student_registration_controller.dart';
@@ -183,75 +145,180 @@ class _StudentInfoSectionState extends State<StudentInfoSection> {
 
   @override
   Widget build(BuildContext context) {
-    return ExpansionTile(
-      title: const Text("Student Information",
-          style: TextStyle(fontWeight: FontWeight.bold)),
-      children: [
-        TextFormField(
-          controller: widget.controller.studentNameController,
-          decoration: const InputDecoration(labelText: 'Student Name*'),
-          validator: (value) =>
-              value!.isEmpty ? 'Please enter student name' : null,
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+        side: BorderSide(color: Colors.blue.shade100, width: 1),
+      ),
+      child: ExpansionTile(
+        initiallyExpanded: true,
+        collapsedBackgroundColor: Colors.blue.shade50,
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        title: const Text(
+          "STUDENT INFORMATION",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Color.fromRGBO(21, 101, 192, 1),
+            fontSize: 16,
+          ),
         ),
+        childrenPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        children: [
+          const SizedBox(height: 8),
+          _buildFormField(
+            controller: widget.controller.studentNameController,
+            label: 'Student Name',
+            icon: Icons.person_outline,
+            isRequired: true,
+          ),
+          const SizedBox(height: 16),
 
-        // Registration Number Field with last number reference below
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextFormField(
-              controller: widget.controller.registrationController,
-              decoration: InputDecoration(
-                labelText: 'Registration Number*',
-                hintText: 'e.g., REG2024001',
-                suffixIcon: _isLoading
+          // Registration Number Field
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildFormField(
+                controller: widget.controller.registrationController,
+                label: 'Registration Number',
+                icon: Icons.numbers,
+                isRequired: true,
+                suffix: _isLoading
                     ? const SizedBox(
                         width: 20,
                         height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.blue,
+                        ),
                       )
                     : null,
               ),
-              validator: (value) =>
-                  value!.isEmpty ? 'Please enter registration number' : null,
-            ),
-            if (_lastRegistrationNumber != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 4.0, left: 12.0),
-                child: Text(
-                  'Last registration: $_lastRegistrationNumber',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                    fontStyle: FontStyle.italic,
+              if (_lastRegistrationNumber != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4.0, left: 8.0),
+                  child: Text(
+                    'Last registered number: $_lastRegistrationNumber',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.blue.shade600,
+                      fontStyle: FontStyle.italic,
+                    ),
                   ),
                 ),
-              ),
-          ],
-        ),
+            ],
+          ),
+          const SizedBox(height: 16),
 
-        TextFormField(
-          controller: widget.controller.dobController,
-          decoration: const InputDecoration(
+          // Date of Birth Field
+          TextFormField(
+            controller: widget.controller.dobController,
+            decoration: InputDecoration(
               labelText: 'Date of Birth*',
-              suffixIcon: Icon(Icons.calendar_today)),
-          readOnly: true,
-          onTap: () => widget.controller.selectDate(context),
+              labelStyle: TextStyle(color: Colors.blue.shade700),
+              prefixIcon:
+                  Icon(Icons.calendar_today, color: Colors.blue.shade600),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.blue.shade300),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.blue.shade700, width: 2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            readOnly: true,
+            onTap: () => widget.controller.selectDate(context),
+            validator: (value) => value!.isEmpty ? 'Required field' : null,
+          ),
+          const SizedBox(height: 16),
+
+          // Gender Dropdown
+          DropdownButtonFormField<String>(
+            value: widget.controller.gender,
+            decoration: InputDecoration(
+              labelText: 'Gender*',
+              labelStyle: TextStyle(color: Colors.blue.shade700),
+              prefixIcon: Icon(Icons.transgender, color: Colors.blue.shade600),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.blue.shade300),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.blue.shade700, width: 2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            items: ['Male', 'Female', 'Other']
+                .map((e) => DropdownMenuItem(
+                      value: e,
+                      child: Text(
+                        e,
+                        style: TextStyle(color: Colors.blue.shade800),
+                      ),
+                    ))
+                .toList(),
+            onChanged: (value) =>
+                setState(() => widget.controller.gender = value),
+            validator: (value) => value == null ? 'Please select gender' : null,
+            style: TextStyle(color: Colors.blue.shade800),
+          ),
+          const SizedBox(height: 16),
+
+          // Address Field
+          _buildFormField(
+            controller: widget.controller.addressController,
+            label: 'Address',
+            icon: Icons.home_outlined,
+            isRequired: true,
+            maxLines: 1,
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFormField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    bool isRequired = false,
+    Widget? suffix,
+    int? maxLines,
+  }) {
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines ?? 1,
+      decoration: InputDecoration(
+        labelText: isRequired ? '$label*' : label,
+        labelStyle: TextStyle(color: Colors.blue.shade700),
+        prefixIcon: Icon(icon, color: Colors.blue.shade600),
+        suffixIcon: suffix,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
         ),
-        DropdownButtonFormField<String>(
-          value: widget.controller.gender,
-          decoration: const InputDecoration(labelText: 'Gender*'),
-          items: ['Male', 'Female', 'Other']
-              .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-              .toList(),
-          onChanged: (value) =>
-              setState(() => widget.controller.gender = value),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.blue.shade300),
+          borderRadius: BorderRadius.circular(8),
         ),
-        TextFormField(
-          controller: widget.controller.addressController,
-          decoration: const InputDecoration(labelText: 'Address*'),
-          validator: (value) => value!.isEmpty ? 'Please enter address' : null,
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.blue.shade700, width: 2),
+          borderRadius: BorderRadius.circular(8),
         ),
-      ],
+      ),
+      validator: isRequired
+          ? (value) => value!.isEmpty ? 'Please enter $label' : null
+          : null,
     );
   }
 }

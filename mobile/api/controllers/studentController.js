@@ -581,3 +581,4 @@ export const ggetLastRegistrationNumber = async (req, res) => {
     });
   }
 };
+

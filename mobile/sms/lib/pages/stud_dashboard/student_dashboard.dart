@@ -62,9 +62,12 @@ class _StudentDashboardState extends State<StudentDashboard> {
         final data = json.decode(response.body);
         setState(() {
           studentData = data;
-          studentName = data['name'] ?? "Student";
-          studentClass = data['class_name'] ?? "";
-          // studentRoll = data['roll_number'] ?? "";
+          studentName = data['name'] ??
+              data['student_name'] ??
+              "Student"; // Handle both cases
+          studentClass = data['class_name'] ?? data['assigned_class'] ?? "";
+          studentRoll =
+              data['roll_number'] ?? data['registration_number'] ?? "";
           studentProfileImage = data['profile_image'] ?? "";
           isLoading = false;
         });

@@ -462,10 +462,10 @@ class _AddClassPageState extends State<AddClassPage> {
                   ),
                 ),
                 SizedBox(height: 16),
-                _buildInputField('Class Name', (value) => _className = value!),
+                _buildInputField('Class Name', (value) => _className = value),
                 SizedBox(height: 16),
                 _buildInputField(
-                    'Monthly Tuition Fees', (value) => _tuitionFees = value!,
+                    'Monthly Tuition Fees', (value) => _tuitionFees = value,
                     keyboardType: TextInputType.number),
                 SizedBox(height: 24),
                 if (token == null)

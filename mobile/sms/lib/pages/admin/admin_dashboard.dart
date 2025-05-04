@@ -31,19 +31,39 @@ class _AdminDashboardState extends State<AdminDashboard> {
   int totalStudents = 0; // Student count initialized at 0
   int totalTeachers = 0;
   bool isLoading = false; // To show loading state
+  String? userEmail;
 
   @override
   void initState() {
     super.initState();
+    _loadUserData();
     _fetchCounts(); // Fetch total students when the dashboard is loaded
+  }
+
+  Future<void> _loadUserData() async {
+    setState(() => isLoading = true);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      setState(() {
+        userEmail = prefs.getString('user_email'); // This should set the value
+      });
+      if (userEmail != null) {
+        await _fetchCounts();
+      }
+    } catch (e) {
+      // handle error
+    } finally {
+      setState(() => isLoading = false);
+    }
   }
 
   // Function to fetch total students and teachers from the backend
   Future<void> _fetchCounts() async {
+    print("User email: $userEmail");
     try {
       final studentResponse = await http.get(
         Uri.parse(
-            'http://localhost:1000/api/api/students/count'), // Replace with your API
+            'http://localhost:1000/api/api/students/count?user_email=$userEmail'), // Replace with your API
       );
       final teacherResponse = await http.get(
         Uri.parse(
