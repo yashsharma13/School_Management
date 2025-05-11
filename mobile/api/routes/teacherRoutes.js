@@ -16,6 +16,6 @@ router.post('/registerteacher', verifyToken, upload, registerTeacher);
 router.get('/teachers', verifyToken, getAllTeachers);
 router.put('/teachers/:id', verifyToken, upload, updateTeacherDetails);
 router.delete('/teachers/:id', verifyToken, deleteTeacherById);
-router.get('/api/teachers/count', getTotalTeacherCount);
+router.get('/api/teachers/count', verifyToken, getTotalTeacherCount);
 
 export default router;

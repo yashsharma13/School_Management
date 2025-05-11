@@ -178,13 +178,17 @@ export const deleteTeacherById = (req, res) => {
   });
 };
 
-
 export const getTotalTeacherCount = (req, res) => {
-  getTeacherCount((err, results) => {
+  const user_email = req.user_email; // Get the user's email from the token
+
+  // console.log('User email from token:', user_email);  // Add this line for debugging
+
+  getTeacherCount(user_email, (err, results) => {
     if (err) {
       console.error('Error fetching teacher count:', err);
       return res.status(500).json({ error: 'Failed to fetch teacher count' });
     }
+    // console.log('Teacher count from DB:', results);  // Add this line for debugging
     res.json({ totalTeachers: results[0].totalTeachers });
   });
 };

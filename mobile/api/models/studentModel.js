@@ -136,9 +136,16 @@ export const getStudentsByClass = (className, user_email, callback) => {
   connection.query(query, [className, user_email], callback);
 };
 
-export const getStudentCount = (callback) => {
-  const query = 'SELECT COUNT(*) as totalStudents FROM students';
-  connection.query(query, callback);
+// studentModel.js
+
+export const getStudentCount = (user_email, callback) => {
+  const query = 'SELECT COUNT(*) AS totalStudents FROM students WHERE user_email = ?';
+  connection.query(query, [user_email], (err, results) => {
+    if (err) {
+      return callback(err);
+    }
+    callback(null, results);
+  });
 };
 
 
@@ -173,25 +180,18 @@ export const getStudentCountByClass = (user_email, callback) => {
     callback(null, results);
   });
 };
-
-export const getLastRegistrationNumber = (callback) => {
+export const getLastRegistrationNumber = (userEmail, callback) => {
   const query = `
-    SELECT registration_number 
-    FROM students 
-    ORDER BY created_at DESC 
-    LIMIT 1
+    SELECT MAX(registration_number) AS lastRegNumber
+    FROM students
+    WHERE user_email = ?
   `;
-  
-  connection.query(query, (err, results) => {
-    if (err) {
-      console.error('Database error:', err);
-      return callback(err, null);
-    }
-    
-    if (results.length === 0) {
-      return callback(null, null);
-    }
-    
-    callback(null, results[0].registration_number);
+
+  connection.query(query, [userEmail], (err, results) => {
+    if (err) return callback(err);
+
+    const lastRegNumber = results[0]?.lastRegNumber;
+    callback(null, lastRegNumber);
   });
 };
+

@@ -21,7 +21,8 @@ export const verifyToken = (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Invalid or expired token' });
     }
 
-    req.user_email = decoded.email; // Attach the user's email to the request object
+    req.user_email = decoded.email || decoded.user_email; // Attach the user's email to the request object
+    // console.log("Authenticated user email:", req.user_email); // Debug log
     next(); // Proceed to the next middleware or route handler
   });
 };

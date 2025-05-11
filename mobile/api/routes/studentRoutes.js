@@ -10,7 +10,8 @@ import {
   getStudentsByClassName,
   getTotalStudentCount,
   modelgetStudentCountByClass,
-  ggetLastRegistrationNumber
+  ggetLastRegistrationNumber,
+  getStudentDashboardDetails
 } from '../controllers/studentController.js';
 
 const router = express.Router();
@@ -21,9 +22,11 @@ router.get('/students', verifyToken, getAllStudents);
 router.put('/students/:id', verifyToken, upload, updateStudentDetails);
 router.delete('/students/:id', verifyToken, deleteStudentById);
 router.get('/students/:class', verifyToken, getStudentsByClassName);
-router.get('/api/students/count', getTotalStudentCount);
+router.get('/api/students/count',verifyToken, getTotalStudentCount);
 router.get('/api/students/count-by-class', verifyToken,modelgetStudentCountByClass);
 router.get('/last-registration-number', verifyToken, ggetLastRegistrationNumber);
+// Add this to your studentRoutes.js
+router.get('/students/dashboard/:id', verifyToken, getStudentDashboardDetails);
 
 
 export default router;

@@ -122,8 +122,14 @@ export const deleteTeacher = (teacherId, callback) => {
   connection.query(deleteTeacherQuery, [teacherId], callback);
 };
 
-
-export const getTeacherCount = (callback) => {
-  const query = 'SELECT COUNT(*) as totalTeachers FROM teacher';
-  connection.query(query, callback);
+export const getTeacherCount = (user_email, callback) => {
+  const query = 'SELECT COUNT(*) AS totalTeachers FROM teacher WHERE user_email = ?';
+  connection.query(query, [user_email], (err, results) => {
+    if (err) {
+      console.error('Error in query:', err);  // Log the error for debugging
+      return callback(err);
+    }
+    console.log('Query results:', results);  // Log the query results for debugging
+    callback(null, results);
+  });
 };

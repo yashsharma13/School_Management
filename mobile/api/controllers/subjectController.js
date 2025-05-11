@@ -1,28 +1,6 @@
 import connection from '../config/mysqlconnectivity.js';
 import { createSubject,getSubjectsByUser,updateSubjectById } from '../models/subjectModel.js';
 
-// export const registerSubject = (req, res) => {
-//   const { class_name, subject_name, marks } = req.body;
-//   const user_email = req.user_email;
-
-//   console.log('Received request body:', req.body);  // Log incoming data for debugging
-
-//   if (!class_name || !subject_name || !marks || !user_email) {
-//     return res.status(400).json({ message: 'Missing required fields' });
-//   }
-//   // Insert the data into the database
-//   createSubject({ class_name, subject_name, marks, user_email }, (err, results) => {
-//     if (err) {
-//       console.error('Error registering subjects:', err);
-//       return res.status(500).json({ message: 'Error registering subjects' });
-//     }
-
-//     res.status(201).json({
-//       success: true,
-//       message: 'Subjects registered successfully',
-//     });
-//   });
-// };
 export const registerSubject = (req, res) => {
   const { class_name, subject_name, marks } = req.body;
   const user_email = req.user_email;
@@ -78,44 +56,6 @@ export const registerSubject = (req, res) => {
     });
   });
 };
-// export const getAllSubjects = (req, res) => {
-//   const user_email = req.user_email;
-
-//   if (!user_email) {
-//     return res.status(400).json({ message: 'User email is required' });
-//   }
-
-//   getSubjectsByUser(user_email, (err, results) => {
-//     if (err) {
-//       console.error('Error fetching subjects:', err);
-//       return res.status(500).json({ message: 'Error fetching subjects' });
-//     }
-
-//     // Group subjects by class
-//     const classSubjectsMap = {};
-//     results.forEach(subject => {
-//       if (!classSubjectsMap[subject.class_name]) {
-//         classSubjectsMap[subject.class_name] = {
-//           _id: subject.id, // You might want to generate a unique ID
-//           class_name: subject.class_name,
-//           user_email: subject.user_email, // Include user email
-//           subjects: []
-//         };
-//       }
-//       classSubjectsMap[subject.class_name].subjects.push({
-//         subject_name: subject.subject_name,
-//         marks: subject.marks
-//       });
-//     });
-
-//     // Convert map to array
-//     const classSubjectsArray = Object.values(classSubjectsMap);
-
-//     res.status(200).json({
-//       data: classSubjectsArray
-//     });
-//   });
-// };
 export const getAllSubjects = (req, res) => {
   const user_email = req.user_email;
 
