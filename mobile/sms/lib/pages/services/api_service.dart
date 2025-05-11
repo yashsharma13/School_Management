@@ -8,7 +8,7 @@ import 'package:sms/pages/student/student_registration/student_registration_cont
 
 class ApiService {
   // API URLs
-  // API URLs
+  // use ipconfig to check niche wala jo url hai vo localhost ki jagh use krna hai agar phone mein use krna hai toh
   // 192.168.148.213
   static const String apiUrlRegister =
       'http://localhost:1000/api/auth/register';
@@ -47,139 +47,6 @@ class ApiService {
     }
   }
 
-  // // User login
-  // static Future<Map<String, dynamic>> login(
-  //     String email, String password) async {
-  //   try {
-  //     final response = await http.post(
-  //       Uri.parse(apiUrlLogin),
-  //       headers: {'Content-Type': 'application/json'},
-  //       body: jsonEncode({'email': email, 'password': password}),
-  //     );
-
-  //     if (response.statusCode == 200) {
-  //       final responseData = jsonDecode(response.body);
-  //       if (responseData['success'] == true) {
-  //         return {
-  //           'success': true,
-  //           'token': responseData['token'], // Return the token
-  //         };
-  //       } else {
-  //         return {'success': false, 'message': 'Invalid Credentials'};
-  //       }
-  //     } else {
-  //       return {'success': false, 'message': 'Login failed'};
-  //     }
-  //   } catch (error) {
-  //     print('Error: $error');
-  //     return {'success': false, 'message': 'Something went wrong'};
-  //   }
-  // }
-
-  // Regular login (without role specification)
-//   static Future<Map<String, dynamic>> login(
-//       String email, String password) async {
-//     try {
-//       final response = await http.post(
-//         Uri.parse(apiUrlLogin),
-//         headers: {'Content-Type': 'application/json'},
-//         body: jsonEncode({'email': email, 'password': password}),
-//       );
-
-//       if (response.statusCode == 200) {
-//         final responseData = jsonDecode(response.body);
-//         if (responseData['success'] == true) {
-//           return {
-//             'success': true,
-//             'token': responseData['token'],
-//             'role': responseData['role'],
-//           };
-//         } else {
-//           return {'success': false, 'message': 'Invalid Credentials'};
-//         }
-//       } else {
-//         return {'success': false, 'message': 'Login failed'};
-//       }
-//     } catch (error) {
-//       // print('Error: $error');
-//       return {'success': false, 'message': 'Something went wrong'};
-//     }
-//   }
-
-//   // Login with role specification
-//   static Future<Map<String, dynamic>> loginWithRole(
-//       String email, String password, String role) async {
-//     try {
-//       final response = await http.post(
-//         Uri.parse(apiUrlLogin),
-//         headers: {'Content-Type': 'application/json'},
-//         body: jsonEncode({'email': email, 'password': password, 'role': role}),
-//       );
-
-//       if (response.statusCode == 200) {
-//         final responseData = jsonDecode(response.body);
-//         if (responseData['success'] == true) {
-//           // Check if the returned role matches the requested role
-//           if (responseData['role'].toLowerCase() == role.toLowerCase()) {
-//             return {
-//               'success': true,
-//               'token': responseData['token'],
-//               'role': responseData['role'],
-//             };
-//           } else {
-//             return {
-//               'success': false,
-//               'message': 'User role mismatch. Please select the correct role.'
-//             };
-//           }
-//         } else {
-//           return {
-//             'success': false,
-//             'message': responseData['message'] ?? 'Invalid Credentials'
-//           };
-//         }
-//       } else {
-//         return {'success': false, 'message': 'Login failed'};
-//       }
-//     } catch (error) {
-//       // print('Error: $error');
-//       return {'success': false, 'message': 'Something went wrong'};
-//     }
-//   }
-
-// // Add to your ApiService class
-//   static Future<Map<String, dynamic>> studentLogin(
-//       String username, String password) async {
-//     try {
-//       final response = await http.post(
-//         Uri.parse('$baseUrl/auth/student-login'),
-//         headers: {'Content-Type': 'application/json'},
-//         body: jsonEncode({'username': username, 'password': password}),
-//       );
-
-//       if (response.statusCode == 200) {
-//         final responseData = jsonDecode(response.body);
-//         if (responseData['success'] == true) {
-//           return {
-//             'success': true,
-//             'token': responseData['token'],
-//             'role': 'student',
-//           };
-//         } else {
-//           return {
-//             'success': false,
-//             'message': responseData['message'] ?? 'Invalid username or password'
-//           };
-//         }
-//       } else {
-//         return {'success': false, 'message': 'Login failed'};
-//       }
-//     } catch (error) {
-//       // print('Error: $error');
-//       return {'success': false, 'message': 'Something went wrong'};
-//     }
-//   }
-
   static Future<Map<String, dynamic>> login(
       String username, String password) async {
     try {
@@ -193,24 +60,38 @@ class ApiService {
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         if (responseData['success'] == true) {
+          // Decode the JWT token to get user information
+          final token = responseData['token'];
+          final decodedToken = _decodeJwt(token);
+
           return {
             'success': true,
-            'token': responseData['token'],
+            'token': token,
             'role': responseData['role'],
+            'user_email': decodedToken['user_email'] ?? decodedToken['email'],
+            'user_id': decodedToken['user_id'],
           };
         }
       }
 
       // If regular login fails, try student login
-      // Only if the username doesn't look like an email (basic check)
       if (!username.contains('@')) {
-        var studentResponse = await _attemptStudentLogin(username, password);
+        final studentResponse = await _attemptStudentLogin(username, password);
         if (studentResponse['success'] == true) {
-          return studentResponse;
+          // Decode student JWT token
+          final token = studentResponse['token'];
+          final decodedToken = _decodeJwt(token);
+
+          return {
+            'success': true,
+            'token': token,
+            'role': studentResponse['role'],
+            'user_email': decodedToken['user_email'] ?? decodedToken['email'],
+            'user_id': decodedToken['user_id'],
+          };
         }
       }
 
-      // If both logins fail
       return {
         'success': false,
         'message': 'Invalid username/email or password'
@@ -220,11 +101,29 @@ class ApiService {
     }
   }
 
+// Helper function to decode JWT token
+  static Map<String, dynamic> _decodeJwt(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) {
+        throw Exception('Invalid token');
+      }
+
+      final payload = parts[1];
+      final normalized = base64Url.normalize(payload);
+      final decoded = utf8.decode(base64Url.decode(normalized));
+
+      return jsonDecode(decoded);
+    } catch (e) {
+      return {};
+    }
+  }
+
   static Future<Map<String, dynamic>> _attemptStudentLogin(
       String username, String password) async {
     try {
       final response = await http.post(
-        Uri.parse('apiUrlLogin'),
+        Uri.parse(apiUrlLogin),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'username': username, 'password': password}),
       );

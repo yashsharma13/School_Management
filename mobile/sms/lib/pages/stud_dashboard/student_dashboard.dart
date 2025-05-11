@@ -27,19 +27,17 @@ class _StudentDashboardState extends State<StudentDashboard> {
     _fetchStudentDetails();
   }
 
-  // Function to fetch student data from the backend
   Future<void> _fetchStudentDetails() async {
     setState(() {
       isLoading = true;
     });
 
     try {
-      // Get the token from SharedPreferences
+      // 1. Get token from SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
 
-      if (token == null) {
-        // If no token, redirect to login
+      if (token == null || token.isEmpty) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const LoginPage()),
@@ -47,56 +45,99 @@ class _StudentDashboardState extends State<StudentDashboard> {
         return;
       }
 
-      // Get the student ID from SharedPreferences or token payload
-      final studentId = _getStudentIdFromToken(token);
+      // 2. Get student ID from token
+      final studentId = await _getStudentIdFromToken(token);
+      if (studentId.isEmpty) {
+        throw Exception('Invalid token: Student ID not found');
+      }
 
+      // 3. Make API call to the new dashboard endpoint
       final response = await http.get(
-        Uri.parse('http://localhost:1000/api/students/$studentId'),
+        Uri.parse('http://localhost:1000/api/students/dashboard/$studentId'),
         headers: {
           'Authorization': token,
           'Content-Type': 'application/json',
         },
       );
 
+      // Debug output
+      print('API Response Status: ${response.statusCode}');
+      print('API Response Body: ${response.body}');
+
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final responseData = json.decode(response.body);
+
+        if (responseData['success'] != true || responseData['data'] == null) {
+          throw Exception('Invalid response format');
+        }
+
+        final studentData = responseData['data'];
+
         setState(() {
-          studentData = data;
-          studentName = data['name'] ??
-              data['student_name'] ??
-              "Student"; // Handle both cases
-          studentClass = data['class_name'] ?? data['assigned_class'] ?? "";
-          studentRoll =
-              data['roll_number'] ?? data['registration_number'] ?? "";
-          studentProfileImage = data['profile_image'] ?? "";
+          this.studentData = studentData;
+          studentName = studentData['name'] ?? 'Student';
+          studentClass = studentData['class_name'] ?? 'Not assigned';
+          studentRoll = studentData['registration_number'] ?? 'N/A';
+          studentProfileImage = studentData['profile_image'] != null
+              ? 'http://localhost:1000${studentData['profile_image']}'
+              : '';
           isLoading = false;
         });
       } else {
-        throw Exception('Failed to load student details');
+        final errorData = json.decode(response.body);
+        throw Exception(
+            errorData['message'] ?? 'Failed to load student details');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to fetch student details: $e')),
-      );
       setState(() {
         isLoading = false;
       });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          duration: const Duration(seconds: 5),
+          action: SnackBarAction(
+            label: 'Retry',
+            onPressed: _fetchStudentDetails,
+          ),
+        ),
+      );
+
+      print('Error fetching student details: $e');
     }
   }
 
-  // Parse the JWT token to get student ID
   String _getStudentIdFromToken(String token) {
-    final parts = token.split('.');
-    if (parts.length != 3) {
+    try {
+      print('Raw token: $token');
+      final parts = token.split('.');
+      if (parts.length != 3) return "";
+
+      // Fix base64 padding issues
+      String paddedPayload = parts[1];
+      switch (paddedPayload.length % 4) {
+        case 2:
+          paddedPayload += '==';
+          break;
+        case 3:
+          paddedPayload += '=';
+          break;
+      }
+
+      final decoded = utf8.decode(base64Url.decode(paddedPayload));
+      print('Decoded payload: $decoded'); // Debug payload
+      final payloadMap = json.decode(decoded);
+      print('Payload content: $payloadMap'); // Debug payload content
+
+      return payloadMap['id']?.toString() ??
+          payloadMap['studentId']?.toString() ??
+          payloadMap['userId']?.toString() ??
+          "";
+    } catch (e) {
+      print('Error decoding token: $e');
       return "";
     }
-
-    final payload = parts[1];
-    final normalized = base64Url.normalize(payload);
-    final decoded = utf8.decode(base64Url.decode(normalized));
-    final payloadMap = json.decode(decoded);
-
-    return payloadMap['id']?.toString() ?? "";
   }
 
   // Function to handle logout
@@ -345,7 +386,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    "Class: $studentClass | Roll Number: $studentRoll",
+                    "Class: $studentClass | Registration Number: $studentRoll",
                     style: const TextStyle(fontSize: 16, color: Colors.grey),
                   ),
                   const SizedBox(height: 20),

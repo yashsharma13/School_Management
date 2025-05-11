@@ -37,7 +37,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
   void initState() {
     super.initState();
     _loadUserData();
-    _fetchCounts(); // Fetch total students when the dashboard is loaded
   }
 
   Future<void> _loadUserData() async {
@@ -61,13 +60,26 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Future<void> _fetchCounts() async {
     print("User email: $userEmail");
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null) {
+        throw Exception('No token found. Please log in.');
+      }
       final studentResponse = await http.get(
         Uri.parse(
-            'http://localhost:1000/api/api/students/count?user_email=$userEmail'), // Replace with your API
+            'http://localhost:1000/api/api/students/count?user_email=$userEmail'),
+        headers: {
+          'Authorization': token,
+        },
+        // Replace with your API
       );
       final teacherResponse = await http.get(
         Uri.parse(
-            'http://localhost:1000/api/api/teachers/count'), // Replace with your API
+            'http://localhost:1000/api/api/teachers/count?user_email=$userEmail'), // Replace with your API
+        headers: {
+          'Authorization': token,
+        },
       );
 
       if (studentResponse.statusCode == 200 &&
@@ -171,265 +183,276 @@ class _AdminDashboardState extends State<AdminDashboard> {
         ],
       ),
       drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
+        child: Column(
           children: [
-            DrawerHeader(
-              decoration: BoxDecoration(color: Colors.blue.shade900),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  CircleAvatar(
-                    radius: 40, // Adjust size
-                    backgroundImage: AssetImage('assets/images/almanet1.jpg'),
-                  ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    "Almanet Dashboard",
-                    style: TextStyle(
+            // Full-width header
+            Container(
+              width: double.infinity,
+              color: Colors.blue.shade900,
+              child: DrawerHeader(
+                margin: EdgeInsets.zero,
+                padding: EdgeInsets.zero,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircleAvatar(
+                      radius: 40,
+                      backgroundImage: AssetImage('assets/images/almanet1.jpg'),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      "Almanet Dashboard",
+                      style: TextStyle(
                         color: Colors.white,
                         fontSize: 18,
-                        fontWeight: FontWeight.bold),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Scrollable content
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.dashboard, color: Colors.black87),
+                    title: const Text(
+                      "Dashboard",
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context); // Close drawer
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const AdminDashboard()),
+                      );
+                    },
                   ),
+                  ExpansionTile(
+                    leading: const Icon(Icons.class_, color: Colors.black87),
+                    title: const Text("Classes",
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold)),
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.add, color: Colors.black54),
+                        title: const Text("New Class"),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => AddClassPage()));
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.view_agenda_rounded,
+                            color: Colors.black54),
+                        title: const Text("All Classes"),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => AllClassesPage()));
+                        },
+                      ),
+                    ],
+                  ),
+                  ExpansionTile(
+                    leading: const Icon(Icons.subject, color: Colors.black87),
+                    title: const Text("Subjects",
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold)),
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.add, color: Colors.black54),
+                        title: const Text("Classes with Subjects"),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      ClassWithSubjectsPage()));
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.view_agenda_rounded,
+                            color: Colors.black54),
+                        title: const Text("Assign Subjects"),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => AssignSubjectPage()));
+                        },
+                      ),
+                    ],
+                  ),
+                  ExpansionTile(
+                    leading: const Icon(Icons.school, color: Colors.black87),
+                    title: const Text("Students",
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold)),
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.add, color: Colors.black54),
+                        title: const Text("Add New Student"),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => StudentRegistrationPage(
+                                  onStudentRegistered: incrementStudentCount),
+                            ),
+                          );
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.view_agenda_rounded,
+                            color: Colors.black54),
+                        title: const Text("View Student details"),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      StudentProfileManagementPage()));
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.calendar_month,
+                            color: Colors.black54),
+                        title: const Text("Student attendance"),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => AttendancePage()));
+                        },
+                      ),
+                      ListTile(
+                        leading:
+                            const Icon(Icons.report, color: Colors.black54),
+                        title: const Text("Student Reports"),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => StudentReportPage()));
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.insert_drive_file,
+                            color: Colors.black54),
+                        title: const Text("Admission Letter"),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => AdmissionLetterPage()));
+                        },
+                      ),
+                    ],
+                  ),
+                  ExpansionTile(
+                    leading: const Icon(Icons.payment, color: Colors.black87),
+                    title: const Text("Fees",
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold)),
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.add, color: Colors.black54),
+                        title: const Text("Collect Fees"),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      FeesStudentSearchPage()));
+                        },
+                      ),
+                    ],
+                  ),
+                  ExpansionTile(
+                    leading: const Icon(Icons.person, color: Colors.black87),
+                    title: const Text("Teacher",
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold)),
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.add, color: Colors.black54),
+                        title: const Text("Add New Teacher"),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => TeacherRegistrationPage(
+                                  onTeacherRegistered: incrementTeacherCount),
+                            ),
+                          );
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.view_agenda_rounded,
+                            color: Colors.black54),
+                        title: const Text("View Teacher details"),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      TeacherProfileManagementPage()));
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.calendar_month,
+                            color: Colors.black54),
+                        title: const Text("Teacher attendance"),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      TeacherAttendancePage()));
+                        },
+                      ),
+                      ListTile(
+                        leading:
+                            const Icon(Icons.report, color: Colors.black54),
+                        title: const Text("Teacher Reports"),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => TeacherReportPage()));
+                        },
+                      ),
+                    ],
+                  ),
+                  buildDrawerItem(Icons.family_restroom, "Parents", context),
+                  buildDrawerItem(Icons.announcement, "Notices", context),
                 ],
               ),
             ),
-
-            // ExpansionTile for classes
-            ExpansionTile(
-              leading: const Icon(Icons.class_, color: Colors.black87),
-              title: const Text("Classes",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.add, color: Colors.black54),
-                  title: const Text("New Class"),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => (AddClassPage()),
-                      ),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.view_agenda_rounded,
-                      color: Colors.black54),
-                  title: const Text("All Classes"),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            AllClassesPage(), // Create a page to view classes
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-            // ExpansionTile for Subjects
-            ExpansionTile(
-              leading: const Icon(Icons.subject, color: Colors.black87),
-              title: const Text("Subjects",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.add, color: Colors.black54),
-                  title: const Text("Classes with Subjects"),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => (ClassWithSubjectsPage()),
-                      ),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.view_agenda_rounded,
-                      color: Colors.black54),
-                  title: const Text("Assign Subjects"),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            AssignSubjectPage(), // Create a page to view classes
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-            // ExpansionTile for Students
-            ExpansionTile(
-              leading: const Icon(Icons.school, color: Colors.black87),
-              title: const Text("Students",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.add, color: Colors.black54),
-                  title: const Text("Add New Student"),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => StudentRegistrationPage(
-                          onStudentRegistered:
-                              incrementStudentCount, // Pass callback
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.view_agenda_rounded,
-                      color: Colors.black54),
-                  title: const Text("View Student details"),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => StudentProfileManagementPage()),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading:
-                      const Icon(Icons.calendar_month, color: Colors.black54),
-                  title: const Text("Student attendance"),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => AttendancePage()),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.report, color: Colors.black54),
-                  title: const Text("Student Reports"),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => StudentReportPage()),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.insert_drive_file,
-                      color: Colors.black54),
-                  title: const Text("Admission Letter"),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => AdmissionLetterPage()),
-                    );
-                  },
-                ),
-              ],
-            ),
-            ExpansionTile(
-              leading: const Icon(
-                Icons.payment,
-                color: Colors.black87,
-              ),
-              title: const Text(
-                "Fees",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.add, color: Colors.black54),
-                  title: const Text("Collect Fees"),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => FeesStudentSearchPage()),
-                    );
-                  },
-                )
-              ],
-            ),
-            // ExpansionTile for teacher
-            ExpansionTile(
-              leading: const Icon(Icons.person, color: Colors.black87),
-              title: const Text("Teacher",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.add, color: Colors.black54),
-                  title: const Text("Add New Teacher"),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => TeacherRegistrationPage(
-                          onTeacherRegistered:
-                              incrementTeacherCount, // Pass callback
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.view_agenda_rounded,
-                      color: Colors.black54),
-                  title: const Text("View Teacher details"),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => TeacherProfileManagementPage()),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading:
-                      const Icon(Icons.calendar_month, color: Colors.black54),
-                  title: const Text("Teacher attendance"),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => TeacherAttendancePage()),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.report, color: Colors.black54),
-                  title: const Text("Teacher Reports"),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => TeacherReportPage()),
-                    );
-                  },
-                ),
-              ],
-            ),
-
-            buildDrawerItem(Icons.family_restroom, "Parents", context),
-            buildDrawerItem(Icons.announcement, "Notices", context),
           ],
         ),
       ),
