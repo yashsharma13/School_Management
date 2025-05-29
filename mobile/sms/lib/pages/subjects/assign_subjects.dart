@@ -13,6 +13,8 @@ class _AssignSubjectPageState extends State<AssignSubjectPage> {
   bool isLoading = true;
   String? token;
   Class? selectedClass;
+  String? selectedSection;
+  List<String> availableSections = [];
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -39,13 +41,35 @@ class _AssignSubjectPageState extends State<AssignSubjectPage> {
 
       final fetchedClasses = await ApiService.fetchClasses();
 
-      setState(() {
-        classes = fetchedClasses
-            .map((data) => Class.fromJson(data))
-            .where((classObj) =>
-                classObj.id.isNotEmpty && classObj.className.isNotEmpty)
-            .toList();
+      // Grouping sections by class name
+      final Map<String, Set<String>> classSectionMap = {};
+      final List<Class> tempClasses = [];
 
+      for (final data in fetchedClasses) {
+        final className =
+            (data['class_name'] ?? data['className'] ?? '').toString().trim();
+        final section = (data['section'] ?? '').toString().trim();
+
+        if (className.isEmpty) continue;
+
+        if (!classSectionMap.containsKey(className)) {
+          classSectionMap[className] = {};
+        }
+
+        classSectionMap[className]!.add(section);
+      }
+
+      // Build Class objects
+      classSectionMap.forEach((className, sections) {
+        tempClasses.add(Class(
+          id: className, // You can adjust ID if you need real IDs
+          className: className,
+          sections: sections.toList(),
+        ));
+      });
+
+      setState(() {
+        classes = tempClasses;
         if (classes.isEmpty) {
           _showErrorSnackBar(
               'No valid classes found. Please add classes first.');
@@ -106,6 +130,10 @@ class _AssignSubjectPageState extends State<AssignSubjectPage> {
       _showErrorSnackBar('Please select a class');
       return;
     }
+    if (selectedSection == null) {
+      _showErrorSnackBar('Please select a section');
+      return;
+    }
 
     setState(() {
       isLoading = true;
@@ -121,6 +149,7 @@ class _AssignSubjectPageState extends State<AssignSubjectPage> {
 
       final success = await ApiService.registerSubject(
         className: selectedClass!.className,
+        section: selectedSection!,
         subjectsData: subjectsData,
       );
 
@@ -155,7 +184,7 @@ class _AssignSubjectPageState extends State<AssignSubjectPage> {
           ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.blue[800],
+        backgroundColor: Colors.blue.shade900,
         elevation: 0,
       ),
       body: Form(
@@ -237,6 +266,8 @@ class _AssignSubjectPageState extends State<AssignSubjectPage> {
                   onChanged: (Class? newValue) {
                     setState(() {
                       selectedClass = newValue;
+                      selectedSection = null;
+                      availableSections = newValue?.sections ?? [];
                       subjectFields.clear();
                       _addSubjectField(); // Add first subject field automatically
                     });
@@ -253,6 +284,51 @@ class _AssignSubjectPageState extends State<AssignSubjectPage> {
                   validator: (value) =>
                       value == null ? 'Please select a class' : null,
                 ),
+                SizedBox(height: 16),
+
+                // Section Dropdown
+                DropdownButtonFormField<String>(
+                  decoration: InputDecoration(
+                    labelText: 'Select Section',
+                    labelStyle: TextStyle(color: Colors.blue[800]),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.blue[300]!),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.blue[300]!),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.blue[800]!),
+                    ),
+                    filled: true,
+                    fillColor: Colors.blue[50],
+                  ),
+                  hint: Text(
+                    'Select Section',
+                    style: TextStyle(color: Colors.blue[800]),
+                  ),
+                  value: selectedSection,
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      selectedSection = newValue;
+                    });
+                  },
+                  items: availableSections.map((section) {
+                    return DropdownMenuItem<String>(
+                      value: section,
+                      child: Text(
+                        section,
+                        style: TextStyle(color: Colors.blue[900]),
+                      ),
+                    );
+                  }).toList(),
+                  validator: (value) =>
+                      value == null ? 'Please select a section' : null,
+                ),
+
                 SizedBox(height: 24),
                 Text(
                   'Subjects',
@@ -263,6 +339,7 @@ class _AssignSubjectPageState extends State<AssignSubjectPage> {
                   ),
                 ),
                 SizedBox(height: 8),
+
                 Expanded(
                   child: ListView.separated(
                     itemCount: subjectFields.length,
@@ -306,16 +383,12 @@ class _AssignSubjectPageState extends State<AssignSubjectPage> {
                                       TextStyle(color: Colors.blue[800]),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
-                                    borderSide:
-                                        BorderSide(color: Colors.blue[300]!),
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
                                     borderSide:
                                         BorderSide(color: Colors.blue[800]!),
                                   ),
-                                  contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 14),
                                 ),
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
@@ -336,16 +409,12 @@ class _AssignSubjectPageState extends State<AssignSubjectPage> {
                                       TextStyle(color: Colors.blue[800]),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
-                                    borderSide:
-                                        BorderSide(color: Colors.blue[300]!),
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
                                     borderSide:
                                         BorderSide(color: Colors.blue[800]!),
                                   ),
-                                  contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 14),
                                 ),
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
@@ -368,26 +437,20 @@ class _AssignSubjectPageState extends State<AssignSubjectPage> {
                   ),
                 ),
                 SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        icon: Icon(Icons.add, size: 20),
-                        label: Text('Add Subject'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue[50],
-                          foregroundColor: Colors.blue[800],
-                          padding: EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        onPressed: _addSubjectField,
-                      ),
+                ElevatedButton.icon(
+                  icon: Icon(Icons.add),
+                  label: Text('Add Subject'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue[50],
+                    foregroundColor: Colors.blue[800],
+                    padding: EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                  ],
+                  ),
+                  onPressed: _addSubjectField,
                 ),
-                SizedBox(height: 8),
+                SizedBox(height: 12),
                 ElevatedButton(
                   onPressed: _submitForm,
                   style: ElevatedButton.styleFrom(
@@ -399,13 +462,9 @@ class _AssignSubjectPageState extends State<AssignSubjectPage> {
                     ),
                   ),
                   child: isLoading
-                      ? SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation(Colors.white),
-                          ),
+                      ? CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
                         )
                       : Text('Assign Subjects'),
                 ),
@@ -418,11 +477,17 @@ class _AssignSubjectPageState extends State<AssignSubjectPage> {
   }
 }
 
+// Class model
 class Class {
   final String id;
   final String className;
+  final List<String> sections;
 
-  Class({required this.id, required this.className});
+  Class({
+    required this.id,
+    required this.className,
+    required this.sections,
+  });
 
   factory Class.fromJson(Map<String, dynamic> json) {
     return Class(
@@ -430,10 +495,12 @@ class Class {
       className: (json['class_name'] ?? json['className'] ?? 'Unknown Class')
           .toString()
           .trim(),
+      sections: [],
     );
   }
 }
 
+// SubjectField model
 class SubjectField {
   String subjectName = '';
   String marks = '';

@@ -2,14 +2,14 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import 'teacher_model.dart';
 import 'teacher_service.dart';
 import 'teacher_photo_widget.dart';
 import 'pdf_viewer_widget.dart';
 
-const String baseUrl =
-    'http://localhost:1000/uploads'; // Base URL for serving static files
+const String baseUrl = 'http://localhost:1000/uploads';
 
 class TeacherProfileManagementPage extends StatefulWidget {
   const TeacherProfileManagementPage({super.key});
@@ -25,46 +25,64 @@ class _TeacherProfileManagementPageState
   List<Teacher> filteredTeachers = [];
   final TeacherService _teacherService = TeacherService();
   TextEditingController searchController = TextEditingController();
-  // String? selectedClass;
-  // String? selectedSection;
-  // List<String> classes = [
-  //   'Class 1',
-  //   'Class 2',
-  //   'Class 3',
-  //   'Class 4',
-  //   'Class 5',
-  //   'Class 6',
-  //   'Class 7',
-  //   'Class 8',
-  //   'Class 9',
-  //   'Class 10',
-  //   'Class 11',
-  //   'Class 12'
-  // ]; // Example classes
-  // List<String> sections = [
-  //   'Section A',
-  //   'Section B',
-  //   'Section C'
-  // ]; // Example sections
+  bool _isLoading = true;
+  String? token;
 
   @override
   void initState() {
     super.initState();
-    _fetchTeachers();
+    _loadToken();
+  }
+
+  Future<void> _loadToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      token = prefs.getString('token');
+    });
+    if (token != null) {
+      await _fetchTeachers();
+    }
   }
 
   Future<void> _fetchTeachers() async {
     try {
+      setState(() => _isLoading = true);
       final fetchedTeachers = await _teacherService.fetchTeachers();
       setState(() {
         teachers = fetchedTeachers;
-        filteredTeachers = fetchedTeachers; // Initialize filtered list
+        filteredTeachers = fetchedTeachers;
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading teachers: $e')),
-      );
+      _showErrorSnackBar('Error loading teachers: $e');
+    } finally {
+      setState(() => _isLoading = false);
     }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red[800],
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    );
+  }
+
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green[800],
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    );
   }
 
   void _filterTeachers() {
@@ -73,22 +91,28 @@ class _TeacherProfileManagementPageState
         final nameMatch = teacher.name
             .toLowerCase()
             .contains(searchController.text.toLowerCase());
-        // final classMatch =
-        //     selectedClass == null || student.assignedClass == selectedClass;
-        // final sectionMatch = selectedSection == null ||
-        //     student.assignedSection == selectedSection;
-        // return nameMatch && classMatch && sectionMatch;
         return nameMatch;
       }).toList();
     });
   }
 
-  // Edit Student Functionality
+  String formatDate(String dateString) {
+    try {
+      DateTime date = DateTime.parse(dateString);
+      return "${date.day.toString().padLeft(2, '0')}-${date.month.toString().padLeft(2, '0')}-${date.year}";
+    } catch (e) {
+      return dateString;
+    }
+  }
+
   Future<void> _editTeacher(Teacher teacher) async {
+    final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController(text: teacher.name);
     final emailController = TextEditingController(text: teacher.email);
-    final dobController = TextEditingController(text: teacher.dateOfBirth);
-    final dojController = TextEditingController(text: teacher.dateOfJoining);
+    final dobController =
+        TextEditingController(text: formatDate(teacher.dateOfBirth));
+    final dojController =
+        TextEditingController(text: formatDate(teacher.dateOfJoining));
     final genderController = TextEditingController(text: teacher.gender);
     final guardianController =
         TextEditingController(text: teacher.guardian_name);
@@ -100,175 +124,404 @@ class _TeacherProfileManagementPageState
     final addressController = TextEditingController(text: teacher.address);
     final phoneController = TextEditingController(text: teacher.phone);
 
-    String? profilePhoto;
+    String? profilePhoto = teacher.teacherPhoto;
     Uint8List? photoBytes;
+    File? selectedImage;
+
+    String parseDate(String formattedDate) {
+      try {
+        if (formattedDate.isEmpty) return '';
+        List<String> parts = formattedDate.split('-');
+        if (parts.length != 3) return formattedDate;
+        DateTime date = DateTime(
+          int.parse(parts[2]),
+          int.parse(parts[1]),
+          int.parse(parts[0]),
+        );
+        return "${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+      } catch (e) {
+        return formattedDate;
+      }
+    }
+
+    Future<void> selectDate(TextEditingController controller) async {
+      DateTime initialDate = DateTime.now();
+      try {
+        if (controller.text.isNotEmpty) {
+          List<String> parts = controller.text.split('-');
+          if (parts.length == 3) {
+            initialDate = DateTime(
+              int.parse(parts[2]),
+              int.parse(parts[1]),
+              int.parse(parts[0]),
+            );
+          }
+        }
+      } catch (e) {
+        print('Error parsing date: $e');
+      }
+
+      final DateTime? picked = await showDatePicker(
+        context: context,
+        initialDate: initialDate,
+        firstDate: DateTime(1900),
+        lastDate: DateTime.now(),
+      );
+
+      if (picked != null) {
+        controller.text =
+            "${picked.day.toString().padLeft(2, '0')}-${picked.month.toString().padLeft(2, '0')}-${picked.year}";
+      }
+    }
 
     await showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: Text('Edit Teacher Details'),
-          content: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: InputDecoration(labelText: 'Name'),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Theme(
+              data: Theme.of(context).copyWith(
+                dialogBackgroundColor: Colors.white,
+                inputDecorationTheme: InputDecorationTheme(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.blue[800]!, width: 2),
+                  ),
                 ),
-                TextField(
-                  controller: emailController,
-                  decoration: InputDecoration(labelText: 'Email'),
+              ),
+              child: Dialog(
+                insetPadding: EdgeInsets.all(20),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                TextField(
-                  controller: dobController,
-                  decoration: InputDecoration(labelText: 'Date of Birth'),
-                ),
-                TextField(
-                  controller: dojController,
-                  decoration: InputDecoration(labelText: 'Date of Joining'),
-                ),
-                TextField(
-                  controller: genderController,
-                  decoration: InputDecoration(labelText: 'Gender'),
-                ),
-                TextField(
-                  controller: guardianController,
-                  decoration: InputDecoration(labelText: 'Guardian Name'),
-                ),
-                TextField(
-                  controller: qualificationController,
-                  decoration: InputDecoration(labelText: 'Qualification'),
-                ),
-                TextField(
-                  controller: experienceController,
-                  decoration: InputDecoration(labelText: 'Experience'),
-                ),
-                TextField(
-                  controller: salaryController,
-                  decoration: InputDecoration(labelText: 'Salary'),
-                ),
-                TextField(
-                  controller: addressController,
-                  decoration: InputDecoration(labelText: 'Address'),
-                ),
-                TextField(
-                  controller: phoneController,
-                  decoration: InputDecoration(labelText: 'Phone'),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    final pickedFile = await ImagePicker()
-                        .pickImage(source: ImageSource.gallery);
-                    if (pickedFile != null) {
-                      if (kIsWeb) {
-                        // For web: read bytes immediately
-                        final bytes = await pickedFile.readAsBytes();
-                        setState(() {
-                          photoBytes = bytes;
-                          profilePhoto = base64Encode(bytes);
-                        });
-                      } else {
-                        // For mobile: store the path
-                        setState(() {
-                          profilePhoto = pickedFile.path;
-                        });
-                      }
-                    }
-                  },
-                  child: Text('Edit Profile Photo'),
-                ),
-                if (profilePhoto != null)
-                  Padding(
-                    padding: EdgeInsets.only(top: 10),
-                    child: kIsWeb
-                        ? Image.memory(photoBytes!, width: 100, height: 100)
-                        : Image.file(
-                            File(profilePhoto!),
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Edit Teacher',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue[800],
                           ),
-                  )
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () async {
-                try {
-                  // Prepare updated data
-                  final updatedTeacher = {
-                    'teacher_name': nameController.text,
-                    'email': emailController.text,
-                    'date_of_birth': dobController.text,
-                    'date_of_joining': dojController.text,
-                    'gender': genderController.text,
-                    'guardian_name': guardianController.text,
-                    'qualification': qualificationController.text,
-                    'experience': experienceController.text,
-                    'salary': salaryController.text,
-                    'address': addressController.text,
-                    'phone': phoneController.text,
-                    'qualification_certificate':
-                        teacher.qualificationCertificate,
-                  };
+                        ),
+                        SizedBox(height: 20),
+                        Form(
+                          key: formKey,
+                          child: Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  Column(
+                                    children: [
+                                      Text(
+                                        'Current Photo',
+                                        style: TextStyle(
+                                          color: Colors.blue[800],
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      SizedBox(height: 8),
+                                      Container(
+                                        width: 80,
+                                        height: 80,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: Colors.blue[100]!,
+                                            width: 2,
+                                          ),
+                                        ),
+                                        child: ClipOval(
+                                          child: buildTeacherPhoto(
+                                              teacher.teacherPhoto, baseUrl),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  if (selectedImage != null ||
+                                      photoBytes != null)
+                                    Column(
+                                      children: [
+                                        Text(
+                                          'New Photo',
+                                          style: TextStyle(
+                                            color: Colors.blue[800],
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        SizedBox(height: 8),
+                                        Container(
+                                          width: 80,
+                                          height: 80,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: Colors.green[100]!,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          child: ClipOval(
+                                            child: kIsWeb
+                                                ? Image.memory(photoBytes!,
+                                                    fit: BoxFit.cover)
+                                                : Image.file(selectedImage!,
+                                                    fit: BoxFit.cover),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                ],
+                              ),
+                              SizedBox(height: 20),
+                              ElevatedButton.icon(
+                                icon: Icon(Icons.camera_alt, size: 20),
+                                label: Text('Update Photo'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blue[800],
+                                  foregroundColor: Colors.white,
+                                  padding: EdgeInsets.symmetric(
+                                      vertical: 12, horizontal: 20),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                onPressed: () async {
+                                  final pickedFile = await ImagePicker()
+                                      .pickImage(source: ImageSource.gallery);
+                                  if (pickedFile != null) {
+                                    if (kIsWeb) {
+                                      final bytes =
+                                          await pickedFile.readAsBytes();
+                                      setState(() {
+                                        photoBytes = bytes;
+                                        profilePhoto = base64Encode(bytes);
+                                      });
+                                    } else {
+                                      setState(() {
+                                        selectedImage = File(pickedFile.path);
+                                        profilePhoto = pickedFile.path;
+                                      });
+                                    }
+                                  }
+                                },
+                              ),
+                              SizedBox(height: 20),
+                              _buildEditField(nameController, 'Name', true),
+                              _buildEditField(emailController, 'Email', true),
+                              TextFormField(
+                                controller: dobController,
+                                decoration: InputDecoration(
+                                  labelText: 'Date of Birth (DD-MM-YYYY)',
+                                  labelStyle:
+                                      TextStyle(color: Colors.blue[800]),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide:
+                                        BorderSide(color: Colors.blue[300]!),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(
+                                        color: Colors.blue[800]!, width: 2),
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.blue[50],
+                                  suffixIcon: IconButton(
+                                    icon: Icon(Icons.calendar_today,
+                                        color: Colors.blue[800]),
+                                    onPressed: () => selectDate(dobController),
+                                  ),
+                                ),
+                                readOnly: true,
+                                validator: (value) => value!.isEmpty
+                                    ? 'Date of Birth is required'
+                                    : null,
+                              ),
+                              SizedBox(height: 16),
+                              TextFormField(
+                                controller: dojController,
+                                decoration: InputDecoration(
+                                  labelText: 'Date of Joining (DD-MM-YYYY)',
+                                  labelStyle:
+                                      TextStyle(color: Colors.blue[800]),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide:
+                                        BorderSide(color: Colors.blue[300]!),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(
+                                        color: Colors.blue[800]!, width: 2),
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.blue[50],
+                                  suffixIcon: IconButton(
+                                    icon: Icon(Icons.calendar_today,
+                                        color: Colors.blue[800]),
+                                    onPressed: () => selectDate(dojController),
+                                  ),
+                                ),
+                                readOnly: true,
+                                validator: (value) => value!.isEmpty
+                                    ? 'Date of Joining is required'
+                                    : null,
+                              ),
+                              SizedBox(height: 16),
+                              _buildEditField(genderController, 'Gender', true),
+                              _buildEditField(
+                                  guardianController, 'Guardian Name', true),
+                              _buildEditField(qualificationController,
+                                  'Qualification', true),
+                              _buildEditField(
+                                  experienceController, 'Experience', true),
+                              _buildEditField(salaryController, 'Salary', true),
+                              _buildEditField(
+                                  addressController, 'Address', true),
+                              _buildEditField(phoneController, 'Phone', true),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: Text(
+                                'Cancel',
+                                style: TextStyle(color: Colors.grey[700]),
+                              ),
+                            ),
+                            SizedBox(width: 10),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue[800],
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 24, vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              onPressed: () async {
+                                if (formKey.currentState!.validate()) {
+                                  try {
+                                    final updatedTeacher = {
+                                      'teacher_name': nameController.text,
+                                      'email': emailController.text,
+                                      'date_of_birth':
+                                          parseDate(dobController.text),
+                                      'date_of_joining':
+                                          parseDate(dojController.text),
+                                      'gender': genderController.text,
+                                      'guardian_name': guardianController.text,
+                                      'qualification':
+                                          qualificationController.text,
+                                      'experience': experienceController.text,
+                                      'salary': salaryController.text,
+                                      'address': addressController.text,
+                                      'phone': phoneController.text,
+                                      'qualification_certificate':
+                                          teacher.qualificationCertificate,
+                                    };
 
-                  // Add photo data only if a new photo is selected
-                  if (profilePhoto != null &&
-                      profilePhoto != teacher.teacherPhoto) {
-                    updatedTeacher['teacher_photo'] = profilePhoto!;
-                  } else {
-                    updatedTeacher['teacher_photo'] = teacher.teacherPhoto;
-                  }
+                                    if (profilePhoto != null &&
+                                        profilePhoto != teacher.teacherPhoto) {
+                                      updatedTeacher['teacher_photo'] =
+                                          profilePhoto!;
+                                    } else {
+                                      updatedTeacher['teacher_photo'] =
+                                          teacher.teacherPhoto;
+                                    }
 
-                  // print('Updating teacher with data: $updatedTeacher');
-
-                  // Update student
-                  await _teacherService.updateTeacher(teacher, updatedTeacher);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Teacher updated successfully')),
-                  );
-                  Navigator.of(context).pop();
-                  _fetchTeachers(); // Refresh the list
-                } catch (e) {
-                  // print('Error updating teacher: $e');
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Failed to update teacher: $e')),
-                  );
-                }
-              },
-              child: Text('Save'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancel'),
-            ),
-          ],
+                                    await _teacherService.updateTeacher(
+                                        teacher, updatedTeacher);
+                                    _showSuccessSnackBar(
+                                        'Teacher updated successfully');
+                                    Navigator.of(context).pop();
+                                    _fetchTeachers();
+                                  } catch (e) {
+                                    _showErrorSnackBar(
+                                        'Failed to update teacher: ${e.toString()}');
+                                  }
+                                }
+                              },
+                              child: Text('Save'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
         );
       },
     );
   }
 
-  // Delete Student Functionality
+  Widget _buildEditField(
+      TextEditingController controller, String label, bool required) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: TextFormField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(color: Colors.blue[800]),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: Colors.blue[300]!),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: Colors.blue[800]!, width: 2),
+          ),
+          filled: true,
+          fillColor: Colors.blue[50],
+        ),
+        validator: required
+            ? (value) => value!.isEmpty ? '$label is required' : null
+            : null,
+      ),
+    );
+  }
+
   Future<void> _deleteTeacher(int index) async {
     final teacher = filteredTeachers[index];
-
-    bool? confirmed = await showDialog(
+    final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Delete teacher'),
-          content: Text('Are you sure you want to delete ${teacher.name}?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: Text('Yes'),
+      builder: (context) => AlertDialog(
+        title: Text('Confirm Delete',
+            style: TextStyle(
+                color: Colors.blue[800], fontWeight: FontWeight.bold)),
+        content: Text('Delete ${teacher.name} permanently?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Cancel', style: TextStyle(color: Colors.grey[700])),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red[400],
+              foregroundColor: Colors.white,
             ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text('No'),
-            ),
-          ],
-        );
-      },
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('Delete'),
+          ),
+        ],
+      ),
     );
 
     if (confirmed == true) {
@@ -278,13 +531,9 @@ class _TeacherProfileManagementPageState
           teachers.removeWhere((t) => t.id == teacher.id);
           filteredTeachers.removeAt(index);
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Teacher deleted successfully')),
-        );
+        _showSuccessSnackBar('Teacher deleted successfully');
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to delete teacher: $e')),
-        );
+        _showErrorSnackBar('Failed to delete teacher: ${e.toString()}');
       }
     }
   }
@@ -292,77 +541,238 @@ class _TeacherProfileManagementPageState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text('Teacher Profile Management'),
-        centerTitle: true,
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              controller: searchController,
-              decoration: InputDecoration(
-                labelText: 'Search by Name',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
-              ),
-              onChanged: (value) => _filterTeachers(),
-            ),
+        title: Text(
+          'Teacher Profile Management',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
           ),
-          Expanded(
-            child: filteredTeachers.isEmpty
-                ? Center(
-                    child: Text('No teachers found'),
-                  )
-                : ListView.builder(
-                    itemCount: filteredTeachers.length,
-                    itemBuilder: (context, index) {
-                      final teacher = filteredTeachers[index];
-                      return Card(
-                        margin: EdgeInsets.all(8.0),
-                        child: ListTile(
-                          title: Text(teacher.name),
-                          leading:
-                              buildTeacherPhoto(teacher.teacherPhoto, baseUrl),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: Icon(Icons.edit),
-                                onPressed: () => _editTeacher(teacher),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.blue.shade900,
+        elevation: 0,
+      ),
+      body: _isLoading
+          ? Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue[800]!),
+              ),
+            )
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          TextField(
+                            controller: searchController,
+                            decoration: InputDecoration(
+                              labelText: 'Search Teachers',
+                              labelStyle: TextStyle(color: Colors.blue[800]),
+                              prefixIcon:
+                                  Icon(Icons.search, color: Colors.blue[800]),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide:
+                                    BorderSide(color: Colors.blue[300]!),
                               ),
-                              IconButton(
-                                icon: Icon(Icons.delete),
-                                onPressed: () => _deleteTeacher(index),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(
+                                    color: Colors.blue[800]!, width: 2),
                               ),
-                              IconButton(
-                                icon: Icon(Icons.picture_as_pdf),
+                              suffixIcon: IconButton(
+                                icon:
+                                    Icon(Icons.clear, color: Colors.blue[800]),
                                 onPressed: () {
-                                  if (teacher
-                                      .qualificationCertificate.isNotEmpty) {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => PDFViewerScreen(
-                                          pdfData:
-                                              teacher.qualificationCertificate,
-                                          baseUrl: baseUrl,
-                                        ),
-                                      ),
-                                    );
-                                  }
+                                  searchController.clear();
+                                  _filterTeachers();
                                 },
                               ),
-                            ],
+                              filled: true,
+                              fillColor: Colors.blue[50],
+                            ),
+                            onChanged: (value) => _filterTeachers(),
                           ),
-                        ),
-                      );
-                    },
+                        ],
+                      ),
+                    ),
                   ),
-          ),
-        ],
-      ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: filteredTeachers.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.people_outline,
+                                  size: 60,
+                                  color: Colors.grey[400],
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                  searchController.text.isEmpty
+                                      ? 'No teachers found'
+                                      : 'No teachers match your search',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                                if (searchController.text.isNotEmpty)
+                                  TextButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        searchController.clear();
+                                        filteredTeachers = teachers;
+                                      });
+                                    },
+                                    child: Text('Clear Search',
+                                        style:
+                                            TextStyle(color: Colors.blue[800])),
+                                  ),
+                              ],
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: filteredTeachers.length,
+                            itemBuilder: (context, index) {
+                              final teacher = filteredTeachers[index];
+                              return Card(
+                                elevation: 2,
+                                margin: EdgeInsets.only(bottom: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: ListTile(
+                                  contentPadding: EdgeInsets.all(12),
+                                  leading: Container(
+                                    width: 50,
+                                    height: 50,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.blue[100]!,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: ClipOval(
+                                      child: buildTeacherPhoto(
+                                          teacher.teacherPhoto, baseUrl),
+                                    ),
+                                  ),
+                                  title: Text(
+                                    teacher.name,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.blue[800],
+                                    ),
+                                  ),
+                                  subtitle: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '${teacher.email}',
+                                        style: TextStyle(
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                      Text(
+                                        '${teacher.qualification}',
+                                        style: TextStyle(
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  trailing: PopupMenuButton(
+                                    icon: Icon(Icons.more_vert,
+                                        color: Colors.blue[800]),
+                                    itemBuilder: (context) => [
+                                      PopupMenuItem(
+                                        value: 'edit',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.edit,
+                                                color: Colors.blue[800]),
+                                            SizedBox(width: 8),
+                                            Text('Edit',
+                                                style: TextStyle(
+                                                    color: Colors.blue[900])),
+                                          ],
+                                        ),
+                                      ),
+                                      PopupMenuItem(
+                                        value: 'delete',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.delete,
+                                                color: Colors.red[400]),
+                                            SizedBox(width: 8),
+                                            Text('Delete',
+                                                style: TextStyle(
+                                                    color: Colors.red[600])),
+                                          ],
+                                        ),
+                                      ),
+                                      if (teacher
+                                          .qualificationCertificate.isNotEmpty)
+                                        PopupMenuItem(
+                                          value: 'view_certificate',
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.picture_as_pdf,
+                                                  color: Colors.green[600]),
+                                              SizedBox(width: 8),
+                                              Text('View Certificate',
+                                                  style: TextStyle(
+                                                      color:
+                                                          Colors.green[800])),
+                                            ],
+                                          ),
+                                        ),
+                                    ],
+                                    onSelected: (value) {
+                                      if (value == 'edit') {
+                                        _editTeacher(teacher);
+                                      } else if (value == 'delete') {
+                                        _deleteTeacher(index);
+                                      } else if (value == 'view_certificate') {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                PDFViewerScreen(
+                                              pdfData: teacher
+                                                  .qualificationCertificate,
+                                              baseUrl: baseUrl,
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ),
+              ],
+            ),
     );
   }
 }

@@ -1,0 +1,28 @@
+class Notice {
+  final String id;
+  final String title;
+  final String content;
+  final String noticeDate;
+  final String category;
+  final String priority;
+
+  Notice({
+    required this.id,
+    required this.title,
+    required this.content,
+    required this.noticeDate,
+    required this.category,
+    required this.priority,
+  });
+
+  factory Notice.fromJson(Map<String, dynamic> json) {
+    return Notice(
+      id: json['id'].toString(),
+      title: json['title'],
+      content: json['content'],
+      noticeDate: json['notice_date'],
+      category: json['category'],
+      priority: json['priority'] ?? 'medium',
+    );
+  }
+}

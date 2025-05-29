@@ -5,6 +5,7 @@ import {
   registerSubject,
   getAllSubjects,
   updateSubject,
+  deleteSubject,
 } from '../controllers/subjectController.js';
 
 const router = express.Router();
@@ -18,5 +19,5 @@ router.put('/updatesubject',
   updateSubject,
      // Your update controller
 );
-
+router.delete('/deletesubject/:subject_id', verifyToken, deleteSubject);
 export default router;

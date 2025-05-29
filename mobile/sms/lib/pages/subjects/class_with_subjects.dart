@@ -61,7 +61,7 @@ class _ClassWithSubjectsPageState extends State<ClassWithSubjectsPage> {
         }
       });
     } catch (error) {
-      print('Error loading classes with subjects: $error');
+      debugPrint('Error loading classes with subjects: $error');
       setState(() {
         errorMessage = 'Error fetching data: ${error.toString()}';
       });
@@ -74,6 +74,61 @@ class _ClassWithSubjectsPageState extends State<ClassWithSubjectsPage> {
 
   Future<void> _refreshData() async {
     await _loadClassesWithSubjects();
+  }
+
+  Future<void> _deleteAllSubjects(String classId) async {
+    try {
+      final success = await ApiService.deleteSubject(classId);
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('All subjects deleted successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        await _refreshData();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete subjects'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error deleting subjects: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _showDeleteAllConfirmationDialog(String classId, String className) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Confirm Delete All'),
+          content: Text(
+              'Are you sure you want to delete ALL subjects for $className?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancel', style: TextStyle(color: Colors.blue[800])),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _deleteAllSubjects(classId);
+              },
+              child: Text('Delete All', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -89,7 +144,7 @@ class _ClassWithSubjectsPageState extends State<ClassWithSubjectsPage> {
           ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.blue[800],
+        backgroundColor: Colors.blue.shade900,
         elevation: 0,
         actions: [
           IconButton(
@@ -210,14 +265,31 @@ class _ClassWithSubjectsPageState extends State<ClassWithSubjectsPage> {
       ),
       child: ExpansionTile(
         tilePadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        title: Text(
-          classData.className,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-            color: Colors.blue[900],
-          ),
+
+        // ✅ Title showing Class and Section
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              classData.className,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: Colors.blue[900],
+              ),
+            ),
+            SizedBox(height: 4),
+            Text(
+              'Section: ${classData.section}',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
         ),
+
+        // ✅ Subtitle with total subjects and marks
         subtitle: Text(
           '$totalSubjects Subjects • Total Marks: $totalMarks',
           style: TextStyle(
@@ -225,6 +297,7 @@ class _ClassWithSubjectsPageState extends State<ClassWithSubjectsPage> {
             color: Colors.grey[600],
           ),
         ),
+
         leading: CircleAvatar(
           backgroundColor: Colors.blue[100],
           child: Icon(
@@ -232,6 +305,7 @@ class _ClassWithSubjectsPageState extends State<ClassWithSubjectsPage> {
             color: Colors.blue[800],
           ),
         ),
+
         children: [
           if (classData.subjects.isEmpty)
             Padding(
@@ -244,6 +318,7 @@ class _ClassWithSubjectsPageState extends State<ClassWithSubjectsPage> {
           else
             ...classData.subjects.map((subject) => _buildSubjectTile(subject)),
           _buildEditButton(classData),
+          _buildDeleteAllButton(classData),
         ],
       ),
     );
@@ -308,6 +383,27 @@ class _ClassWithSubjectsPageState extends State<ClassWithSubjectsPage> {
         ),
         onPressed: () {
           _navigateToEditPage(classData);
+        },
+      ),
+    );
+  }
+
+  Widget _buildDeleteAllButton(ClassWithSubjects classData) {
+    return Padding(
+      padding: EdgeInsets.only(left: 16, right: 16, bottom: 16),
+      child: ElevatedButton.icon(
+        icon: Icon(Icons.delete_forever, size: 20),
+        label: Text('Delete All Subjects'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.red[400],
+          foregroundColor: Colors.white,
+          padding: EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+        onPressed: () {
+          _showDeleteAllConfirmationDialog(classData.id, classData.className);
         },
       ),
     );
@@ -399,6 +495,44 @@ class _EditSubjectsPageState extends State<EditSubjectsPage> {
     }
   }
 
+  Future<void> _deleteAllSubjects() async {
+    try {
+      setState(() {
+        isSaving = true;
+      });
+
+      bool success = await ApiService.deleteSubject(widget.classData.id);
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('All subjects deleted successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context, true);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete subjects'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error deleting subjects: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        isSaving = false;
+      });
+    }
+  }
+
   Future<void> _saveChanges() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -464,6 +598,32 @@ class _EditSubjectsPageState extends State<EditSubjectsPage> {
     }
   }
 
+  void _showDeleteAllConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Confirm Delete All'),
+          content: Text(
+              'Are you sure you want to delete ALL subjects for ${widget.classData.className}?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancel', style: TextStyle(color: Colors.blue[800])),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _deleteAllSubjects();
+              },
+              child: Text('Delete All', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -477,9 +637,13 @@ class _EditSubjectsPageState extends State<EditSubjectsPage> {
           ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.blue[800],
+        backgroundColor: Colors.blue.shade900,
         elevation: 0,
         actions: [
+          IconButton(
+            icon: Icon(Icons.delete_forever, color: Colors.red[200]),
+            onPressed: _showDeleteAllConfirmationDialog,
+          ),
           IconButton(
             icon: Icon(Icons.save, color: Colors.white),
             onPressed: isSaving ? null : _saveChanges,
@@ -657,11 +821,13 @@ class _EditSubjectsPageState extends State<EditSubjectsPage> {
 class ClassWithSubjects {
   final String id;
   final String className;
+  final String section; // ← NEW FIELD
   final List<Subject> subjects;
 
   ClassWithSubjects({
     required this.id,
     required this.className,
+    required this.section,
     required this.subjects,
   });
 
@@ -677,6 +843,7 @@ class ClassWithSubjects {
       className: (json['class_name'] ?? json['className'] ?? 'Unknown Class')
           .toString()
           .trim(),
+      section: (json['section'] ?? 'Unknown Section').toString().trim(),
       subjects: subjectsData
           .map((subjectJson) => Subject.fromJson(subjectJson))
           .toList(),

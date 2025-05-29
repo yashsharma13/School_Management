@@ -13,6 +13,7 @@ class ClassSectionInfo extends StatefulWidget {
 
 class _ClassSectionInfoState extends State<ClassSectionInfo> {
   List<Class> classes = [];
+  List<String> availableSections = [];
   bool isLoading = true;
   Class? selectedClass;
 
@@ -26,12 +27,34 @@ class _ClassSectionInfoState extends State<ClassSectionInfo> {
     try {
       setState(() => isLoading = true);
       final fetchedClasses = await ApiService.fetchClasses();
+
+      final Map<String, Set<String>> classSectionMap = {};
+      final List<Class> tempClasses = [];
+
+      for (final data in fetchedClasses) {
+        final className =
+            (data['class_name'] ?? data['className'] ?? '').toString().trim();
+        final section = (data['section'] ?? '').toString().trim();
+
+        if (className.isEmpty) continue;
+
+        if (!classSectionMap.containsKey(className)) {
+          classSectionMap[className] = {};
+        }
+
+        classSectionMap[className]!.add(section);
+      }
+
+      classSectionMap.forEach((className, sections) {
+        tempClasses.add(Class(
+          id: className,
+          className: className,
+          sections: sections.toList(),
+        ));
+      });
+
       setState(() {
-        classes = fetchedClasses
-            .map((data) => Class.fromJson(data))
-            .where((classObj) =>
-                classObj.id.isNotEmpty && classObj.className.isNotEmpty)
-            .toList();
+        classes = tempClasses;
       });
     } catch (error) {
       _showErrorSnackBar('Error fetching classes: ${error.toString()}');
@@ -120,6 +143,8 @@ class _ClassSectionInfoState extends State<ClassSectionInfo> {
         setState(() {
           selectedClass = newValue;
           widget.controller.selectedClass = newValue?.className;
+          widget.controller.selectedSection = null;
+          availableSections = newValue?.sections ?? [];
         });
       },
       validator: (value) => value == null ? 'Please select a class' : null,
@@ -144,17 +169,20 @@ class _ClassSectionInfoState extends State<ClassSectionInfo> {
           borderRadius: BorderRadius.circular(8),
         ),
       ),
-      items: ['Section A', 'Section B', 'Section C']
-          .map((e) => DropdownMenuItem(
-                value: e,
-                child: Text(
-                  e,
-                  style: TextStyle(color: Colors.blue.shade800),
-                ),
-              ))
-          .toList(),
-      onChanged: (value) =>
-          setState(() => widget.controller.selectedSection = value),
+      items: availableSections.map((section) {
+        return DropdownMenuItem<String>(
+          value: section,
+          child: Text(
+            section,
+            style: TextStyle(color: Colors.blue.shade800),
+          ),
+        );
+      }).toList(),
+      onChanged: (value) {
+        setState(() {
+          widget.controller.selectedSection = value;
+        });
+      },
       validator: (value) => value == null ? 'Please select a section' : null,
       style: TextStyle(color: Colors.blue.shade800),
     );
@@ -164,8 +192,13 @@ class _ClassSectionInfoState extends State<ClassSectionInfo> {
 class Class {
   final String id;
   final String className;
+  final List<String> sections;
 
-  Class({required this.id, required this.className});
+  Class({
+    required this.id,
+    required this.className,
+    required this.sections,
+  });
 
   factory Class.fromJson(Map<String, dynamic> json) {
     return Class(
@@ -173,6 +206,7 @@ class Class {
       className: (json['class_name'] ?? json['className'] ?? 'Unknown Class')
           .toString()
           .trim(),
+      sections: [],
     );
   }
 }

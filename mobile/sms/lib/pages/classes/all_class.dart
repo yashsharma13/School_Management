@@ -54,11 +54,13 @@ class _AllClassesPageState extends State<AllClassesPage> {
         try {
           final className =
               (item['class_name'] ?? '').toString().toLowerCase().trim();
+          final section =
+              (item['section'] ?? '').toString().toLowerCase().trim();
+          final key = '$className|$section'; // Composite key
           final count = _parseCount(item['student_count'] ?? 0);
 
-          if (className.isNotEmpty) {
-            countMap[className] = count;
-            print('Count for $className: $count');
+          if (className.isNotEmpty && section.isNotEmpty) {
+            countMap[key] = count;
           }
         } catch (e) {
           print('Error processing count item: $e');
@@ -70,8 +72,10 @@ class _AllClassesPageState extends State<AllClassesPage> {
           .map((classData) {
             final className =
                 classData['class_name']?.toString() ?? 'Unassigned';
-            final lowerClassName = className.toLowerCase().trim();
-            final studentCount = countMap[lowerClassName] ?? 0;
+            final section = classData['section']?.toString() ?? '';
+            final key =
+                '${className.toLowerCase().trim()}|${section.toLowerCase().trim()}';
+            final studentCount = countMap[key] ?? 0;
 
             print('Class: $className, Students: $studentCount');
 
@@ -83,6 +87,7 @@ class _AllClassesPageState extends State<AllClassesPage> {
               ...classData,
               'student_count': studentCount,
               'teacher_name': teacherName,
+              'section': classData['section'] ?? '',
             });
           })
           .where((c) => c.id.isNotEmpty)
@@ -153,7 +158,7 @@ class _AllClassesPageState extends State<AllClassesPage> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('All Classes', style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.blue[900],
+        backgroundColor: Colors.blue.shade900,
         elevation: 0,
         centerTitle: true,
         iconTheme: IconThemeData(color: Colors.white),
@@ -248,7 +253,7 @@ class _AllClassesPageState extends State<AllClassesPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    classItem.className,
+                    '${classItem.className} (${classItem.section})',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -417,6 +422,7 @@ class _AllClassesPageState extends State<AllClassesPage> {
         teachers.any((t) => t.name == classItem.teacherName)
             ? classItem.teacherName
             : null;
+    final sectionController = TextEditingController(text: classItem.section);
 
     showDialog(
       context: context,
@@ -430,18 +436,55 @@ class _AllClassesPageState extends State<AllClassesPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    TextField(
+                    TextFormField(
                       controller: classNameController,
+                      readOnly: true,
+                      enabled:
+                          false, // 🚫 disables editing AND shows default greyed-out style
                       decoration: InputDecoration(
                         labelText: 'Class Name',
                         labelStyle: TextStyle(color: Colors.blue[900]),
-                        enabledBorder: OutlineInputBorder(
+                        disabledBorder: OutlineInputBorder(
                           borderSide: BorderSide(
-                              color: Colors.blue[900]!.withOpacity(0.3)),
+                            color: Colors.grey[400]!,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.blue[900]!),
+                        filled: true,
+                        fillColor: Colors.grey[
+                            100], // 👈 Light grey background for non-editable field
+                        suffixIcon: Icon(Icons.lock,
+                            color: Colors.grey), // 🔒 locked icon
+                      ),
+                      style: TextStyle(
+                        color: Colors
+                            .grey[700], // Grey text to indicate disabled state
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    TextFormField(
+                      controller: sectionController,
+                      readOnly: true,
+                      enabled:
+                          false, // 🚫 disables editing AND shows default greyed-out style
+                      decoration: InputDecoration(
+                        labelText: 'Section',
+                        labelStyle: TextStyle(color: Colors.blue[900]),
+                        disabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: Colors.grey[400]!,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
                         ),
+                        filled: true,
+                        fillColor: Colors.grey[
+                            100], // 👈 Light grey background for non-editable field
+                        suffixIcon: Icon(Icons.lock,
+                            color: Colors.grey), // 🔒 locked icon
+                      ),
+                      style: TextStyle(
+                        color: Colors
+                            .grey[700], // Grey text to indicate disabled state
                       ),
                     ),
                     SizedBox(height: 16),
@@ -579,6 +622,7 @@ class Class {
   final String tuitionFees;
   final String teacherName;
   final int studentCount;
+  final String section;
 
   Class({
     required this.id,
@@ -586,6 +630,7 @@ class Class {
     required this.tuitionFees,
     required this.teacherName,
     required this.studentCount,
+    required this.section,
   });
 
   factory Class.fromJson(Map<String, dynamic> json) {
@@ -595,6 +640,7 @@ class Class {
       tuitionFees: json['tuition_fees']?.toString() ?? '0',
       teacherName: json['teacher_name']?.toString() ?? 'No Teacher Assigned',
       studentCount: json['student_count'] ?? 0,
+      section: json['section']?.toString() ?? '',
     );
   }
 }

@@ -18,6 +18,7 @@ class _TeacherAttendancePageState extends State<TeacherAttendancePage> {
   TextEditingController searchController = TextEditingController();
   String? token;
   bool isLoading = false;
+  bool _isInitialLoading = true;
 
   @override
   void initState() {
@@ -25,27 +26,22 @@ class _TeacherAttendancePageState extends State<TeacherAttendancePage> {
     _loadToken();
   }
 
-  // Load token from SharedPreferences and then fetch teachers
   Future<void> _loadToken() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       token = prefs.getString('token');
     });
-    // print('Token loaded: ${token != null ? 'Yes' : 'No'}');
-
-    // After loading the token, fetch teachers if the token is available
     if (token != null) {
-      fetchTeachers();
+      await fetchTeachers();
     }
+    setState(() {
+      _isInitialLoading = false;
+    });
   }
 
-  // Fetch teachers from backend
   Future<void> fetchTeachers() async {
     if (token == null) {
-      // print('No token found. Please log in.');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please login to continue')),
-      );
+      _showErrorSnackBar('Please login to continue');
       return;
     }
 
@@ -53,21 +49,15 @@ class _TeacherAttendancePageState extends State<TeacherAttendancePage> {
       isLoading = true;
     });
 
-    // print('Using token: $token');
-
     try {
       final response = await http.get(
         Uri.parse('http://localhost:1000/api/teachers'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
-          'Authorization':
-              token!, // Use token directly without 'Bearer ' prefix
+          'Authorization': token!,
         },
       );
-
-      // print('Response status: ${response.statusCode}');
-      // print('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final List<dynamic> teacherData = json.decode(response.body);
@@ -76,38 +66,17 @@ class _TeacherAttendancePageState extends State<TeacherAttendancePage> {
               .map((data) => Teacher(
                     data['id'].toString(),
                     data['teacher_name'],
-                    false, // isPresent initialized as false
+                    false,
                   ))
               .toList();
         });
       } else if (response.statusCode == 401) {
-        // print('Token is invalid or expired. Redirecting to login...');
-        // Clear invalid token
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.remove('token');
-        setState(() {
-          token = null;
-        });
-
-        // Show message to user
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Session expired. Please login again.')),
-        );
+        _handleUnauthorized();
       } else {
-        // print('Failed to load teachers. Status code: ${response.statusCode}');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content:
-                  Text('Failed to load teachers: ${response.reasonPhrase}')),
-        );
+        _showErrorSnackBar('Failed to load teachers: ${response.reasonPhrase}');
       }
     } catch (error) {
-      // print('Error fetching teachers: $error');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(
-                'Error connecting to server. Please check your connection.')),
-      );
+      _showErrorSnackBar('Error connecting to server: $error');
     } finally {
       setState(() {
         isLoading = false;
@@ -115,13 +84,9 @@ class _TeacherAttendancePageState extends State<TeacherAttendancePage> {
     }
   }
 
-  // Function to submit attendance
   Future<void> saveAttendance() async {
     if (token == null) {
-      // print('No token found. Please log in.');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please login to continue')),
-      );
+      _showErrorSnackBar('Please login to continue');
       return;
     }
 
@@ -142,8 +107,7 @@ class _TeacherAttendancePageState extends State<TeacherAttendancePage> {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
-          'Authorization':
-              token!, // Use token directly without 'Bearer ' prefix
+          'Authorization': token!,
         },
         body: json.encode({
           'date': DateFormat('yyyy-MM-dd').format(selectedDate),
@@ -151,47 +115,20 @@ class _TeacherAttendancePageState extends State<TeacherAttendancePage> {
         }),
       );
 
-      // print('Save attendance response: ${response.statusCode}');
-      // print('Response body: ${response.body}');
-
       if (response.statusCode == 200) {
-        // Successfully saved attendance
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Teacher attendance record saved successfully')),
-        );
+        _showSuccessSnackBar('Teacher attendance saved successfully');
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => AdminDashboard()),
         );
       } else if (response.statusCode == 401) {
-        // print('Token is invalid or expired. Redirecting to login...');
-        // Clear invalid token
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.remove('token');
-        setState(() {
-          token = null;
-        });
-
-        // Show message to user
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Session expired. Please login again.')),
-        );
+        _handleUnauthorized();
       } else {
-        // print('Failed to save attendance. Status code: ${response.statusCode}');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content:
-                  Text('Failed to save attendance: ${response.reasonPhrase}')),
-        );
+        _showErrorSnackBar(
+            'Failed to save attendance: ${response.reasonPhrase}');
       }
     } catch (error) {
-      // print('Error saving attendance: $error');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(
-                'Error connecting to server. Please check your connection.')),
-      );
+      _showErrorSnackBar('Error saving attendance: $error');
     } finally {
       setState(() {
         isLoading = false;
@@ -199,13 +136,61 @@ class _TeacherAttendancePageState extends State<TeacherAttendancePage> {
     }
   }
 
-  // Function to select date
+  void _handleUnauthorized() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('token');
+    setState(() {
+      token = null;
+    });
+    _showErrorSnackBar('Session expired. Please login again.');
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red[800],
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    );
+  }
+
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green[800],
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    );
+  }
+
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: selectedDate,
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Colors.blue,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+            dialogBackgroundColor: Colors.white,
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null && picked != selectedDate) {
       setState(() {
@@ -217,97 +202,221 @@ class _TeacherAttendancePageState extends State<TeacherAttendancePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Attendance Page')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                SizedBox(width: 10),
-                ElevatedButton.icon(
-                  onPressed: () => _selectDate(context),
-                  icon: Icon(Icons.calendar_today),
-                  label: Text(DateFormat('dd/MM/yyyy').format(selectedDate)),
-                ),
-              ],
-            ),
-            SizedBox(height: 10),
-            TextField(
-              controller: searchController,
-              decoration: InputDecoration(
-                labelText: 'Search Teacher',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
-              ),
-              onChanged: (value) {
-                setState(() {});
-              },
-            ),
-            SizedBox(height: 10),
-            if (token == null)
-              Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.warning, size: 48, color: Colors.orange),
-                    Text('You are not logged in. Please login to continue.'),
-                    SizedBox(height: 10),
-                    ElevatedButton(
-                      onPressed: () {
-                        // Navigate to login page
-                      },
-                      child: Text('Go to Login'),
-                    )
-                  ],
-                ),
-              )
-            else if (isLoading)
-              Center(child: CircularProgressIndicator())
-            else
-              Expanded(
-                child: ListView(
-                  children: teachers
-                      .where((teacher) => teacher.name
-                          .toLowerCase()
-                          .contains(searchController.text.toLowerCase()))
-                      .map((teacher) {
-                    return Card(
-                      margin: EdgeInsets.symmetric(vertical: 4),
-                      child: ListTile(
-                        title: Text(teacher.name),
-                        trailing: Switch(
-                          value: teacher.isPresent,
-                          onChanged: (bool value) {
-                            setState(() {
-                              teacher.isPresent = value;
-                            });
-                          },
+      appBar: AppBar(
+        title:
+            Text('Teacher Attendance', style: TextStyle(color: Colors.white)),
+        centerTitle: true,
+        backgroundColor: Colors.blue.shade900,
+        elevation: 0,
+        iconTheme: IconThemeData(color: Colors.white),
+      ),
+      body: _isInitialLoading
+          ? Center(child: CircularProgressIndicator())
+          : Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Card(
+                    elevation: 3,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: () => _selectDate(context),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blue.shade50,
+                                    foregroundColor: Colors.blue,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    padding: EdgeInsets.symmetric(vertical: 16),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.calendar_today, size: 18),
+                                      SizedBox(width: 8),
+                                      Text(DateFormat('dd/MM/yyyy')
+                                          .format(selectedDate)),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: TextField(
+                                  controller: searchController,
+                                  decoration: InputDecoration(
+                                    labelText: 'Search Teacher',
+                                    labelStyle:
+                                        TextStyle(color: Colors.blue.shade700),
+                                    prefixIcon: Icon(Icons.search,
+                                        color: Colors.blue.shade700),
+                                    border: OutlineInputBorder(),
+                                    filled: true,
+                                    fillColor: Colors.blue.shade50,
+                                  ),
+                                  onChanged: (value) {
+                                    setState(() {});
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  if (token == null)
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.warning, size: 48, color: Colors.orange),
+                            SizedBox(height: 16),
+                            Text(
+                                'You are not logged in. Please login to continue.',
+                                style: TextStyle(fontSize: 16)),
+                            SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: () {
+                                // Navigate to login page
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 24, vertical: 12),
+                              ),
+                              child: Text('Go to Login'),
+                            )
+                          ],
                         ),
                       ),
-                    );
-                  }).toList(),
-                ),
-              ),
-            SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: teachers.isEmpty ? null : saveAttendance,
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: Colors.blue,
-                ),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  child: Text('Save Attendance'),
-                ),
+                    )
+                  else if (isLoading)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: CircularProgressIndicator(color: Colors.blue),
+                      ),
+                    )
+                  else
+                    Expanded(
+                      child: teachers.isEmpty
+                          ? Center(
+                              child: Card(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Text(
+                                    'No teachers found',
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                ),
+                              ),
+                            )
+                          : ListView.separated(
+                              itemCount: teachers
+                                  .where((teacher) => teacher.name
+                                      .toLowerCase()
+                                      .contains(
+                                          searchController.text.toLowerCase()))
+                                  .length,
+                              separatorBuilder: (context, index) =>
+                                  SizedBox(height: 8),
+                              itemBuilder: (context, index) {
+                                final filteredTeachers = teachers
+                                    .where((teacher) => teacher.name
+                                        .toLowerCase()
+                                        .contains(searchController.text
+                                            .toLowerCase()))
+                                    .toList();
+                                final teacher = filteredTeachers[index];
+                                return Card(
+                                  elevation: 2,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: ListTile(
+                                    contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 8),
+                                    leading: CircleAvatar(
+                                      backgroundColor: Colors.blue.shade100,
+                                      child: Text(
+                                        teacher.name.substring(0, 1),
+                                        style: TextStyle(
+                                            color: Colors.blue.shade800),
+                                      ),
+                                    ),
+                                    title: Text(
+                                      teacher.name,
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.blue.shade900),
+                                    ),
+                                    trailing: Transform.scale(
+                                      scale: 1.2,
+                                      child: Switch(
+                                        value: teacher.isPresent,
+                                        onChanged: (bool value) {
+                                          setState(() {
+                                            teacher.isPresent = value;
+                                          });
+                                        },
+                                        activeColor: Colors.blue,
+                                        activeTrackColor: Colors.blue.shade200,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: teachers.isEmpty ? null : saveAttendance,
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: Colors.blue,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        elevation: 3,
+                      ),
+                      child: isLoading
+                          ? SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : Text('Save Attendance',
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-      ),
     );
   }
 }

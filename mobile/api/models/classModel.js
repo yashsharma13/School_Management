@@ -1,55 +1,61 @@
-// // classModel.js
-import connection from '../config/mysqlconnectivity.js';
+// classModel.js
+import pool from '../config/db.js'; // Changed from MySQL connection to PostgreSQL pool
 
-export const createClass = (classData, callback) => {
-  const { class_name, tuition_fees, teacher_name, user_email } = classData;
+export const createClass = async (classData) => {
+  const { class_name, section, tuition_fees, teacher_name, user_email } = classData;
   const sql = `
-    INSERT INTO classes (class_name, tuition_fees, teacher_name, user_email)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO classes (class_name, section, tuition_fees, teacher_name, user_email)
+    VALUES ($1, $2, $3, $4, $5)
+    RETURNING *
   `;
-  connection.query(sql, [class_name, tuition_fees, teacher_name, user_email], (err, results) => {
-    if (err) {
-      console.error('MySQL Error in createClass:', err);
-      return callback(err, null);
-    }
-    callback(null, results);
-  });
+  
+  try {
+    const result = await pool.query(sql, [class_name, section, tuition_fees, teacher_name, user_email]);
+    return result.rows[0];
+  } catch (err) {
+    console.error('PostgreSQL Error in createClass:', err);
+    throw err;
+  }
 };
 
-export const getClassesByUser = (user_email, callback) => {
-  const query = 'SELECT * FROM classes WHERE user_email = ?';
-  connection.query(query, [user_email], (err, results) => {
-    if (err) {
-      console.error('MySQL Error in getClassesByUser:', err);
-      return callback(err, null);
-    }
-    callback(null, results);
-  });
+export const getClassesByUser = async (user_email) => {
+  const query = 'SELECT * FROM classes WHERE user_email = $1';
+  
+  try {
+    const result = await pool.query(query, [user_email]);
+    return result.rows;
+  } catch (err) {
+    console.error('PostgreSQL Error in getClassesByUser:', err);
+    throw err;
+  }
 };
 
-export const updateClass = (classId, classData, callback) => {
+export const updateClass = async (classId, classData) => {
   const { class_name, tuition_fees, teacher_name } = classData;
   const query = `
     UPDATE classes 
-    SET class_name = ?, tuition_fees = ?, teacher_name = ? 
-    WHERE id = ?
+    SET class_name = $1, tuition_fees = $2, teacher_name = $3 
+    WHERE id = $4
+    RETURNING *
   `;
-  connection.query(query, [class_name, tuition_fees, teacher_name, classId], (err, results) => {
-    if (err) {
-      console.error('MySQL Error in updateClass:', err);
-      return callback(err, null);
-    }
-    callback(null, results);
-  });
+  
+  try {
+    const result = await pool.query(query, [class_name, tuition_fees, teacher_name, classId]);
+    return result;
+  } catch (err) {
+    console.error('PostgreSQL Error in updateClass:', err);
+    throw err;
+  }
 };
 
-export const deleteClass = (classId, callback) => {
-  const query = 'DELETE FROM classes WHERE id = ?';
-  connection.query(query, [classId], (err, results) => {
-    if (err) {
-      console.error('MySQL Error in deleteClass:', err);
-      return callback(err, null);
-    }
-    callback(null, results);
-  });
+export const deleteClass = async (classId) => {
+  const query = 'DELETE FROM classes WHERE id = $1 RETURNING *';
+  
+  try {
+    const result = await pool.query(query, [classId]);
+    return result;
+  } catch (err) {
+    console.error('PostgreSQL Error in deleteClass:', err);
+    throw err;
+  }
 };

@@ -9,7 +9,6 @@ import 'package:sms/pages/student/student_registration/student_registration_cont
 class ApiService {
   // API URLs
   // use ipconfig to check niche wala jo url hai vo localhost ki jagh use krna hai agar phone mein use krna hai toh
-  // 192.168.148.213
   static const String apiUrlRegister =
       'http://localhost:1000/api/auth/register';
   static const String apiUrlLogin = 'http://localhost:1000/api/auth/login';
@@ -397,6 +396,7 @@ class ApiService {
   static const String apiUrlRegisterClass = 'http://localhost:1000/api/classes';
   static Future<bool> registerClass({
     required String className,
+    required String section,
     required String tuitionFees,
     required String teacherName, // Changed parameter name
   }) async {
@@ -416,6 +416,7 @@ class ApiService {
         },
         body: json.encode({
           'class_name': className,
+          'section': section,
           'tuition_fees': tuitionFees,
           'teacher_name': teacherName, // Match backend expectation
         }),
@@ -575,6 +576,7 @@ class ApiService {
 
   static Future<bool> registerSubject({
     required String className,
+    required String section,
     required List<Map<String, dynamic>> subjectsData,
   }) async {
     try {
@@ -598,6 +600,7 @@ class ApiService {
         },
         body: json.encode({
           'class_name': className,
+          'section': section,
           'subject_name': subjectNames, // Send comma-separated subject names
           'marks': marks, // Send comma-separated marks
         }),
@@ -713,6 +716,37 @@ class ApiService {
       }
     } catch (e) {
       // print('[ERROR] in updateSubject: $e');
+      rethrow;
+    }
+  }
+
+  static const String apiUrlDeleteSubject =
+      'http://localhost:1000/api/deletesubject';
+
+  static Future<bool> deleteSubject(String subjectId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null || token.isEmpty) {
+        throw Exception('Authentication token not found');
+      }
+
+      final response = await http.delete(
+        Uri.parse('$apiUrlDeleteSubject/$subjectId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token, // Add Bearer if required by backend
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to delete subjects');
+      }
+    } catch (e) {
       rethrow;
     }
   }

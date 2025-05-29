@@ -14,10 +14,15 @@ class AdmissionLetterPage extends StatefulWidget {
 class _AdmissionLetterPageState extends State<AdmissionLetterPage> {
   List<Class> classes = [];
   List<Student> students = [];
+  List<Student> filteredStudents = [];
   bool isLoadingClasses = true;
+  bool isLoadingSections = false;
   bool isLoadingStudents = false;
   String? token;
   String? selectedClassId;
+  String? selectedClassName;
+  String? selectedSection;
+  List<String> availableSections = [];
 
   @override
   void initState() {
@@ -51,15 +56,47 @@ class _AdmissionLetterPageState extends State<AdmissionLetterPage> {
 
       if (response.statusCode == 200) {
         final List<dynamic> classData = json.decode(response.body);
+        final Map<String, Class> classMap = {};
+
+        for (final data in classData) {
+          if (data is! Map<String, dynamic>) continue;
+
+          final rawClassName =
+              (data['class_name'] ?? data['className'] ?? '').toString().trim();
+
+          if (rawClassName.isEmpty) continue;
+
+          // Normalize className (lowercase) as key for grouping
+          final classNameKey = rawClassName.toLowerCase();
+
+          final section = (data['section'] ?? '').toString().trim();
+
+          // If class already exists, add section if not present
+          if (classMap.containsKey(classNameKey)) {
+            if (section.isNotEmpty &&
+                !classMap[classNameKey]!.sections.contains(section)) {
+              classMap[classNameKey]!.sections.add(section);
+            }
+          } else {
+            // Create new Class object; id can be classNameKey or empty string
+            classMap[classNameKey] = Class(
+              id: classNameKey, // or '' or data['_id'] if you want
+              className: rawClassName,
+              sections: section.isNotEmpty ? [section] : [],
+            );
+          }
+        }
+
+        // Sort sections inside each class
+        for (final classObj in classMap.values) {
+          classObj.sections.sort();
+        }
+
+        final classesList = classMap.values.toList()
+          ..sort((a, b) => a.className.compareTo(b.className));
+
         setState(() {
-          classes = classData
-              .map((data) => Class(
-                    id: data['_id']?.toString() ?? data['id']?.toString() ?? '',
-                    className:
-                        data['class_name']?.toString() ?? 'Unknown Class',
-                  ))
-              .where((classItem) => classItem.id.isNotEmpty)
-              .toList();
+          classes = classesList;
         });
       } else {
         _showErrorSnackBar('Failed to load classes: ${response.statusCode}');
@@ -71,18 +108,37 @@ class _AdmissionLetterPageState extends State<AdmissionLetterPage> {
     }
   }
 
+  void _updateAvailableSections(String? classId) {
+    setState(() {
+      if (classId != null) {
+        final selectedClass = classes.firstWhere(
+          (c) => c.id == classId,
+          orElse: () => Class(id: '', className: '', sections: []),
+        );
+        availableSections = selectedClass.sections;
+        selectedClassName = selectedClass.className;
+      } else {
+        availableSections = [];
+        selectedClassName = null;
+      }
+      selectedSection = null;
+      _filterStudents();
+    });
+  }
+
   Future<void> _fetchStudentsByClass(String classId) async {
     if (token == null || classId.isEmpty) return;
 
     setState(() {
       isLoadingStudents = true;
       students = [];
+      filteredStudents = [];
     });
 
     try {
       final selectedClass = classes.firstWhere(
         (c) => c.id == classId,
-        orElse: () => Class(id: '', className: 'Unknown'),
+        orElse: () => Class(id: '', className: 'Unknown', sections: []),
       );
 
       final response = await http.get(
@@ -116,6 +172,9 @@ class _AdmissionLetterPageState extends State<AdmissionLetterPage> {
                   ))
               .where((student) => student.id.isNotEmpty)
               .toList();
+
+          // Initially show all students of the selected class
+          filteredStudents = List.from(students);
         });
       } else {
         _showErrorSnackBar('Failed to load students: ${response.statusCode}');
@@ -127,17 +186,25 @@ class _AdmissionLetterPageState extends State<AdmissionLetterPage> {
     }
   }
 
+  void _filterStudents() {
+    setState(() {
+      filteredStudents = students.where((student) {
+        final sectionMatch = selectedSection == null ||
+            student.assignedSection == selectedSection;
+        return sectionMatch;
+      }).toList();
+    });
+  }
+
   void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red[800],
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(message),
+      backgroundColor: Colors.red[800],
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
       ),
-    );
+    ));
   }
 
   void _viewAdmissionConfirmation(Student student) {
@@ -156,7 +223,7 @@ class _AdmissionLetterPageState extends State<AdmissionLetterPage> {
         title: const Text('Admission Letters',
             style: TextStyle(color: Colors.white)),
         centerTitle: true,
-        backgroundColor: Colors.blue[800],
+        backgroundColor: Colors.blue.shade900,
         elevation: 0,
         iconTheme: IconThemeData(color: Colors.white),
       ),
@@ -165,7 +232,7 @@ class _AdmissionLetterPageState extends State<AdmissionLetterPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Class Selection Card
+            // Class and Section Selection Card
             Card(
               elevation: 3,
               shape: RoundedRectangleBorder(
@@ -176,12 +243,14 @@ class _AdmissionLetterPageState extends State<AdmissionLetterPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Select Class',
+                    Text('Filter Students',
                         style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: Colors.blue[800])),
                     const SizedBox(height: 12),
+
+                    // Class Dropdown
                     isLoadingClasses
                         ? const Center(child: CircularProgressIndicator())
                         : classes.isEmpty
@@ -218,14 +287,56 @@ class _AdmissionLetterPageState extends State<AdmissionLetterPage> {
                                 onChanged: (value) {
                                   setState(() {
                                     selectedClassId = value;
+                                    _updateAvailableSections(value);
                                     if (value != null && value.isNotEmpty) {
                                       _fetchStudentsByClass(value);
                                     } else {
                                       students = [];
+                                      filteredStudents = [];
                                     }
                                   });
                                 },
                               ),
+
+                    // Section Dropdown (only visible when a class is selected)
+                    // if (selectedClassId != null && selectedClassId!.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12.0),
+                      child: DropdownButtonFormField<String>(
+                        decoration: InputDecoration(
+                          labelText: 'Section',
+                          labelStyle: TextStyle(color: Colors.blue[800]),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          filled: true,
+                          fillColor: Colors.blue[50],
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 12),
+                        ),
+                        value: selectedSection,
+                        items: [
+                          const DropdownMenuItem<String>(
+                            value: null,
+                            child: Text('-- All Sections --',
+                                style: TextStyle(color: Colors.grey)),
+                          ),
+                          ...availableSections.map(
+                            (section) => DropdownMenuItem<String>(
+                              value: section,
+                              child: Text(section,
+                                  style: TextStyle(color: Colors.blue[900])),
+                            ),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            selectedSection = value;
+                            _filterStudents();
+                          });
+                        },
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -252,15 +363,22 @@ class _AdmissionLetterPageState extends State<AdmissionLetterPage> {
                             ],
                           ),
                         )
-                      : students.isEmpty
+                      : filteredStudents.isEmpty
                           ? Center(
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.people_outline,
-                                      size: 48, color: Colors.blue[800]),
+                                  Icon(
+                                      selectedSection == null
+                                          ? Icons.people_outline
+                                          : Icons.filter_alt_outlined,
+                                      size: 48,
+                                      color: Colors.blue[800]),
                                   const SizedBox(height: 16),
-                                  Text('No students found in this class',
+                                  Text(
+                                      selectedSection == null
+                                          ? 'No students found in this class'
+                                          : 'No students found in this section',
                                       style: TextStyle(
                                           fontSize: 16,
                                           color: Colors.blue[900])),
@@ -268,9 +386,9 @@ class _AdmissionLetterPageState extends State<AdmissionLetterPage> {
                               ),
                             )
                           : ListView.builder(
-                              itemCount: students.length,
+                              itemCount: filteredStudents.length,
                               itemBuilder: (context, index) {
-                                final student = students[index];
+                                final student = filteredStudents[index];
                                 return Card(
                                   margin:
                                       const EdgeInsets.symmetric(vertical: 8),
@@ -345,10 +463,12 @@ class _AdmissionLetterPageState extends State<AdmissionLetterPage> {
 class Class {
   final String id;
   final String className;
+  final List<String> sections;
 
   const Class({
     required this.id,
     required this.className,
+    required this.sections,
   });
 }
 

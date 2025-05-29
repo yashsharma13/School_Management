@@ -1,31 +1,35 @@
-// models/userModel.js
-import connection from '../config/mysqlconnectivity.js';
+// models/userModelPG.js
+import pool from '../config/db.js'; // PostgreSQL pool
 
-export const findUserByEmail = (email, callback) => {
-  const query = 'SELECT * FROM signup WHERE email = ?';
-  connection.query(query, [email], callback);
+export const findUserByEmailPG = async (email) => {
+  const query = 'SELECT * FROM signup WHERE email = $1';
+  const { rows } = await pool.query(query, [email]);
+  return rows;
 };
 
-export const findUserByCredentials = (email, password, callback) => {
-  const query = 'SELECT * FROM signup WHERE email = ? AND password = ?';
-  connection.query(query, [email, password], callback);
+export const findUserByCredentialsPG = async (email, password) => {
+  const query = 'SELECT * FROM signup WHERE email = $1 AND password = $2';
+  const { rows } = await pool.query(query, [email, password]);
+  return rows;
 };
 
-// New function to find user by credentials and role
-export const findUserByCredentialsAndRole = (email, password, role, callback) => {
-  const query = 'SELECT * FROM signup WHERE email = ? AND password = ? AND role = ?';
-  connection.query(query, [email, password, role], callback);
+export const findUserByCredentialsAndRolePG = async (email, password, role) => {
+  const query = 'SELECT * FROM signup WHERE email = $1 AND password = $2 AND role = $3';
+  const { rows } = await pool.query(query, [email, password, role]);
+  return rows;
 };
 
-export const createUser = (userData, callback) => {
+export const createUserPG = async (userData) => {
   const { email, phone, password, confirmpassword, role } = userData;
-  const query = 'INSERT INTO signup (email, phone, password, confirmpassword, role) VALUES (?, ?, ?, ?, ?)';
-  connection.query(query, [email, phone, password, confirmpassword, role], callback);
+  const query = `
+    INSERT INTO signup (email, phone, password, confirmpassword, role)
+    VALUES ($1, $2, $3, $4, $5)
+  `;
+  await pool.query(query, [email, phone, password, confirmpassword, role]);
 };
 
-// Add to userModel.js
-export const findStudentByCredentials = (username, password, callback) => {
-  const query = 'SELECT * FROM students WHERE username = ? AND password = ?';
-  connection.query(query, [username, password], callback);
+export const findStudentByCredentialsPG = async (username, password) => {
+  const query = 'SELECT * FROM students WHERE username = $1 AND password = $2';
+  const { rows } = await pool.query(query, [username, password]);
+  return rows;
 };
-

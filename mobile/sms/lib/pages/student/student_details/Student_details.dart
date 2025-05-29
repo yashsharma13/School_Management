@@ -29,7 +29,7 @@ class _StudentProfileManagementPageState
   String? selectedClass;
   String? selectedSection;
   List<Class> classes = [];
-  List<String> sections = ['Section A', 'Section B', 'Section C'];
+  List<String> availableSections = [];
   bool _isLoading = true;
   String? token;
 
@@ -52,31 +52,56 @@ class _StudentProfileManagementPageState
 
   Future<void> _loadClasses() async {
     try {
-      setState(() {
-        _isLoading = true;
-      });
-
+      setState(() => _isLoading = true);
       final fetchedClasses = await ApiService.fetchClasses();
 
-      setState(() {
-        classes = fetchedClasses
-            .map((data) => Class.fromJson(data))
-            .where((classObj) =>
-                classObj.id.isNotEmpty && classObj.className.isNotEmpty)
-            .toList();
+      final Map<String, Set<String>> classSectionMap = {};
+      final List<Class> tempClasses = [];
 
-        if (classes.isEmpty) {
-          _showErrorSnackBar(
-              'No valid classes found. Please add classes first.');
+      for (final data in fetchedClasses) {
+        final className =
+            (data['class_name'] ?? data['className'] ?? '').toString().trim();
+        final section = (data['section'] ?? '').toString().trim();
+
+        if (className.isEmpty) continue;
+
+        if (!classSectionMap.containsKey(className)) {
+          classSectionMap[className] = {};
         }
+
+        classSectionMap[className]!.add(section);
+      }
+
+      classSectionMap.forEach((className, sections) {
+        tempClasses.add(Class(
+          id: className,
+          className: className,
+          sections: sections.toList(),
+        ));
+      });
+
+      setState(() {
+        classes = tempClasses;
       });
     } catch (error) {
       _showErrorSnackBar('Error fetching classes: ${error.toString()}');
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
+  }
+
+  void _updateAvailableSections(String? className) {
+    setState(() {
+      if (className != null) {
+        final selectedClassObj =
+            classes.firstWhere((c) => c.className == className);
+        availableSections = selectedClassObj.sections;
+      } else {
+        availableSections = [];
+      }
+      selectedSection = null;
+    });
+    _filterStudents();
   }
 
   Future<void> _fetchInitialData() async {
@@ -88,7 +113,7 @@ class _StudentProfileManagementPageState
       final fetchedStudents = await _studentService.fetchStudents();
       setState(() {
         students = fetchedStudents;
-        filteredStudents = fetchedStudents; // Initialize filtered list
+        filteredStudents = fetchedStudents;
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -138,15 +163,12 @@ class _StudentProfileManagementPageState
     });
   }
 
-  // Function to format date
   String formatDate(String dateString) {
     try {
       DateTime date = DateTime.parse(dateString);
-      // Convert to local date to avoid timezone issues
-      DateTime localDate = DateTime(date.year, date.month, date.day);
-      return "${localDate.day.toString().padLeft(2, '0')}-${localDate.month.toString().padLeft(2, '0')}-${localDate.year}";
+      return "${date.day.toString().padLeft(2, '0')}-${date.month.toString().padLeft(2, '0')}-${date.year}";
     } catch (e) {
-      return dateString; // Return original if parsing fails
+      return dateString;
     }
   }
 
@@ -172,26 +194,22 @@ class _StudentProfileManagementPageState
     Uint8List? photoBytes;
     File? selectedImage;
 
-    // Function to parse date from formatted string
     String parseDate(String formattedDate) {
       try {
         if (formattedDate.isEmpty) return '';
-        List<String> parts = formattedDate.split('/');
+        List<String> parts = formattedDate.split('-');
         if (parts.length != 3) return formattedDate;
-        // Create date in local timezone without time component
         DateTime date = DateTime(
           int.parse(parts[2]),
           int.parse(parts[1]),
           int.parse(parts[0]),
         );
-        // Return in YYYY-MM-DD format without time component
         return "${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
       } catch (e) {
         return formattedDate;
       }
     }
 
-    // Function to show date picker
     Future<void> selectDate() async {
       DateTime initialDate = DateTime.now();
       try {
@@ -214,26 +232,11 @@ class _StudentProfileManagementPageState
         initialDate: initialDate,
         firstDate: DateTime(1900),
         lastDate: DateTime.now(),
-        // builder: (context, child) {
-        //   return Theme(
-        //     data: Theme.of(context).copyWith(
-        //       colorScheme: ColorScheme.light(
-        //         primary: Colors.blue[800]!,
-        //         onPrimary: Colors.white,
-        //         surface: Colors.white,
-        //         onSurface: Colors.black,
-        //       ),
-        //       dialogBackgroundColor: Colors.white,
-        //     ),
-        //     child: child!,
-        //   );
-        // },
       );
 
       if (picked != null) {
-        // Use the local date directly
         dobController.text =
-            "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
+            "${picked.day.toString().padLeft(2, '0')}-${picked.month.toString().padLeft(2, '0')}-${picked.year}";
       }
     }
 
@@ -242,6 +245,16 @@ class _StudentProfileManagementPageState
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
+            // Get sections for the selected class
+            List<String> editSections = [];
+            if (newClass != null) {
+              final classObj = classes.firstWhere(
+                (c) => c.className == newClass,
+                orElse: () => Class(id: '', className: '', sections: []),
+              );
+              editSections = classObj.sections;
+            }
+
             return Theme(
               data: Theme.of(context).copyWith(
                 dialogBackgroundColor: Colors.white,
@@ -278,12 +291,10 @@ class _StudentProfileManagementPageState
                           key: formKey,
                           child: Column(
                             children: [
-                              // Current Photo and New Photo Preview
                               Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceEvenly,
                                 children: [
-                                  // Current Photo
                                   Column(
                                     children: [
                                       Text(
@@ -311,7 +322,6 @@ class _StudentProfileManagementPageState
                                       ),
                                     ],
                                   ),
-                                  // New Photo Preview
                                   if (selectedImage != null ||
                                       photoBytes != null)
                                     Column(
@@ -347,8 +357,6 @@ class _StudentProfileManagementPageState
                                 ],
                               ),
                               SizedBox(height: 20),
-
-                              // Photo Upload Button
                               ElevatedButton.icon(
                                 icon: Icon(Icons.camera_alt, size: 20),
                                 label: Text('Update Photo'),
@@ -382,17 +390,13 @@ class _StudentProfileManagementPageState
                                 },
                               ),
                               SizedBox(height: 20),
-
-                              // Form Fields
                               _buildEditField(nameController, 'Name', true),
                               _buildEditField(registrationController,
                                   'Registration Number', true),
-
-                              // Date of Birth Field with Date Picker
                               TextFormField(
                                 controller: dobController,
                                 decoration: InputDecoration(
-                                  labelText: 'Date of Birth (DD/MM/YYYY)',
+                                  labelText: 'Date of Birth (DD-MM-YYYY)',
                                   labelStyle:
                                       TextStyle(color: Colors.blue[800]),
                                   border: OutlineInputBorder(
@@ -419,7 +423,6 @@ class _StudentProfileManagementPageState
                                     : null,
                               ),
                               SizedBox(height: 16),
-
                               _buildEditField(genderController, 'Gender', true),
                               _buildEditField(
                                   addressController, 'Address', true),
@@ -430,8 +433,6 @@ class _StudentProfileManagementPageState
                               _buildEditField(emailController, 'Email', true),
                               _buildEditField(phoneController, 'Phone', true),
                               SizedBox(height: 16),
-
-                              // Class Dropdown
                               DropdownButtonFormField<String>(
                                 value: newClass,
                                 decoration: InputDecoration(
@@ -451,20 +452,38 @@ class _StudentProfileManagementPageState
                                   filled: true,
                                   fillColor: Colors.blue[50],
                                 ),
-                                items: classes.map((classItem) {
-                                  return DropdownMenuItem<String>(
-                                    value: classItem.className,
-                                    child: Text(classItem.className,
+                                items: [
+                                  DropdownMenuItem(
+                                    value: null,
+                                    child: Text('Select Class',
                                         style:
                                             TextStyle(color: Colors.blue[900])),
-                                  );
-                                }).toList(),
-                                onChanged: (value) =>
-                                    setState(() => newClass = value),
+                                  ),
+                                  ...classes.map((classItem) {
+                                    return DropdownMenuItem<String>(
+                                      value: classItem.className,
+                                      child: Text(classItem.className,
+                                          style: TextStyle(
+                                              color: Colors.blue[900])),
+                                    );
+                                  }).toList(),
+                                ],
+                                onChanged: (value) {
+                                  setState(() {
+                                    newClass = value;
+                                    newSection = null;
+                                    if (value != null) {
+                                      final selectedClassObj =
+                                          classes.firstWhere(
+                                              (c) => c.className == value);
+                                      editSections = selectedClassObj.sections;
+                                    } else {
+                                      editSections = [];
+                                    }
+                                  });
+                                },
                               ),
                               SizedBox(height: 16),
-
-                              // Section Dropdown
                               DropdownButtonFormField<String>(
                                 value: newSection,
                                 decoration: InputDecoration(
@@ -484,16 +503,27 @@ class _StudentProfileManagementPageState
                                   filled: true,
                                   fillColor: Colors.blue[50],
                                 ),
-                                items: sections.map((String value) {
-                                  return DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Text(value,
+                                items: [
+                                  DropdownMenuItem(
+                                    value: null,
+                                    child: Text('Select Section',
                                         style:
                                             TextStyle(color: Colors.blue[900])),
-                                  );
-                                }).toList(),
-                                onChanged: (value) =>
-                                    setState(() => newSection = value),
+                                  ),
+                                  ...editSections.map((value) {
+                                    return DropdownMenuItem<String>(
+                                      value: value,
+                                      child: Text(value,
+                                          style: TextStyle(
+                                              color: Colors.blue[900])),
+                                    );
+                                  }).toList(),
+                                ],
+                                onChanged: (value) {
+                                  setState(() {
+                                    newSection = value;
+                                  });
+                                },
                               ),
                             ],
                           ),
@@ -658,7 +688,7 @@ class _StudentProfileManagementPageState
           ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.blue[800],
+        backgroundColor: Colors.blue.shade900,
         elevation: 0,
       ),
       body: _isLoading
@@ -669,7 +699,6 @@ class _StudentProfileManagementPageState
             )
           : Column(
               children: [
-                // Search and Filter Section
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Card(
@@ -753,7 +782,7 @@ class _StudentProfileManagementPageState
                                   onChanged: (String? newValue) {
                                     setState(() {
                                       selectedClass = newValue;
-                                      _filterStudents();
+                                      _updateAvailableSections(newValue);
                                     });
                                   },
                                 ),
@@ -786,7 +815,7 @@ class _StudentProfileManagementPageState
                                           style: TextStyle(
                                               color: Colors.blue[900])),
                                     ),
-                                    ...sections.map((String value) {
+                                    ...availableSections.map((value) {
                                       return DropdownMenuItem<String>(
                                         value: value,
                                         child: Text(value,
@@ -810,8 +839,6 @@ class _StudentProfileManagementPageState
                     ),
                   ),
                 ),
-
-                // Student List Section
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -988,15 +1015,11 @@ class _StudentProfileManagementPageState
 class Class {
   final String id;
   final String className;
+  final List<String> sections;
 
-  Class({required this.id, required this.className});
-
-  factory Class.fromJson(Map<String, dynamic> json) {
-    return Class(
-      id: (json['_id'] ?? json['id'] ?? '').toString().trim(),
-      className: (json['class_name'] ?? json['className'] ?? 'Unknown Class')
-          .toString()
-          .trim(),
-    );
-  }
+  Class({
+    required this.id,
+    required this.className,
+    required this.sections,
+  });
 }

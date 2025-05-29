@@ -8,7 +8,6 @@ class TeacherRegistrationPage extends StatefulWidget {
   const TeacherRegistrationPage({super.key, required this.onTeacherRegistered});
 
   @override
-  // ignore: library_private_types_in_public_api
   _TeacherRegistrationPageState createState() =>
       _TeacherRegistrationPageState();
 }
@@ -21,17 +20,26 @@ class _TeacherRegistrationPageState extends State<TeacherRegistrationPage> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
         ),
-        title: Text("New Teacher Registration"),
+        title: const Text("New Teacher Registration"),
         centerTitle: true,
+        backgroundColor: Colors.blue.shade900,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        titleTextStyle: const TextStyle(
+          color: Colors.white,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
       ),
-      body: TeacherRegistrationForm(
-        controller: _controller,
-        onRegistered: widget.onTeacherRegistered,
+      body: Container(
+        color: Colors.grey.shade100,
+        child: TeacherRegistrationForm(
+          controller: _controller,
+          onRegistered: widget.onTeacherRegistered,
+        ),
       ),
     );
   }

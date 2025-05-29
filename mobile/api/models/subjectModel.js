@@ -1,56 +1,85 @@
-import connection from '../config/mysqlconnectivity.js';
+import pool from '../config/db.js';
 
-export const createSubject = (classData, callback) => {
-  const { class_name, subject_name, marks, user_email } = classData;
+export const createSubject = async (classData) => {
+  const { class_name, section, subject_name, marks, user_email } = classData;
   const sql = `
-    INSERT INTO subjects (class_name, subject_name, marks, user_email)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO subjects (class_name, section, subject_name, marks, user_email)
+    VALUES ($1, $2, $3, $4, $5)
+    RETURNING *
   `;
-  connection.query(sql, [class_name, subject_name, marks, user_email], (err, results) => {
-    if (err) {
-      console.error('MySQL Error in createSubjects:', err);
-      return callback(err, null);
-    }
-    callback(null, results);
-  });
+  
+  try {
+    const result = await pool.query(sql, [
+      class_name,
+      section,
+      subject_name,
+      marks,
+      user_email
+    ]);
+    return result.rows[0];
+  } catch (err) {
+    console.error('PostgreSQL Error in createSubject:', err);
+    throw err;
+  }
 };
 
-export const getSubjectsByUser = (user_email, callback) => {
-  const query = 'SELECT * FROM subjects WHERE user_email = ?';
-  connection.query(query, [user_email], (err, results) => {
-    if (err) {
-      console.error('MySQL Error in getSubjectsByUser:', err);
-      return callback(err, null);
-    }
-    callback(null, results);
-  });
+export const getSubjectsByUser = async (user_email) => {
+  const query = 'SELECT * FROM subjects WHERE user_email = $1';
+  
+  try {
+    const result = await pool.query(query, [user_email]);
+    return result.rows;
+  } catch (err) {
+    console.error('PostgreSQL Error in getSubjectsByUser:', err);
+    throw err;
+  }
 };
-// Assuming you are using a database like MySQL or MongoDB, adapt the query accordingly
 
-// Update subject by ID in the database
-export const updateSubjectById = (id, updatedData, userEmail, callback) => {
-  // Assuming you're using a MySQL-like database
+export const updateSubjectById = async (id, updatedData, userEmail) => {
   const { subject_name, marks } = updatedData;
-
-  // Your database update query, adapting the syntax to your setup
   const query = `
     UPDATE subjects 
-    SET subject_name = ?, marks = ?
-    WHERE id = ? AND user_email = ?
+    SET subject_name = $1, marks = $2
+    WHERE id = $3 AND user_email = $4
+    RETURNING *
   `;
 
-  // Execute the update query
-  connection.query(query, [subject_name, marks, id, userEmail], (err, result) => {
-    if (err) {
-      return callback(err, null);
+  try {
+    const result = await pool.query(query, [
+      subject_name,
+      marks,
+      id,
+      userEmail
+    ]);
+    
+    if (result.rowCount === 0) {
+      return null; // No subject found
     }
-
-    if (result.affectedRows === 0) {
-      // No subject was found with the given ID
-      return callback(null, null);
-    }
-
-    callback(null, result);
-  });
+    
+    return result.rows[0];
+  } catch (err) {
+    console.error('PostgreSQL Error in updateSubjectById:', err);
+    throw err;
+  }
 };
 
+export const deleteSubjectById = async (id, userEmail) => {
+  const query = `
+    DELETE FROM subjects 
+    WHERE id = $1 AND user_email = $2
+    RETURNING *
+  `;
+
+  try {
+    const result = await pool.query(query, [id, userEmail]);
+    
+    if (result.rowCount === 0) {
+      return null; // Not found
+    }
+    
+    return result.rows[0];
+  } catch (err) {
+    console.error('PostgreSQL Error in deleteSubjectById:', err);
+    throw err;
+  }
+};

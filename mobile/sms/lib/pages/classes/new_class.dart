@@ -12,6 +12,7 @@ class AddClassPage extends StatefulWidget {
 class _AddClassPageState extends State<AddClassPage> {
   final _formKey = GlobalKey<FormState>();
   String _className = '';
+  String? _selectedSection;
   String _tuitionFees = '';
   String? _selectedTeacherName;
   String? token;
@@ -19,6 +20,31 @@ class _AddClassPageState extends State<AddClassPage> {
   bool isLoading = false;
   bool isFetchingTeachers = false;
   List<Teacher> teachers = [];
+
+  final List<String> classOptions = [
+    'Nursery',
+    'LKG',
+    'UKG',
+    'class 1',
+    'class 2',
+    'class 3',
+    'class 4',
+    'class 5',
+    'class 6',
+    'class 7',
+    'class 8',
+    'class 9',
+    'class 10',
+    'class 11',
+    'class 12',
+  ];
+
+  final List<String> sectionOptions = [
+    'Section A',
+    'Section B',
+    'Section C',
+    'Section D'
+  ];
 
   @override
   void initState() {
@@ -104,6 +130,7 @@ class _AddClassPageState extends State<AddClassPage> {
       try {
         final success = await ApiService.registerClass(
           className: _className,
+          section: _selectedSection!,
           tuitionFees: _tuitionFees,
           teacherName: _selectedTeacherName!,
         );
@@ -119,7 +146,8 @@ class _AddClassPageState extends State<AddClassPage> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Class: $_className', style: TextStyle(fontSize: 16)),
+                    Text('Class: $_className - $_selectedSection',
+                        style: TextStyle(fontSize: 16)),
                     SizedBox(height: 8),
                     Text('Fees: $_tuitionFees', style: TextStyle(fontSize: 16)),
                     SizedBox(height: 8),
@@ -180,7 +208,7 @@ class _AddClassPageState extends State<AddClassPage> {
       appBar: AppBar(
         title:
             const Text('Add New Class', style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.blue[900],
+        backgroundColor: Colors.blue.shade900,
         elevation: 0,
         centerTitle: true,
         iconTheme: IconThemeData(color: Colors.white),
@@ -202,11 +230,15 @@ class _AddClassPageState extends State<AddClassPage> {
                   ),
                 ),
                 SizedBox(height: 16),
-                _buildInputField('Class Name', (value) => _className = value),
+                _buildClassDropdown(),
+                SizedBox(height: 16),
+                _buildSectionDropdown(),
                 SizedBox(height: 16),
                 _buildInputField(
-                    'Monthly Tuition Fees', (value) => _tuitionFees = value,
-                    keyboardType: TextInputType.number),
+                  'Monthly Tuition Fees',
+                  (value) => _tuitionFees = value,
+                  keyboardType: TextInputType.number,
+                ),
                 SizedBox(height: 24),
                 if (token == null)
                   _buildWarningCard(
@@ -225,6 +257,95 @@ class _AddClassPageState extends State<AddClassPage> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildClassDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Select Class',
+            style: TextStyle(color: Colors.blue[900], fontSize: 16)),
+        SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.blue[900]!.withOpacity(0.3)),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: DropdownButtonFormField<String>(
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(horizontal: 8),
+              ),
+              value: _className.isNotEmpty ? _className : null,
+              onChanged: (String? newValue) {
+                setState(() {
+                  _className = newValue!;
+                });
+              },
+              items: classOptions.map((className) {
+                return DropdownMenuItem<String>(
+                  value: className,
+                  child: Text(className),
+                );
+              }).toList(),
+              validator: (value) => value == null || value.isEmpty
+                  ? 'Please select a class'
+                  : null,
+              style: TextStyle(color: Colors.blue[900]),
+              icon: Icon(Icons.arrow_drop_down, color: Colors.blue[900]),
+              dropdownColor: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSectionDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Select Section',
+            style: TextStyle(color: Colors.blue[900], fontSize: 16)),
+        SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.blue[900]!.withOpacity(0.3)),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: DropdownButtonFormField<String>(
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(horizontal: 8),
+              ),
+              value: _selectedSection,
+              onChanged: (String? newValue) {
+                setState(() {
+                  _selectedSection = newValue;
+                });
+              },
+              items: sectionOptions.map((section) {
+                return DropdownMenuItem<String>(
+                  value: section,
+                  child: Text(section),
+                );
+              }).toList(),
+              validator: (value) =>
+                  value == null ? 'Please select a section' : null,
+              style: TextStyle(color: Colors.blue[900]),
+              icon: Icon(Icons.arrow_drop_down, color: Colors.blue[900]),
+              dropdownColor: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -262,13 +383,8 @@ class _AddClassPageState extends State<AddClassPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Class Teacher',
-          style: TextStyle(
-            color: Colors.blue[900],
-            fontSize: 16,
-          ),
-        ),
+        Text('Class Teacher',
+            style: TextStyle(color: Colors.blue[900], fontSize: 16)),
         SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
@@ -288,12 +404,12 @@ class _AddClassPageState extends State<AddClassPage> {
                   _selectedTeacherName = newValue;
                 });
               },
-              items: teachers
-                  .map((teacher) => DropdownMenuItem<String>(
-                        value: teacher.name,
-                        child: Text(teacher.name),
-                      ))
-                  .toList(),
+              items: teachers.map((teacher) {
+                return DropdownMenuItem<String>(
+                  value: teacher.name,
+                  child: Text(teacher.name),
+                );
+              }).toList(),
               validator: (value) =>
                   value == null ? 'Please select a teacher' : null,
               style: TextStyle(color: Colors.blue[900]),
@@ -349,9 +465,7 @@ class _AddClassPageState extends State<AddClassPage> {
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.blue[900],
           padding: EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           elevation: 0,
         ),
         child: isLoading
@@ -359,17 +473,14 @@ class _AddClassPageState extends State<AddClassPage> {
                 height: 24,
                 width: 24,
                 child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
-                ),
+                    color: Colors.white, strokeWidth: 2),
               )
             : Text(
                 'Add Class',
                 style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white),
               ),
       ),
     );

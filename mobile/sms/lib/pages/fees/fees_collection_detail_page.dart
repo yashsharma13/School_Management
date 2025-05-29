@@ -8,6 +8,7 @@ class FeesCollectionPage extends StatefulWidget {
   final String studentId;
   final String studentName;
   final String studentClass;
+  final String studentSection;
   final String monthlyFee;
   final bool isNewAdmission;
 
@@ -16,6 +17,7 @@ class FeesCollectionPage extends StatefulWidget {
     required this.studentId,
     required this.studentName,
     required this.studentClass,
+    required this.studentSection,
     required this.monthlyFee,
     this.isNewAdmission = true,
   }) : super(key: key);
@@ -31,6 +33,7 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
   String selectedMonth = DateFormat('MMMM').format(DateTime.now());
   bool isLoading = false;
   bool isMonthlyFeePaidForSelectedMonth = false;
+  bool _isMounted = false;
 
   // Previous balance and payment history
   double previousBalance = 0.0;
@@ -57,6 +60,7 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
   final TextEditingController totalDepositController = TextEditingController();
   final TextEditingController depositController = TextEditingController();
   final TextEditingController dueBalanceController = TextEditingController();
+  final TextEditingController remarkController = TextEditingController();
 
   // Fee enablers
   bool canCollectAdmissionFee = true;
@@ -81,9 +85,33 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
   @override
   void initState() {
     super.initState();
-    _loadToken();
+    _isMounted = true;
     _initializeControllers();
-    _loadFeeDetails();
+    _loadToken().then((_) {
+      if (_isMounted) {
+        _loadFeeDetails();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _isMounted = false;
+    monthlyFeeController.dispose();
+    admissionFeeController.dispose();
+    registrationFeeController.dispose();
+    artMaterialController.dispose();
+    transportController.dispose();
+    booksController.dispose();
+    uniformController.dispose();
+    fineController.dispose();
+    othersController.dispose();
+    previousBalanceController.dispose();
+    totalDepositController.dispose();
+    depositController.dispose();
+    dueBalanceController.dispose();
+    remarkController.dispose();
+    super.dispose();
   }
 
   void _initializeControllers() {
@@ -98,6 +126,7 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
     othersController.text = '0';
     previousBalanceController.text = '0';
     depositController.text = '0';
+    remarkController.text = '';
 
     [
       monthlyFeeController,
@@ -116,38 +145,28 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
     });
   }
 
-  @override
-  void dispose() {
-    monthlyFeeController.dispose();
-    admissionFeeController.dispose();
-    registrationFeeController.dispose();
-    artMaterialController.dispose();
-    transportController.dispose();
-    booksController.dispose();
-    uniformController.dispose();
-    fineController.dispose();
-    othersController.dispose();
-    previousBalanceController.dispose();
-    totalDepositController.dispose();
-    depositController.dispose();
-    dueBalanceController.dispose();
-    super.dispose();
-  }
-
   Future<void> _loadToken() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      token = prefs.getString('token');
-    });
+    if (_isMounted) {
+      setState(() {
+        token = prefs.getString('token');
+      });
+    }
   }
 
   Future<void> _loadFeeDetails() async {
     if (token == null) {
-      _showErrorSnackBar('Authentication required');
+      if (_isMounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _showErrorSnackBar('Authentication required');
+        });
+      }
       return;
     }
 
-    setState(() => isLoading = true);
+    if (_isMounted) {
+      setState(() => isLoading = true);
+    }
 
     try {
       final responses = await Future.wait([
@@ -187,58 +206,74 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
       final hasMonthlyFeePaymentForThisMonth = previousPayments.any((payment) =>
           payment['fee_month'] == selectedMonth && payment['monthly_fee'] > 0);
 
-      setState(() {
-        canCollectAdmissionFee =
-            eligibilityData['data']['canCollectAdmissionFee'] ?? false;
-        canCollectRegistrationFee =
-            eligibilityData['data']['canCollectRegistrationFee'] ?? false;
-        canCollectUniformFee =
-            eligibilityData['data']['canCollectUniformFee'] ?? false;
+      if (_isMounted) {
+        setState(() {
+          canCollectAdmissionFee =
+              eligibilityData['data']['canCollectAdmissionFee'] ?? false;
+          canCollectRegistrationFee =
+              eligibilityData['data']['canCollectRegistrationFee'] ?? false;
+          canCollectUniformFee =
+              eligibilityData['data']['canCollectUniformFee'] ?? false;
 
-        if (canCollectAdmissionFee) {
-          admissionFeeController.text = admissionFee.toStringAsFixed(2);
-        } else {
-          admissionFeeController.text = '0';
-        }
+          if (canCollectAdmissionFee) {
+            admissionFeeController.text = admissionFee.toStringAsFixed(2);
+          } else {
+            admissionFeeController.text = '0';
+          }
 
-        if (canCollectRegistrationFee) {
-          registrationFeeController.text = registrationFee.toStringAsFixed(2);
-        } else {
-          registrationFeeController.text = '0';
-        }
+          if (canCollectRegistrationFee) {
+            registrationFeeController.text = registrationFee.toStringAsFixed(2);
+          } else {
+            registrationFeeController.text = '0';
+          }
 
-        if (canCollectUniformFee) {
-          uniformController.text = uniformFee.toStringAsFixed(2);
-        } else {
-          uniformController.text = '0';
-        }
+          if (canCollectUniformFee) {
+            uniformController.text = uniformFee.toStringAsFixed(2);
+          } else {
+            uniformController.text = '0';
+          }
 
-        previousBalance =
-            (summaryData['data']['last_due_balance'] ?? 0).toDouble();
-        previousBalanceController.text = previousBalance.toStringAsFixed(2);
+          previousBalance =
+              (summaryData['data']['last_due_balance'] ?? 0).toDouble();
+          previousBalanceController.text = previousBalance.toStringAsFixed(2);
 
-        isMonthlyFeePaidForSelectedMonth = hasMonthlyFeePaymentForThisMonth;
+          isMonthlyFeePaidForSelectedMonth = hasMonthlyFeePaymentForThisMonth;
 
-        if (isMonthlyFeePaidForSelectedMonth) {
-          monthlyFeeController.text = '0';
-          _showInfoSnackBar(
-              'Monthly Fee Of This Student is Already Added for This Month! So System will Not Add it Again.');
-        } else {
-          monthlyFeeController.text = widget.monthlyFee;
-        }
+          if (isMonthlyFeePaidForSelectedMonth) {
+            monthlyFeeController.text = '0';
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _showInfoSnackBar(
+                  'Monthly Fee Of This Student is Already Added for This Month! So System will Not Add it Again.');
+            });
+          } else {
+            monthlyFeeController.text = widget.monthlyFee;
+          }
 
-        lastPaymentMonth = summaryData['data']['last_payment_month'];
-      });
+          lastPaymentMonth = summaryData['data']['last_payment_month'];
+        });
+      }
 
       _calculateTotals();
     } on http.ClientException catch (error) {
-      _showErrorSnackBar('Network error: ${error.message}');
+      if (_isMounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _showErrorSnackBar('Network error: ${error.message}');
+        });
+      }
     } on FormatException catch (_) {
-      _showErrorSnackBar('Invalid data format from server');
+      if (_isMounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _showErrorSnackBar('Invalid data format from server');
+        });
+      }
     } catch (error) {
-      _showErrorSnackBar('Error loading fee details: ${error.toString()}');
+      if (_isMounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _showErrorSnackBar('Error loading fee details: ${error.toString()}');
+        });
+      }
     } finally {
-      if (mounted) {
+      if (_isMounted) {
         setState(() => isLoading = false);
       }
     }
@@ -261,10 +296,12 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
     double deposit = double.tryParse(depositController.text) ?? 0;
     double dueBalance = total - deposit;
 
-    setState(() {
-      totalDepositController.text = total.toStringAsFixed(2);
-      dueBalanceController.text = dueBalance.toStringAsFixed(2);
-    });
+    if (_isMounted) {
+      setState(() {
+        totalDepositController.text = total.toStringAsFixed(2);
+        dueBalanceController.text = dueBalance.toStringAsFixed(2);
+      });
+    }
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -274,7 +311,7 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
     );
-    if (picked != null && picked != selectedDate) {
+    if (picked != null && picked != selectedDate && _isMounted) {
       setState(() {
         selectedDate = picked;
       });
@@ -287,6 +324,10 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
       _showErrorSnackBar('Authentication required');
       return;
     }
+    if (remarkController.text.isEmpty) {
+      _showErrorSnackBar('Please enter a remark');
+      return;
+    }
 
     if (isMonthlyFeePaidForSelectedMonth &&
         (double.tryParse(monthlyFeeController.text) ?? 0) > 0) {
@@ -297,13 +338,16 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
       return;
     }
 
-    setState(() => isLoading = true);
+    if (_isMounted) {
+      setState(() => isLoading = true);
+    }
 
     try {
       final feeData = {
         'student_id': int.parse(widget.studentId),
         'student_name': widget.studentName,
         'class_name': widget.studentClass,
+        'section': widget.studentSection,
         'fee_month': selectedMonth,
         'payment_date': DateFormat('yyyy-MM-dd').format(selectedDate),
         'monthly_fee': double.tryParse(monthlyFeeController.text) ?? 0,
@@ -319,6 +363,7 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
         'previous_balance':
             double.tryParse(previousBalanceController.text) ?? 0,
         'deposit': double.tryParse(depositController.text) ?? 0,
+        'remark': remarkController.text,
         'is_new_admission': widget.isNewAdmission,
       };
 
@@ -341,7 +386,9 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
       }
 
       _showSuccessSnackBar('Fee payment recorded successfully');
-      Navigator.pop(context, true);
+      if (_isMounted) {
+        Navigator.pop(context, true);
+      }
     } on http.ClientException catch (error) {
       _showErrorSnackBar('Network error: ${error.message}');
     } on FormatException catch (_) {
@@ -349,7 +396,7 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
     } catch (error) {
       _showErrorSnackBar(error.toString());
     } finally {
-      if (mounted) {
+      if (_isMounted) {
         setState(() => isLoading = false);
       }
     }
@@ -397,12 +444,13 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
           'Fees Collection - ${widget.studentName}',
           style: TextStyle(color: whiteTheme),
         ),
-        backgroundColor: blueTheme,
+        backgroundColor: Colors.blue.shade900,
         iconTheme: IconThemeData(color: whiteTheme),
         elevation: 4,
       ),
       body: isLoading
-          ? Center(child: CircularProgressIndicator(color: blueTheme))
+          ? Center(
+              child: CircularProgressIndicator(color: Colors.blue.shade900))
           : SingleChildScrollView(
               padding: EdgeInsets.all(16),
               child: Form(
@@ -458,6 +506,18 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                                   ),
                                 ],
                               ),
+                              SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Icon(Icons.school, color: whiteTheme),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Section: ${widget.studentSection}',
+                                    style: TextStyle(
+                                        fontSize: 16, color: whiteTheme),
+                                  ),
+                                ],
+                              ),
                               SizedBox(height: 16),
                               Divider(color: whiteTheme.withOpacity(0.5)),
                               SizedBox(height: 16),
@@ -493,10 +553,12 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                                             );
                                           }).toList(),
                                           onChanged: (value) {
-                                            setState(() {
-                                              selectedMonth = value!;
-                                              _loadFeeDetails();
-                                            });
+                                            if (_isMounted) {
+                                              setState(() {
+                                                selectedMonth = value!;
+                                                _loadFeeDetails();
+                                              });
+                                            }
                                           },
                                           validator: (value) => value == null
                                               ? 'Please select month'
@@ -718,6 +780,14 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                               label: 'Due Balance',
                               icon: Icons.account_balance,
                               isEditable: false,
+                            ),
+                            SizedBox(height: 16),
+                            _buildSummaryField(
+                              controller: remarkController,
+                              label: 'Remark',
+                              icon: Icons.note,
+                              isEditable: true,
+                              isRequired: true,
                             ),
                           ],
                         ),

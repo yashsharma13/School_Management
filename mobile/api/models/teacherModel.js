@@ -1,70 +1,92 @@
-// models/studentModel.js
-import connection from '../config/mysqlconnectivity.js';
+import pool from '../config/db.js';
 
-export const createTeacher = (teacherData, callback) => {
+export const createTeacher = async (teacherData) => {
   const {
     teacher_name,
-            email,
-            date_of_birth,
-            date_of_joining,
-            gender,
-            guardian_name,
-            qualification,
-            experience,
-            salary,
-            address,
-            phone,
-            qualification_certificate, 
-            teacher_photo,
-            user_email
+    email,
+    date_of_birth,
+    date_of_joining,
+    gender,
+    guardian_name,
+    qualification,
+    experience,
+    salary,
+    address,
+    phone,
+    qualification_certificate, 
+    teacher_photo,
+    user_email
   } = teacherData;
 
-  const sql = `INSERT INTO teacher (
-    teacher_name,
-    email,
-    date_of_birth,
-    date_of_joining,
-    gender,
-    guardian_name,
-    qualification,
-    experience,
-    salary,
-    address,
-    phone,
-    qualification_certificate,
-    teacher_photo,
-    user_email )
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
+  const sql = `
+    INSERT INTO teacher (
+      teacher_name,
+      email,
+      date_of_birth,
+      date_of_joining,
+      gender,
+      guardian_name,
+      qualification,
+      experience,
+      salary,
+      address,
+      phone,
+      qualification_certificate,
+      teacher_photo,
+      user_email
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+    RETURNING *
+  `;
 
-connection.query(sql, [
-    teacher_name,
-    email,
-    date_of_birth,
-    date_of_joining,
-    gender,
-    guardian_name,
-    qualification,
-    experience,
-    salary,
-    address,
-    phone,
-    qualification_certificate,
-    teacher_photo,
-    user_email // Add the user's email from the token
-], callback);
+  try {
+    const result = await pool.query(sql, [
+      teacher_name,
+      email,
+      date_of_birth,
+      date_of_joining,
+      gender,
+      guardian_name,
+      qualification,
+      experience,
+      salary,
+      address,
+      phone,
+      qualification_certificate,
+      teacher_photo,
+      user_email
+    ]);
+    return result.rows[0];
+  } catch (err) {
+    console.error('Error creating teacher:', err);
+    throw err;
+  }
 };
 
-export const getTeachersByUser = (user_email, callback) => {
-  const query = 'SELECT * FROM teacher WHERE user_email = ?';
-  connection.query(query, [user_email], callback);
+export const getTeachersByUser = async (user_email) => {
+  const query = 'SELECT * FROM teacher WHERE user_email = $1';
+  try {
+    const result = await pool.query(query, [user_email]);
+    return result.rows;
+  } catch (err) {
+    console.error('Error fetching teachers:', err);
+    throw err;
+  }
 };
 
-export const getTeacherById = (teacherId, callback) => {
-  const query = 'SELECT * FROM teacher WHERE id = ?';
-  connection.query(query, [teacherId], callback);
+
+
+export const getTeacherById = async (teacherId) => {
+  const query = 'SELECT * FROM teacher WHERE id = $1';
+  try {
+    const result = await pool.query(query, [teacherId]);
+    return result.rows[0];
+  } catch (err) {
+    console.error('Error fetching teacher:', err);
+    throw err;
+  }
 };
 
-export const updateTeacher = (teacherId, teacherData, callback) => {
+export const updateTeacher = async (teacherId, teacherData) => {
   const {
     teacher_name,
     email,
@@ -83,53 +105,66 @@ export const updateTeacher = (teacherId, teacherData, callback) => {
 
   const updateQuery = `
     UPDATE teacher SET
-    teacher_name = ?,
-    email = ?,
-    date_of_birth = ?,
-    date_of_joining = ?,
-    gender = ?,
-    guardian_name = ?,
-    qualification = ?,
-    experience = ?,
-    salary = ?,
-    address = ?,
-    phone = ?, 
-    qualification_certificate = ?, 
-    teacher_photo = ?
-    WHERE id = ?
+      teacher_name = $1,
+      email = $2,
+      date_of_birth = $3,
+      date_of_joining = $4,
+      gender = $5,
+      guardian_name = $6,
+      qualification = $7,
+      experience = $8,
+      salary = $9,
+      address = $10,
+      phone = $11, 
+      qualification_certificate = $12, 
+      teacher_photo = $13
+    WHERE id = $14
+    RETURNING *
   `;
 
-  connection.query(updateQuery, [
-    teacher_name,
-    email,
-    date_of_birth,
-    date_of_joining,
-    gender,
-    guardian_name,
-    qualification,
-    experience,
-    salary,
-    address,
-    phone,
-    qualification_certificate,
-    teacher_photo,
-    teacherId
-  ], callback);
+  try {
+    const result = await pool.query(updateQuery, [
+      teacher_name,
+      email,
+      date_of_birth,
+      date_of_joining,
+      gender,
+      guardian_name,
+      qualification,
+      experience,
+      salary,
+      address,
+      phone,
+      qualification_certificate,
+      teacher_photo,
+      teacherId
+    ]);
+    return result.rows[0];
+  } catch (err) {
+    console.error('Error updating teacher:', err);
+    throw err;
+  }
 };
 
-export const deleteTeacher = (teacherId, callback) => {
-  const deleteTeacherQuery = 'DELETE FROM teacher WHERE id = ?';
-  connection.query(deleteTeacherQuery, [teacherId], callback);
+export const deleteTeacher = async (teacherId) => {
+  const deleteTeacherQuery = 'DELETE FROM teacher WHERE id = $1 RETURNING *';
+  try {
+    const result = await pool.query(deleteTeacherQuery, [teacherId]);
+    return result.rows[0];
+  } catch (err) {
+    console.error('Error deleting teacher:', err);
+    throw err;
+  }
 };
 
-export const getTeacherCount = (user_email, callback) => {
-  const query = 'SELECT COUNT(*) AS totalTeachers FROM teacher WHERE user_email = ?';
-  connection.query(query, [user_email], (err, results) => {
-    if (err) {
-      console.error('Error in query:', err);  // Log the error for debugging
-      return callback(err);
-    }
-    console.log('Query results:', results);  // Log the query results for debugging
-    callback(null, results);
-  });
+export const getTeacherCount = async (user_email) => {
+  const query = 'SELECT COUNT(*) AS totalteachers FROM teacher WHERE user_email = $1';
+  const values = [user_email];
+  try {
+    const result = await pool.query(query, values);
+    return result.rows;
+  } catch (err) {
+    console.error('Error getting teacher count:', err);
+    throw err;
+  }
 };

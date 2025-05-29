@@ -1,11 +1,17 @@
 import path from 'path';
-import { createTeacher, getTeachersByUser, updateTeacher, getTeacherById, deleteTeacher,getTeacherCount } from '../models/teacherModel.js';
+import fs from 'fs';
+import { 
+  createTeacher, 
+  getTeachersByUser, 
+  updateTeacher, 
+  getTeacherById, 
+  deleteTeacher, 
+  getTeacherCount 
+} from '../models/teacherModel.js';
 import { deleteAttendanceByTeacherId } from '../models/attendanceModel.js';
 import { uploadDir } from '../middlewares/upload.js';
-import fs from 'fs';
 
-
-export const registerTeacher = (req, res) => {
+export const registerTeacher = async (req, res) => {
   console.log('Uploaded files:', req.files);
 
   const { 
@@ -14,25 +20,21 @@ export const registerTeacher = (req, res) => {
     salary, address, phone 
   } = req.body;
   
-  const user_email = req.user_email; // Get the user's email from the token
+  const user_email = req.user_email; // from token
 
-  // Initialize file paths as null
   let teacherPhotoPath = null;
   let qualificationCertificatePath = null;
 
   try {
-    // If teacher photo is uploaded
     if (req.files && req.files['teacher_photo']) {
       teacherPhotoPath = path.basename(req.files['teacher_photo'][0].path);
     }
 
-    // If qualification certificate is uploaded
-    if (req.files && req.files['qualification_certificate']) {  // Ensure field name matches exactly
+    if (req.files && req.files['qualification_certificate']) {
       qualificationCertificatePath = path.basename(req.files['qualification_certificate'][0].path);
     }
 
-    // Create teacher in database
-    createTeacher({
+    await createTeacher({
       teacher_name,
       email,
       date_of_birth,
@@ -44,45 +46,39 @@ export const registerTeacher = (req, res) => {
       salary,
       address,
       phone,
-      qualification_certificate: qualificationCertificatePath, // Ensure correct field name
-      teacher_photo: teacherPhotoPath, // Ensure correct field name
+      qualification_certificate: qualificationCertificatePath,
+      teacher_photo: teacherPhotoPath,
       user_email
-    }, (err, results) => {
-      if (err) {
-        console.error('Error registering teacher:', err);
-        return res.status(500).json({ message: 'Error registering teacher', error: err.message });
-      }
-      res.status(200).json({ message: 'Teacher registered successfully' });
     });
-  } catch (error) {
-    console.error('Error processing files:', error);
-    res.status(500).json({ message: 'Error processing files', error: error.message });
+
+    res.status(200).json({ message: 'Teacher registered successfully' });
+
+  } catch (err) {
+    console.error('Error registering teacher:', err);
+    res.status(500).json({ message: 'Error registering teacher', error: err.message });
   }
 };
 
-export const getAllTeachers = (req, res) => {
-  const user_email = req.user_email; // Get the user's email from the token
+export const getAllTeachers = async (req, res) => {
+  const user_email = req.user_email;
 
-  getTeachersByUser(user_email, (err, results) => {
-    if (err) {
-      console.error('Error fetching teachers:', err);
-      return res.status(500).json({ message: 'Internal server error' });
-    }
+  try {
+    const teachers = await getTeachersByUser(user_email);
 
-    // Normalize paths in the results
-    const normalizedResults = results.map(teacher => ({
+    const normalizedResults = teachers.map(teacher => ({
       ...teacher,
-      teacher_photo: teacher.teacher_photo ? 
-        path.basename(teacher.teacher_photo.replace(/\\/g, '/')) : null,
-      qualification_certificate: teacher.qualification_certificate ? 
-        path.basename(teacher.qualification_certificate.replace(/\\/g, '/')) : null
+      teacher_photo: teacher.teacher_photo ? path.basename(teacher.teacher_photo.replace(/\\/g, '/')) : null,
+      qualification_certificate: teacher.qualification_certificate ? path.basename(teacher.qualification_certificate.replace(/\\/g, '/')) : null
     }));
 
     res.json(normalizedResults);
-  });
+  } catch (err) {
+    console.error('Error fetching teachers:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 };
 
-export const updateTeacherDetails = (req, res) => {
+export const updateTeacherDetails = async (req, res) => {
   const teacherId = req.params.id;
   const {
     teacher_name,
@@ -99,96 +95,118 @@ export const updateTeacherDetails = (req, res) => {
     qualification_certificate
   } = req.body;
 
-  // Handle photo upload
-  let teacherPhoto = req.body.teacher_photo; // Keep existing photo if not updated
+  let teacherPhoto = req.body.teacher_photo;
   if (req.files && req.files['teacher_photo']) {
     teacherPhoto = path.basename(req.files['teacher_photo'][0].path);
   }
 
-  updateTeacher(teacherId, {
-    teacher_name,
-    email,
-    date_of_birth,
-    date_of_joining,
-    gender,
-    guardian_name,
-    qualification,
-    experience,
-    salary,
-    address,
-    phone,
-    qualification_certificate,
-    teacher_photo: teacherPhoto
-  }, (err, results) => {
-    if (err) {
-      console.error('Error updating teacher:', err);
-      return res.status(500).json({ error: 'Failed to update teacher' });
-    }
+  try {
+    await updateTeacher(teacherId, {
+      teacher_name,
+      email,
+      date_of_birth,
+      date_of_joining,
+      gender,
+      guardian_name,
+      qualification,
+      experience,
+      salary,
+      address,
+      phone,
+      qualification_certificate,
+      teacher_photo: teacherPhoto
+    });
     res.status(200).json({ message: 'Teacher updated successfully' });
-  });
+  } catch (err) {
+    console.error('Error updating teacher:', err);
+    res.status(500).json({ error: 'Failed to update teacher' });
+  }
 };
 
-export const deleteTeacherById = (req, res) => {
+export const deleteTeacherById = async (req, res) => {
   const teacherId = req.params.id;
 
-  // Step 1: Log teacherId for debugging
   console.log('Attempting to delete teacher with ID:', teacherId);
 
-  // Step 2: Delete attendance records related to the teacher
-  deleteAttendanceByTeacherId(teacherId, (err) => {
-    if (err) {
-      console.error('Error deleting attendance records:', err);
-      return res.status(500).json({ error: 'Failed to delete attendance records' });
+  try {
+    await deleteAttendanceByTeacherId(teacherId);
+
+    const teacherResult = await getTeacherById(teacherId);
+    if (teacherResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Teacher not found' });
     }
+    const teacherPhoto = teacherResult.rows[0].teacher_photo;
 
-    // Step 3: Now, get the teacher's photo path to delete the file
-    getTeacherById(teacherId, (err, results) => {
-      if (err) {
-        console.error('Error fetching teacher:', err);
-        return res.status(500).json({ error: 'Failed to fetch teacher details' });
-      }
+    await deleteTeacher(teacherId);
 
-      if (results.length === 0) {
-        return res.status(404).json({ error: 'Teacher not found' });
-      }
-
-      const teacherPhoto = results[0].teacher_photo;
-
-      // Step 4: Delete the teacher from the database
-      deleteTeacher(teacherId, (err, results) => {
+    if (teacherPhoto) {
+      const photoPath = path.join(uploadDir, teacherPhoto);
+      fs.unlink(photoPath, (err) => {
         if (err) {
-          console.error('Error deleting teacher:', err);
-          return res.status(500).json({ error: 'Failed to delete teacher' });
+          console.error('Error deleting photo file:', err);
+          // Don't return error response, as teacher already deleted
         }
-
-        // Step 5: If teacher had a photo, delete the file
-        if (teacherPhoto) {
-          const photoPath = path.join(uploadDir, teacherPhoto);
-          fs.unlink(photoPath, (err) => {
-            if (err) {
-              console.error('Error deleting photo file:', err);
-              // Don't send error response here as the teacher is already deleted
-            }
-          });
-        }
-
-        res.status(200).json({ message: 'Teacher deleted successfully' });
       });
-    });
-  });
-};
-
-export const getTotalTeacherCount = (req, res) => {
-  const user_email = req.user_email; // Get the user's email from the token
-
-  // console.log('User email from token:', user_email);  // Add this line for debugging
-
-  getTeacherCount(user_email, (err, results) => {
-    if (err) {
-      console.error('Error fetching teacher count:', err);
-      return res.status(500).json({ error: 'Failed to fetch teacher count' });
     }
-    // console.log('Teacher count from DB:', results);  // Add this line for debugging
-    res.json({ totalTeachers: results[0].totalTeachers });
-  });
+
+    res.status(200).json({ message: 'Teacher deleted successfully' });
+
+  } catch (err) {
+    console.error('Error deleting teacher:', err);
+    res.status(500).json({ error: 'Failed to delete teacher' });
+  }
 };
+export const getTotalTeacherCount = async (req, res) => {
+    try {
+      const user_email = req.user_email;
+    const result = await getTeacherCount(user_email);
+    if (!result || result.length === 0 || !result[0].totalteachers) {
+      return res.status(404).json({
+        success: false,
+        message: 'Teacher count not found',
+        data: result
+      });
+    }
+      res.status(200).json({
+      success: true,
+      totalTeachers: parseInt(result[0].totalteachers, 10)
+    });
+  } catch (err) {
+    console.error('Error fetching Teacher count:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch Teacher count',
+      error: err.message
+    });
+  }
+};
+
+
+// export const getTotalStudentCount = async (req, res) => {
+//   try {
+//     const user_email = req.user_email;
+//     const result = await getStudentCount(user_email);
+
+//     // Safe check for result structure
+    // if (!result || result.length === 0 || !result[0].totalstudents) {
+    //   return res.status(404).json({
+    //     success: false,
+    //     message: 'Student count not found',
+    //     data: result
+    //   });
+    // }
+
+//     res.status(200).json({
+//       success: true,
+//       totalStudents: parseInt(result[0].totalstudents, 10)
+//     });
+//   } catch (err) {
+//     console.error('Error fetching student count:', err);
+//     res.status(500).json({
+//       success: false,
+//       message: 'Failed to fetch student count',
+//       error: err.message
+//     });
+//   }
+// };
+

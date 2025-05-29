@@ -15,29 +15,43 @@ class AttendancePage extends StatefulWidget {
 class Class {
   final String id;
   final String className;
+  final List<String> sections;
 
-  Class({required this.id, required this.className});
+  Class({
+    required this.id,
+    required this.className,
+    required this.sections,
+  });
 
   factory Class.fromJson(Map<String, dynamic> json) {
+    final sections = (json['sections'] as List<dynamic>? ?? [])
+        .map((e) => e.toString())
+        .toList();
+
     return Class(
       id: (json['_id'] ?? json['id'] ?? '').toString().trim(),
       className: (json['class_name'] ?? json['className'] ?? 'Unknown Class')
           .toString()
           .trim(),
+      sections: sections,
     );
   }
 }
 
 class _AttendancePageState extends State<AttendancePage> {
   DateTime selectedDate = DateTime.now();
-  List<Student> students = [];
+  List<Student> allStudents = []; // All students fetched from API
+  List<Student> filteredStudents =
+      []; // Students filtered by class/section/search
   TextEditingController searchController = TextEditingController();
   String? token;
   bool isLoading = false;
 
-  // For dynamic class
+  // For dynamic class and section
   List<Class> classes = [];
-  Class? selectedClass;
+  String? selectedClass;
+  String? selectedSection;
+  List<String> availableSections = [];
   bool _isInitialLoading = true;
 
   @override
@@ -53,6 +67,7 @@ class _AttendancePageState extends State<AttendancePage> {
     });
     if (token != null) {
       await _loadClasses();
+      await _fetchAllStudents(); // Fetch all students initially
     }
     setState(() {
       _isInitialLoading = false;
@@ -76,8 +91,37 @@ class _AttendancePageState extends State<AttendancePage> {
 
       if (response.statusCode == 200) {
         final List<dynamic> classData = json.decode(response.body);
+
+        // Create a map to group sections by class
+        final Map<String, Set<String>> classSectionMap = {};
+        final List<Class> tempClasses = [];
+
+        for (final data in classData) {
+          final className =
+              (data['class_name'] ?? data['className'] ?? '').toString().trim();
+          final section = (data['section'] ?? '').toString().trim();
+
+          if (className.isEmpty) continue;
+
+          if (!classSectionMap.containsKey(className)) {
+            classSectionMap[className] = {};
+          }
+
+          if (section.isNotEmpty) {
+            classSectionMap[className]!.add(section);
+          }
+        }
+
+        classSectionMap.forEach((className, sections) {
+          tempClasses.add(Class(
+            id: className,
+            className: className,
+            sections: sections.toList(),
+          ));
+        });
+
         setState(() {
-          classes = classData.map((data) => Class.fromJson(data)).toList();
+          classes = tempClasses;
         });
       } else if (response.statusCode == 401) {
         _handleUnauthorized();
@@ -91,6 +135,84 @@ class _AttendancePageState extends State<AttendancePage> {
         isLoading = false;
       });
     }
+  }
+
+  Future<void> _fetchAllStudents() async {
+    if (token == null) {
+      _showErrorSnackBar('Please login to continue');
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+      allStudents = [];
+    });
+
+    try {
+      final response = await http.get(
+        Uri.parse('http://localhost:1000/api/students'),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': token!,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> studentData = json.decode(response.body);
+        setState(() {
+          allStudents = studentData
+              .map((data) => Student(
+                    data['_id']?.toString() ?? data['id']?.toString() ?? '',
+                    data['student_name']?.toString() ?? 'Unknown Student',
+                    data['assigned_class']?.toString() ?? '',
+                    data['assigned_section']?.toString() ?? '',
+                    false,
+                  ))
+              .toList();
+          _filterStudents(); // Apply initial filter
+        });
+      } else if (response.statusCode == 401) {
+        _handleUnauthorized();
+      } else {
+        _showErrorSnackBar('Failed to load students: ${response.reasonPhrase}');
+      }
+    } catch (error) {
+      _showErrorSnackBar('Error connecting to server: $error');
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  void _updateAvailableSections(String? className) {
+    setState(() {
+      if (className != null) {
+        final selectedClassObj =
+            classes.firstWhere((c) => c.className == className);
+        availableSections = selectedClassObj.sections;
+      } else {
+        availableSections = [];
+      }
+      selectedSection = null;
+      _filterStudents(); // Filter students when class changes
+    });
+  }
+
+  void _filterStudents() {
+    setState(() {
+      filteredStudents = allStudents.where((student) {
+        final nameMatch = student.name
+            .toLowerCase()
+            .contains(searchController.text.toLowerCase());
+        final classMatch =
+            selectedClass == null || student.assignedClass == selectedClass;
+        final sectionMatch = selectedSection == null ||
+            student.assignedSection == selectedSection;
+        return nameMatch && classMatch && sectionMatch;
+      }).toList();
+    });
   }
 
   void _handleUnauthorized() async {
@@ -128,61 +250,6 @@ class _AttendancePageState extends State<AttendancePage> {
     );
   }
 
-  Future<void> fetchStudents() async {
-    if (selectedClass == null) {
-      _showErrorSnackBar('Please select a class first');
-      return;
-    }
-
-    if (token == null) {
-      _showErrorSnackBar('Please login to continue');
-      return;
-    }
-
-    setState(() {
-      isLoading = true;
-      students = []; // Clear previous students while loading
-    });
-
-    try {
-      String encodedClassName = Uri.encodeComponent(selectedClass!.className);
-      // Use the class ID to fetch students
-      final response = await http.get(
-        Uri.parse('http://localhost:1000/api/students/$encodedClassName'),
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': token!,
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> studentData = json.decode(response.body);
-        setState(() {
-          students = studentData
-              .map((data) => Student(
-                    data['_id']?.toString() ?? data['id']?.toString() ?? '',
-                    data['student_name']?.toString() ?? 'Unknown Student',
-                    false,
-                  ))
-              .toList();
-        });
-      } else if (response.statusCode == 401) {
-        _handleUnauthorized();
-      } else {
-        _showErrorSnackBar('Failed to load students: ${response.reasonPhrase}');
-      }
-    } catch (error) {
-      _showErrorSnackBar('Error connecting to server: $error');
-    } finally {
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
-    }
-  }
-
   Future<void> saveAttendance() async {
     if (token == null) {
       _showErrorSnackBar('Please login to continue');
@@ -194,15 +261,21 @@ class _AttendancePageState extends State<AttendancePage> {
       return;
     }
 
+    if (selectedSection == null) {
+      _showErrorSnackBar('Please select a section');
+      return;
+    }
+
     setState(() {
       isLoading = true;
     });
 
-    final attendanceData = students.map((student) {
+    final attendanceData = filteredStudents.map((student) {
       return {
         'student_id': student.id,
         'is_present': student.isPresent,
-        'class_name': selectedClass!.className,
+        'class_name': selectedClass,
+        'section': selectedSection,
       };
     }).toList();
 
@@ -266,9 +339,6 @@ class _AttendancePageState extends State<AttendancePage> {
       setState(() {
         selectedDate = picked;
       });
-      if (selectedClass != null) {
-        fetchStudents();
-      }
     }
   }
 
@@ -279,7 +349,7 @@ class _AttendancePageState extends State<AttendancePage> {
         title: Text('Attendance Management',
             style: TextStyle(color: Colors.white)),
         centerTitle: true,
-        backgroundColor: Colors.blue[800],
+        backgroundColor: Colors.blue.shade900,
         elevation: 0,
         iconTheme: IconThemeData(color: Colors.white),
       ),
@@ -302,7 +372,7 @@ class _AttendancePageState extends State<AttendancePage> {
                           Row(
                             children: [
                               Expanded(
-                                child: DropdownButtonFormField<Class>(
+                                child: DropdownButtonFormField<String>(
                                   value: selectedClass,
                                   decoration: InputDecoration(
                                     labelText: 'Select Class',
@@ -313,24 +383,72 @@ class _AttendancePageState extends State<AttendancePage> {
                                     fillColor: Colors.blue.shade50,
                                   ),
                                   isExpanded: true,
-                                  onChanged: (Class? newValue) {
+                                  onChanged: (String? newValue) {
                                     setState(() {
                                       selectedClass = newValue;
+                                      _updateAvailableSections(newValue);
                                     });
-                                    fetchStudents();
                                   },
-                                  items: classes.map<DropdownMenuItem<Class>>(
-                                      (Class classItem) {
-                                    return DropdownMenuItem<Class>(
-                                      value: classItem,
-                                      child: Text(classItem.className,
+                                  items: [
+                                    DropdownMenuItem(
+                                      value: null,
+                                      child: Text('All Classes',
                                           style: TextStyle(
                                               color: Colors.blue.shade900)),
-                                    );
-                                  }).toList(),
+                                    ),
+                                    ...classes.map((classItem) {
+                                      return DropdownMenuItem<String>(
+                                        value: classItem.className,
+                                        child: Text(classItem.className,
+                                            style: TextStyle(
+                                                color: Colors.blue.shade900)),
+                                      );
+                                    }).toList(),
+                                  ],
                                 ),
                               ),
                               SizedBox(width: 10),
+                              Expanded(
+                                child: DropdownButtonFormField<String>(
+                                  value: selectedSection,
+                                  decoration: InputDecoration(
+                                    labelText: 'Select Section',
+                                    labelStyle:
+                                        TextStyle(color: Colors.blue.shade700),
+                                    border: OutlineInputBorder(),
+                                    filled: true,
+                                    fillColor: Colors.blue.shade50,
+                                  ),
+                                  isExpanded: true,
+                                  onChanged: (String? newValue) {
+                                    setState(() {
+                                      selectedSection = newValue;
+                                      _filterStudents();
+                                    });
+                                  },
+                                  items: [
+                                    DropdownMenuItem(
+                                      value: null,
+                                      child: Text('All Sections',
+                                          style: TextStyle(
+                                              color: Colors.blue.shade900)),
+                                    ),
+                                    ...availableSections.map((section) {
+                                      return DropdownMenuItem<String>(
+                                        value: section,
+                                        child: Text(section,
+                                            style: TextStyle(
+                                                color: Colors.blue.shade900)),
+                                      );
+                                    }).toList(),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 16),
+                          Row(
+                            children: [
                               Expanded(
                                 child: ElevatedButton(
                                   onPressed: () => _selectDate(context),
@@ -353,22 +471,26 @@ class _AttendancePageState extends State<AttendancePage> {
                                   ),
                                 ),
                               ),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: TextField(
+                                  controller: searchController,
+                                  decoration: InputDecoration(
+                                    labelText: 'Search Student',
+                                    labelStyle:
+                                        TextStyle(color: Colors.blue.shade700),
+                                    prefixIcon: Icon(Icons.search,
+                                        color: Colors.blue.shade700),
+                                    border: OutlineInputBorder(),
+                                    filled: true,
+                                    fillColor: Colors.blue.shade50,
+                                  ),
+                                  onChanged: (value) {
+                                    _filterStudents();
+                                  },
+                                ),
+                              ),
                             ],
-                          ),
-                          SizedBox(height: 16),
-                          TextField(
-                            controller: searchController,
-                            decoration: InputDecoration(
-                              labelText: 'Search Student',
-                              labelStyle:
-                                  TextStyle(color: Colors.blue.shade700),
-                              prefixIcon: Icon(Icons.search,
-                                  color: Colors.blue.shade700),
-                              border: OutlineInputBorder(),
-                            ),
-                            onChanged: (value) {
-                              setState(() {});
-                            },
                           ),
                         ],
                       ),
@@ -416,36 +538,30 @@ class _AttendancePageState extends State<AttendancePage> {
                     )
                   else
                     Expanded(
-                      child: students.isEmpty
+                      child: filteredStudents.isEmpty
                           ? Center(
                               child: Card(
                                 child: Padding(
                                   padding: const EdgeInsets.all(16.0),
                                   child: Text(
-                                    selectedClass == null
-                                        ? 'Please select a class to view students'
-                                        : 'No students found for ${selectedClass?.className}',
+                                    selectedClass == null &&
+                                            selectedSection == null
+                                        ? 'Please select a class and section to view students'
+                                        : selectedClass == null
+                                            ? 'Please select a class to view students'
+                                            : selectedSection == null
+                                                ? 'Please select a section to view students'
+                                                : 'No students found for ${selectedClass!} - $selectedSection',
                                     style: TextStyle(fontSize: 16),
                                   ),
                                 ),
                               ),
                             )
                           : ListView.separated(
-                              itemCount: students
-                                  .where((student) => student.name
-                                      .toLowerCase()
-                                      .contains(
-                                          searchController.text.toLowerCase()))
-                                  .length,
+                              itemCount: filteredStudents.length,
                               separatorBuilder: (context, index) =>
                                   SizedBox(height: 8),
                               itemBuilder: (context, index) {
-                                final filteredStudents = students
-                                    .where((student) => student.name
-                                        .toLowerCase()
-                                        .contains(searchController.text
-                                            .toLowerCase()))
-                                    .toList();
                                 final student = filteredStudents[index];
                                 return Card(
                                   elevation: 2,
@@ -469,6 +585,12 @@ class _AttendancePageState extends State<AttendancePage> {
                                           fontWeight: FontWeight.w500,
                                           color: Colors.blue.shade900),
                                     ),
+                                    subtitle: Text(
+                                      '${student.assignedClass} - ${student.assignedSection}',
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
                                     trailing: Transform.scale(
                                       scale: 1.2,
                                       child: Switch(
@@ -491,7 +613,8 @@ class _AttendancePageState extends State<AttendancePage> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: students.isEmpty ? null : saveAttendance,
+                      onPressed:
+                          filteredStudents.isEmpty ? null : saveAttendance,
                       style: ElevatedButton.styleFrom(
                         foregroundColor: Colors.white,
                         backgroundColor: Colors.blue,
@@ -525,7 +648,10 @@ class _AttendancePageState extends State<AttendancePage> {
 class Student {
   final String id;
   final String name;
+  final String assignedClass;
+  final String assignedSection;
   bool isPresent;
 
-  Student(this.id, this.name, this.isPresent);
+  Student(this.id, this.name, this.assignedClass, this.assignedSection,
+      this.isPresent);
 }

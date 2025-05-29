@@ -20,7 +20,7 @@ class AdmissionConfirmationPage extends StatelessWidget {
         title: Text('Admission Confirmation',
             style: TextStyle(color: Colors.white)),
         centerTitle: true,
-        backgroundColor: Colors.blue,
+        backgroundColor: Colors.blue.shade900,
         elevation: 0,
         iconTheme: IconThemeData(color: Colors.white),
       ),

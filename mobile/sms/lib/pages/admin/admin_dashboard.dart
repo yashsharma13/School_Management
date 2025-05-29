@@ -3,6 +3,7 @@ import 'package:sms/pages/admission/admission_letter.dart';
 import 'package:sms/pages/classes/all_class.dart';
 import 'package:sms/pages/classes/new_class.dart';
 import 'package:sms/pages/fees/fees_student_search.dart';
+import 'package:sms/pages/notices/notice_model.dart';
 import 'package:sms/pages/student/student_attendance/student_attendance.dart';
 import 'package:sms/pages/student/student_details/Student_details.dart';
 import 'package:sms/pages/student/student_registration/student_registration_page.dart';
@@ -14,11 +15,11 @@ import 'package:sms/pages/teacher/teacher_details/teacher_details.dart';
 import 'package:sms/pages/teacher/teacher_registration/teacher_registration.dart';
 import 'package:sms/pages/teacher/teacher_report/teacher_report.dart';
 import 'package:sms/widgets/dashboard_card.dart';
-import 'package:sms/widgets/drawer_item.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sms/pages/auth/login.dart'; // Import your login page
+import 'package:sms/pages/notices/notice.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -32,11 +33,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
   int totalTeachers = 0;
   bool isLoading = false; // To show loading state
   String? userEmail;
+  List<Notice> notices = [];
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    fetchNotices(); // fetch notices on dashboard load
   }
 
   Future<void> _loadUserData() async {
@@ -99,6 +102,50 @@ class _AdminDashboardState extends State<AdminDashboard> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to fetch counts: $e')),
       );
+    }
+  }
+
+  Future<void> fetchNotices() async {
+    setState(() {
+      isLoading = true;
+      // error = '';
+    });
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null) {
+        setState(() => 'Please login again.');
+        // Navigate to login page if needed
+        return;
+      }
+
+      final response = await http.get(
+        Uri.parse('http://localhost:1000/api/notices'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        print('Notices from API: ${jsonData['data']}');
+
+        final List<dynamic> data = jsonData['data'];
+        setState(() {
+          notices = data.map((n) => Notice.fromJson(n)).toList();
+        });
+      } else if (response.statusCode == 401) {
+        setState(() => 'Session expired. Please login again.');
+      } else {
+        setState(() => 'Failed to fetch notices.');
+      }
+    } catch (e) {
+      setState(() => e.toString());
+    } finally {
+      setState(() => isLoading = false);
     }
   }
 
@@ -448,8 +495,24 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       ),
                     ],
                   ),
-                  buildDrawerItem(Icons.family_restroom, "Parents", context),
-                  buildDrawerItem(Icons.announcement, "Notices", context),
+                  // buildDrawerItem(Icons.family_restroom, "Parents", context),
+                  ListTile(
+                    leading:
+                        const Icon(Icons.announcement, color: Colors.black87),
+                    // title: const Text("Notices"),
+                    title: const Text(
+                      "Notices",
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => NoticesPage()));
+                    },
+                  ),
                 ],
               ),
             ),
@@ -498,20 +561,26 @@ class _AdminDashboardState extends State<AdminDashboard> {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
-            Card(
-              elevation: 3,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-              child: ListTile(
-                title: const Text(
-                  "Notice 1: School will be closed on Monday.",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: const Text("Posted on 2023-10-01"),
-                leading: Icon(Icons.notification_important,
-                    color: Colors.red.shade700),
-              ),
-            ),
+            notices.isEmpty
+                ? Text("No notices available.")
+                : Column(
+                    children: notices.map((notice) {
+                      return Card(
+                        elevation: 3,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                        child: ListTile(
+                          title: Text(
+                            notice.title,
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: Text("Posted on ${notice.noticeDate}"),
+                          leading: Icon(Icons.notification_important,
+                              color: Colors.red.shade700),
+                        ),
+                      );
+                    }).toList(),
+                  )
           ],
         ),
       ),
