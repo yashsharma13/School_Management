@@ -123,28 +123,65 @@ export const updateTeacherDetails = async (req, res) => {
   }
 };
 
+// export const deleteTeacherById = async (req, res) => {
+//   const teacherId = req.params.id;
+
+//   console.log('Attempting to delete teacher with ID:', teacherId);
+
+//   try {
+//     await deleteAttendanceByTeacherId(teacherId);
+
+//     const teacherResult = await getTeacherById(teacherId);
+//     if (teacherResult.rows.length === 0) {
+//       return res.status(404).json({ error: 'Teacher not found' });
+//     }
+//     const teacherPhoto = teacherResult.rows[0].teacher_photo;
+
+//     await deleteTeacher(teacherId);
+
+//     if (teacherPhoto) {
+//       const photoPath = path.join(uploadDir, teacherPhoto);
+//       fs.unlink(photoPath, (err) => {
+//         if (err) {
+//           console.error('Error deleting photo file:', err);
+//           // Don't return error response, as teacher already deleted
+//         }
+//       });
+//     }
+
+//     res.status(200).json({ message: 'Teacher deleted successfully' });
+
+//   } catch (err) {
+//     console.error('Error deleting teacher:', err);
+//     res.status(500).json({ error: 'Failed to delete teacher' });
+//   }
+// };
 export const deleteTeacherById = async (req, res) => {
   const teacherId = req.params.id;
 
   console.log('Attempting to delete teacher with ID:', teacherId);
 
   try {
+    // delete attendance linked to teacher
     await deleteAttendanceByTeacherId(teacherId);
 
+    // get teacher by ID (returns object or undefined)
     const teacherResult = await getTeacherById(teacherId);
-    if (teacherResult.rows.length === 0) {
+    if (!teacherResult) {
       return res.status(404).json({ error: 'Teacher not found' });
     }
-    const teacherPhoto = teacherResult.rows[0].teacher_photo;
+    const teacherPhoto = teacherResult.teacher_photo;
 
+    // delete teacher record
     await deleteTeacher(teacherId);
 
+    // delete teacher photo file if exists
     if (teacherPhoto) {
       const photoPath = path.join(uploadDir, teacherPhoto);
       fs.unlink(photoPath, (err) => {
         if (err) {
           console.error('Error deleting photo file:', err);
-          // Don't return error response, as teacher already deleted
+          // no need to respond error here
         }
       });
     }
@@ -156,6 +193,7 @@ export const deleteTeacherById = async (req, res) => {
     res.status(500).json({ error: 'Failed to delete teacher' });
   }
 };
+
 export const getTotalTeacherCount = async (req, res) => {
     try {
       const user_email = req.user_email;
@@ -180,33 +218,3 @@ export const getTotalTeacherCount = async (req, res) => {
     });
   }
 };
-
-
-// export const getTotalStudentCount = async (req, res) => {
-//   try {
-//     const user_email = req.user_email;
-//     const result = await getStudentCount(user_email);
-
-//     // Safe check for result structure
-    // if (!result || result.length === 0 || !result[0].totalstudents) {
-    //   return res.status(404).json({
-    //     success: false,
-    //     message: 'Student count not found',
-    //     data: result
-    //   });
-    // }
-
-//     res.status(200).json({
-//       success: true,
-//       totalStudents: parseInt(result[0].totalstudents, 10)
-//     });
-//   } catch (err) {
-//     console.error('Error fetching student count:', err);
-//     res.status(500).json({
-//       success: false,
-//       message: 'Failed to fetch student count',
-//       error: err.message
-//     });
-//   }
-// };
-

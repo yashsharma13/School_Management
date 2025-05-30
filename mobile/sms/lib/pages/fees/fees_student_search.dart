@@ -585,3 +585,473 @@ class Student {
     required this.studentPhoto,
   });
 }
+
+// ==============================================kaam ka code ===============================
+
+// import 'package:flutter/material.dart';
+// import 'package:shared_preferences/shared_preferences.dart';
+// import 'package:sms/pages/services/api_service.dart';
+
+// class ModularFeePage extends StatefulWidget {
+//   @override
+//   _ModularFeePageState createState() => _ModularFeePageState();
+// }
+
+// class _ModularFeePageState extends State<ModularFeePage> {
+//   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+//   List<FeeField> feeFields = [];
+
+//   // Class and Section state
+//   List<Class> classes = [];
+//   Class? selectedClass;
+//   String? selectedSection;
+//   String? token;
+//   List<String> availableSections = [];
+
+//   bool isLoading = false;
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     _addFeeField(); // Add initial fee field
+//     _loadClasses();
+//     _loadToken();
+//   }
+
+//   Future<void> _loadToken() async {
+//     final prefs = await SharedPreferences.getInstance();
+//     setState(() {
+//       token = prefs.getString('token');
+//     });
+//     if (token != null) {
+//       await _loadClasses();
+//     }
+//   }
+
+//   Future<void> _loadClasses() async {
+//     try {
+//       setState(() {
+//         isLoading = true;
+//       });
+
+//       final fetchedClasses = await ApiService.fetchClasses();
+
+//       // Grouping sections by class name
+//       final Map<String, Set<String>> classSectionMap = {};
+//       final List<Class> tempClasses = [];
+
+//       for (final data in fetchedClasses) {
+//         final className =
+//             (data['class_name'] ?? data['className'] ?? '').toString().trim();
+//         final section = (data['section'] ?? '').toString().trim();
+
+//         if (className.isEmpty) continue;
+
+//         if (!classSectionMap.containsKey(className)) {
+//           classSectionMap[className] = {};
+//         }
+
+//         classSectionMap[className]!.add(section);
+//       }
+
+//       // Build Class objects
+//       classSectionMap.forEach((className, sections) {
+//         tempClasses.add(Class(
+//           id: className, // You can adjust ID if you need real IDs
+//           className: className,
+//           sections: sections.toList(),
+//         ));
+//       });
+
+//       setState(() {
+//         classes = tempClasses;
+//         if (classes.isEmpty) {
+//           _showErrorSnackBar(
+//               'No valid classes found. Please add classes first.');
+//         }
+//       });
+//     } catch (error) {
+//       _showErrorSnackBar('Error fetching classes: ${error.toString()}');
+//     } finally {
+//       setState(() {
+//         isLoading = false;
+//       });
+//     }
+//   }
+
+//   void _showErrorSnackBar(String message) {
+//     ScaffoldMessenger.of(context).showSnackBar(
+//       SnackBar(
+//         content: Text(message),
+//         backgroundColor: Colors.red[800],
+//         behavior: SnackBarBehavior.floating,
+//         shape: RoundedRectangleBorder(
+//           borderRadius: BorderRadius.circular(8),
+//         ),
+//       ),
+//     );
+//   }
+
+//   void _addFeeField() {
+//     setState(() {
+//       feeFields.add(FeeField());
+//     });
+//   }
+
+//   void _removeFeeField(int index) {
+//     if (feeFields.length > 1) {
+//       setState(() {
+//         feeFields.removeAt(index);
+//       });
+//     }
+//   }
+
+//   void _submitFees() {
+//     if (_formKey.currentState!.validate()) {
+//       if (selectedClass == null) {
+//         ScaffoldMessenger.of(context).showSnackBar(
+//           SnackBar(
+//             content: Text('Please select a class'),
+//             backgroundColor: Colors.red[700],
+//           ),
+//         );
+//         return;
+//       }
+//       if (selectedSection == null) {
+//         ScaffoldMessenger.of(context).showSnackBar(
+//           SnackBar(
+//             content: Text('Please select a section'),
+//             backgroundColor: Colors.red[700],
+//           ),
+//         );
+//         return;
+//       }
+
+//       _formKey.currentState!.save();
+
+//       List<Map<String, String>> feeData = feeFields
+//           .map((field) => {
+//                 'fee_type': field.feeType.trim(),
+//                 'amount': field.amount.trim(),
+//               })
+//           .toList();
+
+//       print(
+//           "Submitting Fees for Class: ${selectedClass!.className}, Section: $selectedSection");
+//       print("Fee Data: $feeData");
+
+//       // TODO: Send feeData along with class and section to backend using your ApiService
+//       // ApiService.submitFees(className: selectedClass!.className, section: selectedSection, feeData: feeData);
+
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         SnackBar(
+//           content: Text('Fees submitted successfully!'),
+//           backgroundColor: Colors.green[800],
+//         ),
+//       );
+//     }
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: Text('Modular Fee Entry'),
+//         backgroundColor: Colors.blue[800],
+//       ),
+//       body: isLoading
+//           ? Center(child: CircularProgressIndicator(color: Colors.blue[800]))
+//           : Form(
+//               key: _formKey,
+//               child: Padding(
+//                 padding: const EdgeInsets.all(16.0),
+//                 child: Column(
+//                   children: [
+//                     // Class Dropdown
+//                     DropdownButtonFormField<Class>(
+//                       decoration: InputDecoration(
+//                         labelText: 'Select Class',
+//                         border: OutlineInputBorder(),
+//                       ),
+//                       value: selectedClass,
+//                       items: classes.map((classItem) {
+//                         return DropdownMenuItem<Class>(
+//                           value: classItem,
+//                           child: Text(classItem.className),
+//                         );
+//                       }).toList(),
+//                       onChanged: (Class? newValue) {
+//                         setState(() {
+//                           selectedClass = newValue;
+//                           selectedSection = null;
+//                           availableSections = newValue?.sections ?? [];
+//                         });
+//                       },
+//                       validator: (val) =>
+//                           val == null ? 'Please select a class' : null,
+//                     ),
+//                     SizedBox(height: 12),
+
+//                     // Section Dropdown
+//                     DropdownButtonFormField<String>(
+//                       decoration: InputDecoration(
+//                         labelText: 'Select Section',
+//                         border: OutlineInputBorder(),
+//                       ),
+//                       value: selectedSection,
+//                       items: availableSections.map((section) {
+//                         return DropdownMenuItem<String>(
+//                           value: section,
+//                           child: Text(section),
+//                         );
+//                       }).toList(),
+//                       onChanged: (val) {
+//                         setState(() {
+//                           selectedSection = val;
+//                         });
+//                       },
+//                       validator: (val) =>
+//                           val == null ? 'Please select a section' : null,
+//                     ),
+//                     SizedBox(height: 16),
+
+//                     // Fee Fields List
+//                     Expanded(
+//                       child: ListView.separated(
+//                         itemCount: feeFields.length,
+//                         separatorBuilder: (_, __) => SizedBox(height: 12),
+//                         itemBuilder: (context, index) {
+//                           return Card(
+//                             elevation: 2,
+//                             shape: RoundedRectangleBorder(
+//                                 borderRadius: BorderRadius.circular(12)),
+//                             child: Padding(
+//                               padding: const EdgeInsets.all(12.0),
+//                               child: Column(
+//                                 children: [
+//                                   Row(
+//                                     children: [
+//                                       Text(
+//                                         'Fee ${index + 1}',
+//                                         style: TextStyle(
+//                                           fontWeight: FontWeight.bold,
+//                                           color: Colors.blue[800],
+//                                         ),
+//                                       ),
+//                                       Spacer(),
+//                                       if (feeFields.length > 1)
+//                                         IconButton(
+//                                           icon: Icon(Icons.delete,
+//                                               color: Colors.red[400]),
+//                                           onPressed: () =>
+//                                               _removeFeeField(index),
+//                                         ),
+//                                     ],
+//                                   ),
+//                                   SizedBox(height: 12),
+//                                   TextFormField(
+//                                     decoration: InputDecoration(
+//                                       labelText: 'Fee Type',
+//                                       border: OutlineInputBorder(),
+//                                     ),
+//                                     validator: (value) {
+//                                       if (value == null || value.isEmpty) {
+//                                         return 'Required';
+//                                       }
+//                                       return null;
+//                                     },
+//                                     onChanged: (value) {
+//                                       feeFields[index].feeType = value;
+//                                     },
+//                                   ),
+//                                   SizedBox(height: 12),
+//                                   TextFormField(
+//                                     decoration: InputDecoration(
+//                                       labelText: 'Amount (₹)',
+//                                       border: OutlineInputBorder(),
+//                                     ),
+//                                     keyboardType: TextInputType.number,
+//                                     validator: (value) {
+//                                       if (value == null || value.isEmpty) {
+//                                         return 'Required';
+//                                       }
+//                                       if (double.tryParse(value) == null) {
+//                                         return 'Enter valid number';
+//                                       }
+//                                       return null;
+//                                     },
+//                                     onChanged: (value) {
+//                                       feeFields[index].amount = value;
+//                                     },
+//                                   ),
+//                                 ],
+//                               ),
+//                             ),
+//                           );
+//                         },
+//                       ),
+//                     ),
+
+//                     SizedBox(height: 12),
+//                     Row(
+//                       children: [
+//                         Expanded(
+//                           child: ElevatedButton.icon(
+//                             icon: Icon(Icons.add),
+//                             label: Text('Add Fee Field'),
+//                             style: ElevatedButton.styleFrom(
+//                               backgroundColor: Colors.blue[50],
+//                               foregroundColor: Colors.blue[800],
+//                               shape: RoundedRectangleBorder(
+//                                 borderRadius: BorderRadius.circular(8),
+//                               ),
+//                             ),
+//                             onPressed: _addFeeField,
+//                           ),
+//                         ),
+//                       ],
+//                     ),
+//                     SizedBox(height: 12),
+//                     ElevatedButton(
+//                       child: isLoading
+//                           ? CircularProgressIndicator(color: Colors.white)
+//                           : Text('Submit Fees'),
+//                       onPressed: _submitFees,
+//                       style: ElevatedButton.styleFrom(
+//                         backgroundColor: Colors.blue[800],
+//                         foregroundColor: Colors.white,
+//                         minimumSize: Size(double.infinity, 50),
+//                       ),
+//                     )
+//                   ],
+//                 ),
+//               ),
+//             ),
+//     );
+//   }
+// }
+
+// // Models
+// // Class model
+// class Class {
+//   final String id;
+//   final String className;
+//   final List<String> sections;
+
+//   Class({
+//     required this.id,
+//     required this.className,
+//     required this.sections,
+//   });
+
+//   factory Class.fromJson(Map<String, dynamic> json) {
+//     return Class(
+//       id: (json['_id'] ?? json['id'] ?? '').toString().trim(),
+//       className: (json['class_name'] ?? json['className'] ?? 'Unknown Class')
+//           .toString()
+//           .trim(),
+//       sections: [],
+//     );
+//   }
+// }
+
+// class FeeField {
+//   String feeType = '';
+//   String amount = '';
+// }
+
+// CREATE TABLE fee_structure (
+//   id SERIAL PRIMARY KEY,
+//   year INTEGER UNIQUE NOT NULL,
+//   structure JSONB NOT NULL,
+//   created_at TIMESTAMP DEFAULT NOW()
+// );
+
+
+// app.post('/fee-structure', async (req, res) => {
+//   const { structure } = req.body;
+//   const year = new Date().getFullYear();
+
+//   try {
+//     // Check if already exists for this year
+//     const check = await pool.query('SELECT * FROM fee_structure WHERE year = $1', [year]);
+//     if (check.rows.length > 0) {
+//       return res.status(400).json({ error: 'Fee structure for this year already exists' });
+//     }
+
+//     const result = await pool.query(
+//       'INSERT INTO fee_structure (year, structure) VALUES ($1, $2) RETURNING *',
+//       [year, structure]
+//     );
+//     res.status(201).json(result.rows[0]);
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).send('Server error');
+//   }
+// });
+
+
+
+
+// app.get('/fee-structure/current', async (req, res) => {
+//   const year = new Date().getFullYear();
+
+//   try {
+//     const result = await pool.query('SELECT * FROM fee_structure WHERE year = $1', [year]);
+//     if (result.rows.length === 0) {
+//       return res.status(404).json({ error: 'No structure found for this year' });
+//     }
+//     res.json(result.rows[0].structure);
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).send('Server error');
+//   }
+// });
+
+
+// [
+//   { "fee_type": "Admission Fee", "amount": "5000" },
+//   { "fee_type": "Library Fee", "amount": "1000" }
+// ]
+
+
+// CREATE TABLE fee_structure (
+//   id SERIAL PRIMARY KEY,
+//   year INTEGER NOT NULL UNIQUE,
+//   structure JSONB NOT NULL,  -- stores your dynamic fields
+//   created_at TIMESTAMP DEFAULT NOW()
+// );
+
+
+// const feeData = [
+//   { fee_type: "Admission Fee", amount: "5000" },
+//   { fee_type: "Library Fee", amount: "1000" }
+// ];
+
+// await pool.query(
+//   'INSERT INTO fee_structure (year, structure) VALUES ($1, $2)',
+//   [2025, JSON.stringify(feeData)]
+// );
+
+
+
+// {
+//   "year": 2025,
+//   "class": "Class 10",
+//   "section": "A",
+//   "structure": [
+//     { "fee_type": "Admission Fee", "amount": "5000" },
+//     { "fee_type": "Library Fee", "amount": "1000" }
+//   ]
+// }
+
+
+// CREATE TABLE class_fee_structure (
+//   id SERIAL PRIMARY KEY,
+//   class_name VARCHAR(50) NOT NULL,
+//   section VARCHAR(10) NOT NULL,
+//   year INTEGER NOT NULL,
+//   structure JSONB NOT NULL,
+//   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+//   UNIQUE (class_name, section, year)
+// );

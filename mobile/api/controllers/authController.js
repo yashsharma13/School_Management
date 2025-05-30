@@ -1,22 +1,30 @@
 // controllers/authController.js
 import jwt from 'jsonwebtoken';
 import {
-  findUserByCredentialsPG,
   findUserByEmailPG,
   createUserPG,
   findStudentByCredentialsPG
 } from '../models/userModel.js'; // ← PostgreSQL models
 import { JWT_SECRET_KEY } from '../middlewares/auth.js';
+import bcrypt from 'bcrypt';
 
 export const login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
     // First try regular user login
-    const userResults = await findUserByCredentialsPG(email, password);
+    // const userResults = await findUserByCredentialsPG(email, password);
+    const userResults = await findUserByEmailPG(email); // Just get by email
 
     if (userResults.length > 0) {
       const user = userResults[0];
+
+      // ✅ hashed password verify करें
+      const isMatch = await bcrypt.compare(password, user.password);
+
+      if (!isMatch) {
+        return res.status(400).json({ success: false, message: 'Invalid credentials' });
+      }
       const token = jwt.sign(
         {
           email: user.email,

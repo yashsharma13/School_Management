@@ -10,6 +10,7 @@ import 'package:sms/pages/student/student_registration/student_registration_page
 import 'package:sms/pages/student/student_report/Student_reports.dart';
 import 'package:sms/pages/subjects/assign_subjects.dart';
 import 'package:sms/pages/subjects/class_with_subjects.dart';
+import 'package:sms/pages/teacher/Job_letter/job_letter.dart';
 import 'package:sms/pages/teacher/teacher_attendance/teacher_attendance.dart';
 import 'package:sms/pages/teacher/teacher_details/teacher_details.dart';
 import 'package:sms/pages/teacher/teacher_registration/teacher_registration.dart';
@@ -429,8 +430,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                           Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) =>
-                                      FeesStudentSearchPage()));
+                                  builder: (context) => FeesStudentSearchPage()
+                                  // ModularFeePage()
+                                  ));
                         },
                       ),
                     ],
@@ -491,6 +493,19 @@ class _AdminDashboardState extends State<AdminDashboard> {
                               context,
                               MaterialPageRoute(
                                   builder: (context) => TeacherReportPage()));
+                        },
+                      ),
+                      ListTile(
+                        leading:
+                            const Icon(Icons.report, color: Colors.black54),
+                        title: const Text("Job letter"),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      TeacherAdmissionLetterPage()));
                         },
                       ),
                     ],
