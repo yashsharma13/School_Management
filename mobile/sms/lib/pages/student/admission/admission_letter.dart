@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
-import 'package:sms/pages/admission/admission_confirm.dart';
+import 'package:sms/pages/student/admission/admission_confirm.dart';
 import 'dart:convert';
 
 class AdmissionLetterPage extends StatefulWidget {
@@ -23,6 +24,7 @@ class _AdmissionLetterPageState extends State<AdmissionLetterPage> {
   String? selectedClassName;
   String? selectedSection;
   List<String> availableSections = [];
+  static final String baseeUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
 
   @override
   void initState() {
@@ -46,7 +48,7 @@ class _AdmissionLetterPageState extends State<AdmissionLetterPage> {
       setState(() => isLoadingClasses = true);
 
       final response = await http.get(
-        Uri.parse('http://localhost:1000/api/classes'),
+        Uri.parse('$baseeUrl/api/classes'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -143,7 +145,7 @@ class _AdmissionLetterPageState extends State<AdmissionLetterPage> {
 
       final response = await http.get(
         Uri.parse(
-            'http://localhost:1000/api/students/${Uri.encodeComponent(selectedClass.className)}'),
+            '$baseeUrl/api/students/${Uri.encodeComponent(selectedClass.className)}'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -452,7 +454,7 @@ class _AdmissionLetterPageState extends State<AdmissionLetterPage> {
       backgroundImage: NetworkImage(
         photoPath.startsWith('http')
             ? photoPath
-            : 'http://localhost:1000/uploads/$photoPath',
+            : '$baseeUrl/uploads/$photoPath',
       ),
       onBackgroundImageError: (exception, stackTrace) =>
           Icon(Icons.error, color: Colors.red[800]),

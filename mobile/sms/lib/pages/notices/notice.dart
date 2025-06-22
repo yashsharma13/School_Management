@@ -1,187 +1,5 @@
-// import 'package:flutter/material.dart';
-// import 'package:shared_preferences/shared_preferences.dart';
-// import 'package:http/http.dart' as http;
-// import 'package:sms/pages/notices/add_notice.dart';
-// import 'dart:convert';
-// import 'notice_model.dart';
-// import 'package:intl/intl.dart';
-
-// class NoticesPage extends StatefulWidget {
-//   @override
-//   _NoticesPageState createState() => _NoticesPageState();
-// }
-
-// class _NoticesPageState extends State<NoticesPage> {
-//   List<Notice> notices = [];
-//   bool isLoading = true;
-//   String error = '';
-//   String deletingId = '';
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     fetchNotices();
-//   }
-
-//   Future<void> fetchNotices() async {
-//     setState(() {
-//       isLoading = true;
-//       error = '';
-//     });
-
-//     try {
-//       final prefs = await SharedPreferences.getInstance();
-//       final token = prefs.getString('token');
-
-//       if (token == null) {
-//         setState(() => error = 'Please login again.');
-//         // Navigate to login page if needed
-//         return;
-//       }
-
-//       final response = await http.get(
-//         Uri.parse('http://localhost:1000/api/notices'),
-//         headers: {
-//           'Authorization': 'Bearer $token',
-//           'Content-Type': 'application/json',
-//         },
-//       );
-
-//       if (response.statusCode == 200) {
-//         final jsonData = json.decode(response.body);
-//         final List<dynamic> data = jsonData['data'];
-//         setState(() {
-//           notices = data.map((n) => Notice.fromJson(n)).toList();
-//         });
-//       } else if (response.statusCode == 401) {
-//         setState(() => error = 'Session expired. Please login again.');
-//       } else {
-//         setState(() => error = 'Failed to fetch notices.');
-//       }
-//     } catch (e) {
-//       setState(() => error = e.toString());
-//     } finally {
-//       setState(() => isLoading = false);
-//     }
-//   }
-
-//   Future<void> deleteNotice(String id) async {
-//     setState(() => deletingId = id);
-
-//     try {
-//       final prefs = await SharedPreferences.getInstance();
-//       final token = prefs.getString('token');
-
-//       if (token == null) {
-//         setState(() => error = 'Token not found.');
-//         return;
-//       }
-
-//       final response = await http.delete(
-//         Uri.parse('http://localhost:1000/api/notices/$id'),
-//         headers: {
-//           'Authorization': 'Bearer $token',
-//           'Content-Type': 'application/json',
-//         },
-//       );
-
-//       if (response.statusCode == 200) {
-//         setState(() {
-//           notices.removeWhere((notice) => notice.id == id);
-//         });
-//         ScaffoldMessenger.of(context)
-//             .showSnackBar(SnackBar(content: Text("Notice deleted.")));
-//       } else {
-//         final body = json.decode(response.body);
-//         setState(() => error = body['message'] ?? 'Delete failed');
-//       }
-//     } catch (e) {
-//       setState(() => error = e.toString());
-//     } finally {
-//       setState(() => deletingId = '');
-//     }
-//   }
-
-//   // String formatDate(String dateStr) {
-//   //   try {
-//   //     final date = DateTime.parse(dateStr);
-//   //     return DateFormat('MMM d, yyyy – h:mm a').format(date);
-//   //   } catch (_) {
-//   //     return dateStr;
-//   //   }
-//   // }
-
-//   String formatDate(String dateStr) {
-//     try {
-//       final rawDate = dateStr.substring(0, 10); // "2025-05-30"
-//       final date = DateTime.parse(rawDate);
-//       return DateFormat('dd-MM-yyyy').format(date); // Output: 30-05-2025
-//     } catch (_) {
-//       return dateStr;
-//     }
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text('Notices'),
-//         actions: [
-//           IconButton(
-//             icon: Icon(Icons.refresh),
-//             onPressed: fetchNotices,
-//           ),
-//         ],
-//       ),
-//       body: isLoading
-//           ? Center(child: CircularProgressIndicator())
-//           : error.isNotEmpty
-//               ? Center(child: Text(error))
-//               : notices.isEmpty
-//                   ? Center(child: Text("No notices found."))
-//                   : ListView.builder(
-//                       itemCount: notices.length,
-//                       itemBuilder: (context, index) {
-//                         final notice = notices[index];
-//                         return Card(
-//                           margin: EdgeInsets.all(10),
-//                           child: ListTile(
-//                             title: Text(notice.title),
-//                             subtitle: Column(
-//                               crossAxisAlignment: CrossAxisAlignment.start,
-//                               children: [
-//                                 Text(notice.content),
-//                                 SizedBox(height: 5),
-//                                 Text(formatDate(notice.noticeDate)),
-//                                 Text("Category: ${notice.category}"),
-//                                 Text("Priority: ${notice.priority}"),
-//                               ],
-//                             ),
-//                             trailing: deletingId == notice.id
-//                                 ? CircularProgressIndicator()
-//                                 : IconButton(
-//                                     icon: Icon(Icons.delete, color: Colors.red),
-//                                     onPressed: () => deleteNotice(notice.id),
-//                                   ),
-//                           ),
-//                         );
-//                       },
-//                     ),
-//       floatingActionButton: FloatingActionButton(
-//         onPressed: () {
-//           Navigator.push(
-//             context,
-//             MaterialPageRoute(builder: (context) => AddNoticePage()),
-//           );
-//         },
-//         child: Icon(Icons.add),
-//         tooltip: 'Add Notice',
-//       ),
-//     );
-//   }
-// }
-
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:sms/pages/notices/add_notice.dart';
@@ -199,6 +17,7 @@ class _NoticesPageState extends State<NoticesPage> {
   bool isLoading = true;
   String error = '';
   String deletingId = '';
+  static final String baseeUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
 
   @override
   void initState() {
@@ -222,7 +41,7 @@ class _NoticesPageState extends State<NoticesPage> {
       }
 
       final response = await http.get(
-        Uri.parse('http://localhost:1000/api/notices'),
+        Uri.parse('$baseeUrl/api/notices'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -260,7 +79,7 @@ class _NoticesPageState extends State<NoticesPage> {
       }
 
       final response = await http.delete(
-        Uri.parse('http://localhost:1000/api/notices/$id'),
+        Uri.parse('$baseeUrl/api/notices/$id'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -448,6 +267,8 @@ class _NoticesPageState extends State<NoticesPage> {
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                     SizedBox(height: 12),
+
+                                    // Updated Row: Show start date → end date, and category
                                     Row(
                                       children: [
                                         Icon(
@@ -458,6 +279,31 @@ class _NoticesPageState extends State<NoticesPage> {
                                         SizedBox(width: 4),
                                         Text(
                                           formatDate(notice.noticeDate),
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          '→',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: Colors.grey,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        SizedBox(width: 8),
+                                        Icon(
+                                          Icons.calendar_today_outlined,
+                                          size: 16,
+                                          color: Colors.grey,
+                                        ),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          notice.endDate.isNotEmpty
+                                              ? formatDate(notice.endDate)
+                                              : 'N/A',
                                           style: TextStyle(
                                             fontSize: 13,
                                             color: Colors.grey,
@@ -479,6 +325,7 @@ class _NoticesPageState extends State<NoticesPage> {
                                         ),
                                       ],
                                     ),
+
                                     SizedBox(height: 8),
                                     Align(
                                       alignment: Alignment.centerRight,

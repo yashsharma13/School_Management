@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
@@ -60,6 +61,7 @@ class _TeacherReportPageState extends State<TeacherReportPage> {
   String errorMessage = '';
   bool attendanceExists = false;
   bool _isInitialLoading = true;
+  static final String baseeUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
 
   @override
   void initState() {
@@ -122,7 +124,7 @@ class _TeacherReportPageState extends State<TeacherReportPage> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:1000/api/attendance/$formattedDate'),
+        Uri.parse('$baseeUrl/api/attendance/$formattedDate'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',

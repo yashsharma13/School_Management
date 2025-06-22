@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
@@ -104,6 +105,7 @@ class _StudentReportPageState extends State<StudentReportPage> {
   bool isError = false;
   String errorMessage = '';
   bool attendanceExists = false; // New flag to track if attendance exists
+  final String baseeUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
 
   // For dynamic class and section
   List<Class> classes = [];
@@ -140,7 +142,7 @@ class _StudentReportPageState extends State<StudentReportPage> {
       });
 
       final response = await http.get(
-        Uri.parse('http://localhost:1000/api/classes'),
+        Uri.parse('$baseeUrl/api/classes'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -224,7 +226,7 @@ class _StudentReportPageState extends State<StudentReportPage> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:1000/api/students'),
+        Uri.parse('$baseeUrl/api/students'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -361,7 +363,7 @@ class _StudentReportPageState extends State<StudentReportPage> {
     final encodedSection = Uri.encodeComponent(selectedSection!);
 
     final uri = Uri.parse(
-      'http://localhost:1000/api/attendance/$encodedClass/$encodedSection/$formattedDate',
+      '$baseeUrl/api/attendance/$encodedClass/$encodedSection/$formattedDate',
     );
 
     try {

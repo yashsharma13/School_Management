@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,7 +11,9 @@ import 'student_photo_widget.dart';
 import 'pdf_viewer_widget.dart';
 import 'package:sms/pages/services/api_service.dart';
 
-const String baseUrl = 'http://localhost:1000/uploads';
+// const String baseUrl = 'http://localhost:1000/uploads';
+final String baseeUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
+final String uploadBaseUrl = '$baseeUrl/uploads';
 
 class StudentProfileManagementPage extends StatefulWidget {
   const StudentProfileManagementPage({super.key});
@@ -317,7 +320,8 @@ class _StudentProfileManagementPageState
                                         ),
                                         child: ClipOval(
                                           child: buildStudentPhoto(
-                                              student.studentPhoto, baseUrl),
+                                              student.studentPhoto,
+                                              uploadBaseUrl),
                                         ),
                                       ),
                                     ],
@@ -391,8 +395,8 @@ class _StudentProfileManagementPageState
                               ),
                               SizedBox(height: 20),
                               _buildEditField(nameController, 'Name', true),
-                              _buildEditField(registrationController,
-                                  'Registration Number', true),
+                              // _buildEditField(registrationController,
+                              //     'Registration Number', false),
                               TextFormField(
                                 controller: dobController,
                                 decoration: InputDecoration(
@@ -430,8 +434,8 @@ class _StudentProfileManagementPageState
                                   fatherNameController, 'Father Name', true),
                               _buildEditField(
                                   motherNameController, 'Mother Name', true),
-                              _buildEditField(emailController, 'Email', true),
-                              _buildEditField(phoneController, 'Phone', true),
+                              // _buildEditField(emailController, 'Email', true),
+                              // _buildEditField(phoneController, 'Phone', true),
                               SizedBox(height: 16),
                               DropdownButtonFormField<String>(
                                 value: newClass,
@@ -907,7 +911,7 @@ class _StudentProfileManagementPageState
                                     ),
                                     child: ClipOval(
                                       child: buildStudentPhoto(
-                                          student.studentPhoto, baseUrl),
+                                          student.studentPhoto, uploadBaseUrl),
                                     ),
                                   ),
                                   title: Text(
@@ -922,6 +926,8 @@ class _StudentProfileManagementPageState
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
+                                        'registration'
+                                        ':-'
                                         '${student.registrationNumber}',
                                         style: TextStyle(
                                           color: Colors.grey[600],
@@ -993,7 +999,7 @@ class _StudentProfileManagementPageState
                                             builder: (context) =>
                                                 PDFViewerScreen(
                                               pdfData: student.birthCertificate,
-                                              baseUrl: baseUrl,
+                                              baseUrl: uploadBaseUrl,
                                             ),
                                           ),
                                         );

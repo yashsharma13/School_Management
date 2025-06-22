@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:sms/pages/teacher/Job_letter/confirm_letter.dart';
@@ -19,6 +20,7 @@ class _TeacherAdmissionLetterPageState
   bool isLoading = true;
   String? token;
   String? searchQuery;
+  static final String baseeUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
 
   @override
   void initState() {
@@ -42,7 +44,7 @@ class _TeacherAdmissionLetterPageState
       setState(() => isLoading = true);
 
       final response = await http.get(
-        Uri.parse('http://localhost:1000/api/teachers'),
+        Uri.parse('$baseeUrl/api/teachers'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -55,7 +57,7 @@ class _TeacherAdmissionLetterPageState
         setState(() {
           teachers = teacherData
               .map((data) => Teacher(
-                    id: data['_id']?.toString() ?? '',
+                    id: data['id']?.toString() ?? '',
                     name: data['teacher_name']?.toString() ?? 'Unknown Teacher',
                     email: data['email']?.toString() ?? 'N/A',
                     dateOfBirth: data['date_of_birth']?.toString() ?? 'N/A',
@@ -69,6 +71,8 @@ class _TeacherAdmissionLetterPageState
                     teacherPhoto: data['teacher_photo']?.toString() ?? '',
                     qualificationCertificate:
                         data['qualification_certificate']?.toString() ?? '',
+                    username: data['username']?.toString() ?? 'N/A',
+                    password: data['password']?.toString() ?? 'N/A',
                   ))
               .where((teacher) => teacher.id.isNotEmpty)
               .toList();
@@ -137,7 +141,7 @@ class _TeacherAdmissionLetterPageState
       backgroundImage: NetworkImage(
         photoPath.startsWith('http')
             ? photoPath
-            : 'http://localhost:1000/uploads/$photoPath',
+            : '$baseeUrl/uploads/$photoPath',
       ),
       onBackgroundImageError: (exception, stackTrace) =>
           Icon(Icons.error, color: Colors.red[800]),
@@ -302,6 +306,8 @@ class Teacher {
   final String phone;
   final String teacherPhoto;
   final String qualificationCertificate;
+  final String username;
+  final String password;
 
   const Teacher({
     required this.id,
@@ -317,5 +323,7 @@ class Teacher {
     required this.phone,
     required this.teacherPhoto,
     required this.qualificationCertificate,
+    required this.username,
+    required this.password,
   });
 }

@@ -25,8 +25,13 @@ export const verifyToken = (req, res, next) => {
     if (err) {
       return res.status(401).json({ success: false, message: 'Invalid or expired token' });
     }
+    // console.log('Decoded JWT payload:', decoded);
 
-    req.user_email = decoded.email || decoded.user_email; // Attach user email for use in controllers
+    req.signup_id = decoded.id || decoded.signup_id; // Attach user email for use in controllers
+      // console.log('req.signup_id set to:', req.signup_id);  // <--- and this
+      req.school_id = decoded.school_id;
+      req.role = decoded.role;
+
     next(); // Proceed
   });
 };

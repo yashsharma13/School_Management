@@ -1,4 +1,4 @@
-// middlewares/upload.js
+// // middlewares/upload.js
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -19,16 +19,16 @@ if (!fs.existsSync(uploadDir)) {
 
 // File filter for validating uploaded files
 const fileFilter = (req, file, cb) => {
-  console.log('File details:', {
-    fieldname: file.fieldname,
-    mimetype: file.mimetype,
-    originalname: file.originalname,
-    size: file.size
-  });
+  // console.log('File details:', {
+  //   fieldname: file.fieldname,
+  //   mimetype: file.mimetype,
+  //   originalname: file.originalname,
+  //   size: file.size
+  // });
 
   const fileExtension = path.extname(file.originalname).toLowerCase();
 
-  if (file.fieldname === 'student_photo' || file.fieldname === 'teacher_photo') {
+  if (file.fieldname === 'student_photo' || file.fieldname === 'teacher_photo' || file.fieldname === 'logo') {
     const allowedExtensions = ['.jpg', '.jpeg', '.png'];
     if (allowedExtensions.includes(fileExtension)) {
       cb(null, true);
@@ -66,7 +66,8 @@ const upload = multer({
   { name: 'student_photo', maxCount: 1 },
   { name: 'birth_certificate', maxCount: 1 },
   { name: 'teacher_photo', maxCount: 1 },
-  { name: 'qualification_certificate', maxCount: 1 }
+  { name: 'qualification_certificate', maxCount: 1 },
+  { name: 'logo', maxCount: 1 }
 ]);
 
 export default upload;

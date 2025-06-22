@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:sms/pages/fees/fees_collection_detail_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'fees_collection_detail_page.dart';
 
-class FeesStudentSearchPage extends StatefulWidget {
+class FeeCollectPage extends StatefulWidget {
+  const FeeCollectPage({super.key});
+
   @override
-  _FeesStudentSearchPageState createState() => _FeesStudentSearchPageState();
+  State<FeeCollectPage> createState() => _FeeCollectPageState();
 }
 
-class _FeesStudentSearchPageState extends State<FeesStudentSearchPage> {
-  List<Class> classes = [];
-  List<Student> students = [];
-  List<Student> filteredStudents = [];
+class _FeeCollectPageState extends State<FeeCollectPage> {
+  List<ClassModel> classes = [];
+  List<StudentModel> students = [];
+  List<StudentModel> filteredStudents = [];
   bool isLoadingClasses = true;
   bool isLoadingStudents = false;
   String? token;
@@ -21,6 +24,9 @@ class _FeesStudentSearchPageState extends State<FeesStudentSearchPage> {
   String? selectedSection;
   List<String> availableSections = [];
   TextEditingController searchController = TextEditingController();
+  static final String baseUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
+  static final Map<String, String> classIdCache = {};
+  static final Map<String, List<FeeStructureModel>> feeStructureCache = {};
 
   @override
   void initState() {
@@ -51,7 +57,7 @@ class _FeesStudentSearchPageState extends State<FeesStudentSearchPage> {
       setState(() => isLoadingClasses = true);
 
       final response = await http.get(
-        Uri.parse('http://localhost:1000/api/classes'),
+        Uri.parse('$baseUrl/api/classes'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -61,45 +67,40 @@ class _FeesStudentSearchPageState extends State<FeesStudentSearchPage> {
 
       if (response.statusCode == 200) {
         final List<dynamic> classData = json.decode(response.body);
-        final Map<String, Class> classMap = {};
+        final Map<String, ClassModel> classMap = {};
 
         for (final data in classData) {
           if (data is! Map<String, dynamic>) continue;
 
           final rawClassName =
               (data['class_name'] ?? data['className'] ?? '').toString().trim();
-
           if (rawClassName.isEmpty) continue;
 
-          // Normalize className (lowercase) as key for grouping
-          final classNameKey = rawClassName.toLowerCase();
-
+          final classId =
+              data['id']?.toString() ?? data['class_id']?.toString() ?? '';
           final section = (data['section'] ?? '').toString().trim();
 
-          // If class already exists, add section if not present
-          if (classMap.containsKey(classNameKey)) {
+          if (classMap.containsKey(rawClassName)) {
             if (section.isNotEmpty &&
-                !classMap[classNameKey]!.sections.contains(section)) {
-              classMap[classNameKey]!.sections.add(section);
+                !classMap[rawClassName]!.sections.contains(section)) {
+              classMap[rawClassName]!.sections.add(section);
             }
           } else {
-            // Create new Class object; id can be classNameKey or empty string
-            classMap[classNameKey] = Class(
-              id: classNameKey,
-              className: rawClassName,
+            classMap[rawClassName] = ClassModel(
+              id: classId,
+              name: rawClassName,
               sections: section.isNotEmpty ? [section] : [],
-              tuitionFees: data['tuition_fees']?.toString() ?? '0',
             );
+            classIdCache[rawClassName] = classId;
           }
         }
 
-        // Sort sections inside each class
         for (final classObj in classMap.values) {
           classObj.sections.sort();
         }
 
         final classesList = classMap.values.toList()
-          ..sort((a, b) => a.className.compareTo(b.className));
+          ..sort((a, b) => a.name.compareTo(b.name));
 
         setState(() {
           classes = classesList;
@@ -114,27 +115,32 @@ class _FeesStudentSearchPageState extends State<FeesStudentSearchPage> {
     }
   }
 
-  void _updateAvailableSections(String? classId) {
+  void _updateAvailableSections(String? className) {
     setState(() {
-      if (classId != null) {
+      if (className != null) {
         final selectedClass = classes.firstWhere(
-          (c) => c.id == classId,
-          orElse: () =>
-              Class(id: '', className: '', tuitionFees: '0', sections: []),
+          (c) => c.name == className,
+          orElse: () => ClassModel(id: '', name: '', sections: []),
         );
+        selectedClassId = selectedClass.id;
         availableSections = selectedClass.sections;
-        selectedClassName = selectedClass.className;
+        selectedClassName = selectedClass.name;
       } else {
+        selectedClassId = null;
         availableSections = [];
         selectedClassName = null;
       }
       selectedSection = null;
-      _filterStudents();
+      students = [];
+      filteredStudents = [];
+      if (className != null) {
+        _fetchStudents();
+      }
     });
   }
 
-  Future<void> _fetchStudentsByClass(String classId) async {
-    if (token == null) return;
+  Future<void> _fetchStudents() async {
+    if (token == null || selectedClassName == null) return;
 
     setState(() {
       isLoadingStudents = true;
@@ -142,16 +148,10 @@ class _FeesStudentSearchPageState extends State<FeesStudentSearchPage> {
     });
 
     try {
-      Class selectedClass = classes.firstWhere(
-        (c) => c.id == classId,
-        orElse: () =>
-            Class(id: '', className: 'Unknown', tuitionFees: '0', sections: []),
-      );
-
-      String encodedClassName = Uri.encodeComponent(selectedClass.className);
+      String encodedClassName = Uri.encodeComponent(selectedClassName!);
 
       final response = await http.get(
-        Uri.parse('http://localhost:1000/api/students/$encodedClassName'),
+        Uri.parse('$baseUrl/api/students/$encodedClassName'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -163,15 +163,12 @@ class _FeesStudentSearchPageState extends State<FeesStudentSearchPage> {
         final List<dynamic> studentData = json.decode(response.body);
         setState(() {
           students = studentData
-              .map((data) => Student(
+              .map((data) => StudentModel(
                     id: data['_id']?.toString() ?? data['id']?.toString() ?? '',
                     name: data['student_name']?.toString() ?? 'Unknown Student',
-                    registrationNumber:
-                        data['registration_number']?.toString() ?? '',
-                    assignedClassId: classId,
-                    className: selectedClass.className,
-                    assignedSection: data['assigned_section']?.toString() ?? '',
-                    studentPhoto: data['student_photo']?.toString() ?? '',
+                    classId: selectedClassId ?? '',
+                    className: selectedClassName ?? '',
+                    section: data['assigned_section']?.toString() ?? '',
                   ))
               .where((student) => student.id.isNotEmpty)
               .toList();
@@ -190,80 +187,209 @@ class _FeesStudentSearchPageState extends State<FeesStudentSearchPage> {
     }
   }
 
+  // Future<Map<String, dynamic>> _fetchStudentFeeData(
+  //     StudentModel student) async {
+  //   final classId =
+  //       classIdCache[student.className] ?? await _getClassId(student.className);
+  //   final feeStructure =
+  //       feeStructureCache[student.className] ?? await _getFeeStructure(classId);
+  //   final paidFeeMasterIds = await _getPaidFees(student.id);
+  //   final previousBalance = await _getPreviousBalance(student.id);
+
+  //   return {
+  //     'classId': classId,
+  //     'feeStructure': feeStructure,
+  //     'paidFeeMasterIds': paidFeeMasterIds,
+  //     'previousBalance': previousBalance,
+  //   };
+  // }
+
+  Future<Map<String, dynamic>> _fetchStudentFeeData(
+      StudentModel student) async {
+    final classId =
+        classIdCache[student.className] ?? await _getClassId(student.className);
+    final feeStructure =
+        feeStructureCache[student.className] ?? await _getFeeStructure(classId);
+    final paidFeeMasterIds = await _getPaidFees(student.id);
+    final previousBalance = await _getPreviousBalance(student.id);
+
+    // Calculate total yearly fee for the student
+    double totalYearlyFee = 0.0;
+    for (var fee in feeStructure) {
+      if (!paidFeeMasterIds.contains(fee.feeMasterId.toString()) ||
+          !fee.isOneTime) {
+        double amount = double.tryParse(fee.amount) ?? 0.0;
+        totalYearlyFee += fee.isMonthly ? amount : amount;
+      }
+    }
+
+    return {
+      'classId': classId,
+      'feeStructure': feeStructure,
+      'paidFeeMasterIds': paidFeeMasterIds,
+      'previousBalance': previousBalance,
+      'totalYearlyFee': totalYearlyFee,
+    };
+  }
+
+  Future<String> _getClassId(String className) async {
+    if (classIdCache.containsKey(className)) return classIdCache[className]!;
+
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/classes'),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': token!,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> classData = json.decode(response.body);
+        for (final data in classData) {
+          final name =
+              (data['class_name'] ?? data['className'] ?? '').toString().trim();
+          if (name.toLowerCase() == className.toLowerCase()) {
+            final id = data['id']?.toString() ?? data['class_id']?.toString();
+            classIdCache[className] = id!;
+            return id;
+          }
+        }
+      }
+    } catch (error) {
+      // Fallback to class name if API fails
+    }
+    classIdCache[className] = className;
+    return className;
+  }
+
+  Future<List<FeeStructureModel>> _getFeeStructure(String classId) async {
+    if (feeStructureCache.containsKey(classId))
+      return feeStructureCache[classId]!;
+
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/feestructure/$classId'),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': token!,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final feeStructureData = jsonDecode(response.body);
+        List<dynamic> feeStructureList = feeStructureData is List
+            ? feeStructureData
+            : feeStructureData['data'] ?? [];
+        final feeStructure = feeStructureList
+            .map((item) => FeeStructureModel.fromJson(item))
+            .toList();
+        feeStructureCache[classId] = feeStructure;
+        return feeStructure;
+      }
+    } catch (error) {
+      // Return empty list on error
+    }
+    return [];
+  }
+
+  Future<List<String>> _getPaidFees(String studentId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/fees/paid?studentId=$studentId'),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': token!,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return List<String>.from(jsonDecode(response.body));
+      }
+    } catch (error) {
+      // Return empty list on error
+    }
+    return [];
+  }
+
+  Future<double> _getPreviousBalance(String studentId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/summary/$studentId'),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': token!,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final balanceData = jsonDecode(response.body);
+        return (balanceData['data']['last_due_balance'] ?? 0).toDouble();
+      }
+    } catch (error) {
+      // Return 0 on error
+    }
+    return 0.0;
+  }
+
   void _filterStudents() {
     String searchText = searchController.text.toLowerCase();
     setState(() {
       filteredStudents = students.where((student) {
         final nameMatch = student.name.toLowerCase().contains(searchText);
-        final sectionMatch = selectedSection == null ||
-            student.assignedSection == selectedSection;
+        final sectionMatch =
+            selectedSection == null || student.section == selectedSection;
         return nameMatch && sectionMatch;
       }).toList();
     });
-  }
-
-  void _openFeesCollectPage(Student student) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => FeesCollectionPage(
-          studentId: student.id,
-          studentName: student.name,
-          studentClass: student.className,
-          studentSection: student.assignedSection,
-          monthlyFee: classes
-              .firstWhere(
-                (c) => c.id == student.assignedClassId,
-                orElse: () => Class(
-                    id: '',
-                    className: 'Unknown',
-                    tuitionFees: '0',
-                    sections: []),
-              )
-              .tuitionFees,
-          isNewAdmission: false,
-        ),
-      ),
-    );
   }
 
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.red[800],
+        backgroundColor: Colors.red.shade800,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
+        duration: Duration(seconds: 3),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final blueTheme = Colors.blue.shade900;
+    final whiteTheme = Colors.white;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
         title: Text(
-          'Fees Collection',
+          'Collect Fee',
           style: TextStyle(
-            color: Colors.white,
+            color: whiteTheme,
             fontWeight: FontWeight.bold,
+            fontSize: 20,
           ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.blue.shade900,
-        elevation: 0,
+        backgroundColor: blueTheme,
+        elevation: 4,
+        iconTheme: IconThemeData(color: whiteTheme),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Class and Section Selection Card
             Card(
-              elevation: 2,
+              elevation: 4,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -272,117 +398,135 @@ class _FeesStudentSearchPageState extends State<FeesStudentSearchPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Filter Students',
-                        style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue[800])),
+                    Text(
+                      'Filter Students',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: blueTheme,
+                      ),
+                    ),
                     const SizedBox(height: 12),
-
-                    // Class Dropdown
                     isLoadingClasses
                         ? Center(
                             child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.blue[800]!),
+                              color: blueTheme,
                             ),
                           )
                         : classes.isEmpty
-                            ? Center(child: Text('No classes available'))
+                            ? Center(
+                                child: Text(
+                                  'No classes available',
+                                  style: TextStyle(color: Colors.grey.shade600),
+                                ),
+                              )
                             : DropdownButtonFormField<String>(
                                 decoration: InputDecoration(
-                                  labelText: 'Class',
-                                  labelStyle:
-                                      TextStyle(color: Colors.blue[800]),
+                                  labelText: 'Select Class',
+                                  labelStyle: TextStyle(color: blueTheme),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
                                   ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide:
+                                        BorderSide(color: Colors.blue.shade100),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide:
+                                        BorderSide(color: blueTheme, width: 2),
+                                  ),
                                   filled: true,
-                                  fillColor: Colors.blue[50],
+                                  fillColor: Colors.blue.shade50,
                                   contentPadding: EdgeInsets.symmetric(
                                       horizontal: 12, vertical: 12),
                                 ),
-                                value: selectedClassId,
+                                value: selectedClassName,
                                 items: [
                                   DropdownMenuItem<String>(
                                     value: null,
-                                    child: Text('-- Select a Class --',
-                                        style:
-                                            TextStyle(color: Colors.grey[600])),
+                                    child: Text(
+                                      '-- Select a Class --',
+                                      style: TextStyle(
+                                          color: Colors.grey.shade600),
+                                    ),
                                   ),
                                   ...classes.map(
                                     (classItem) => DropdownMenuItem<String>(
-                                      value: classItem.id,
-                                      child: Text(classItem.className,
-                                          style: TextStyle(
-                                              color: Colors.blue[900])),
+                                      value: classItem.name,
+                                      child: Text(
+                                        classItem.name,
+                                        style: TextStyle(color: blueTheme),
+                                      ),
                                     ),
                                   ),
                                 ],
                                 onChanged: (value) {
-                                  setState(() {
-                                    selectedClassId = value;
-                                    _updateAvailableSections(value);
-                                    if (value != null) {
-                                      _fetchStudentsByClass(value);
-                                    } else {
-                                      students = [];
-                                      filteredStudents = [];
-                                    }
-                                  });
+                                  _updateAvailableSections(value);
                                 },
                               ),
-
-                    // Section Dropdown (only visible when a class is selected)
-                    // if (selectedClassId != null && selectedClassId!.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 12.0),
-                      child: DropdownButtonFormField<String>(
-                        decoration: InputDecoration(
-                          labelText: 'Section',
-                          labelStyle: TextStyle(color: Colors.blue[800]),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          filled: true,
-                          fillColor: Colors.blue[50],
-                          contentPadding: EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 12),
-                        ),
-                        value: selectedSection,
-                        items: [
-                          DropdownMenuItem<String>(
-                            value: null,
-                            child: Text('-- All Sections --',
-                                style: TextStyle(color: Colors.grey[600])),
-                          ),
-                          ...availableSections.map(
-                            (section) => DropdownMenuItem<String>(
-                              value: section,
-                              child: Text(section,
-                                  style: TextStyle(color: Colors.blue[900])),
+                    if (selectedClassName != null &&
+                        availableSections.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12.0),
+                        child: DropdownButtonFormField<String>(
+                          decoration: InputDecoration(
+                            labelText: 'Select Section',
+                            labelStyle: TextStyle(color: blueTheme),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
                             ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide:
+                                  BorderSide(color: Colors.blue.shade100),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide:
+                                  BorderSide(color: blueTheme, width: 2),
+                            ),
+                            filled: true,
+                            fillColor: Colors.blue.shade50,
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 12),
                           ),
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            selectedSection = value;
-                            _filterStudents();
-                          });
-                        },
+                          value: selectedSection,
+                          items: [
+                            DropdownMenuItem<String>(
+                              value: null,
+                              child: Text(
+                                '-- All Sections --',
+                                style: TextStyle(color: Colors.grey.shade600),
+                              ),
+                            ),
+                            ...availableSections.map(
+                              (section) => DropdownMenuItem<String>(
+                                value: section,
+                                child: Text(
+                                  section,
+                                  style: TextStyle(color: blueTheme),
+                                ),
+                              ),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            setState(() {
+                              selectedSection = value;
+                              _filterStudents();
+                            });
+                          },
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
             ),
-
             SizedBox(height: 16),
-
-            // Search Field
-            if (selectedClassId != null)
+            if (selectedClassName != null)
               Card(
-                elevation: 2,
+                elevation: 4,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -390,44 +534,43 @@ class _FeesStudentSearchPageState extends State<FeesStudentSearchPage> {
                   controller: searchController,
                   decoration: InputDecoration(
                     labelText: 'Search Student',
-                    labelStyle: TextStyle(color: Colors.blue[800]),
-                    prefixIcon: Icon(Icons.search, color: Colors.blue[800]),
+                    labelStyle: TextStyle(color: blueTheme),
+                    prefixIcon: Icon(Icons.search, color: blueTheme),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    filled: true,
+                    fillColor: Colors.blue.shade50,
                   ),
+                  style: TextStyle(color: blueTheme, fontSize: 14),
                 ),
               ),
-
             SizedBox(height: 16),
-
-            if (selectedClassId != null)
+            if (selectedClassName != null)
               Text(
                 'Students',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blue[900],
+                  color: blueTheme,
                 ),
               ),
-
             SizedBox(height: 8),
-
             Expanded(
               child: isLoadingStudents
                   ? Center(
                       child: CircularProgressIndicator(
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(Colors.blue[800]!),
+                        color: blueTheme,
                       ),
                     )
-                  : selectedClassId == null
+                  : selectedClassName == null
                       ? Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(
                                 Icons.school,
-                                color: Colors.blue[800],
+                                color: blueTheme,
                                 size: 48,
                               ),
                               SizedBox(height: 16),
@@ -435,7 +578,7 @@ class _FeesStudentSearchPageState extends State<FeesStudentSearchPage> {
                                 'Please select a class to view students',
                                 style: TextStyle(
                                   fontSize: 16,
-                                  color: Colors.grey[800],
+                                  color: Colors.grey.shade600,
                                 ),
                               ),
                             ],
@@ -450,7 +593,7 @@ class _FeesStudentSearchPageState extends State<FeesStudentSearchPage> {
                                     selectedSection == null
                                         ? Icons.people_outline
                                         : Icons.filter_alt_outlined,
-                                    color: Colors.blue[800],
+                                    color: blueTheme,
                                     size: 48,
                                   ),
                                   SizedBox(height: 16),
@@ -460,7 +603,7 @@ class _FeesStudentSearchPageState extends State<FeesStudentSearchPage> {
                                         : 'No students found in this section',
                                     style: TextStyle(
                                       fontSize: 16,
-                                      color: Colors.grey[800],
+                                      color: Colors.grey.shade600,
                                     ),
                                   ),
                                 ],
@@ -473,49 +616,97 @@ class _FeesStudentSearchPageState extends State<FeesStudentSearchPage> {
                               itemBuilder: (context, index) {
                                 final student = filteredStudents[index];
                                 return Card(
-                                  elevation: 2,
+                                  elevation: 3,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: ListTile(
-                                    leading: _buildStudentPhoto(
-                                        student.studentPhoto),
+                                    leading: CircleAvatar(
+                                      backgroundColor: Colors.blue.shade50,
+                                      child: Icon(
+                                        Icons.person,
+                                        color: blueTheme,
+                                        size: 20,
+                                      ),
+                                    ),
                                     title: Text(
                                       student.name,
                                       style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.blue[900],
+                                        fontWeight: FontWeight.w600,
+                                        color: blueTheme,
+                                        fontSize: 16,
                                       ),
                                     ),
-                                    subtitle: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Reg: ${student.registrationNumber}',
-                                          style: TextStyle(
-                                              color: Colors.grey[600]),
-                                        ),
-                                        Text(
-                                          'Class: ${student.className} • Section: ${student.assignedSection}',
-                                          style: TextStyle(
-                                              color: Colors.grey[600]),
-                                        ),
-                                      ],
+                                    subtitle: Text(
+                                      'Class: ${student.className} • Section: ${student.section}',
+                                      style: TextStyle(
+                                        color: Colors.grey.shade600,
+                                        fontSize: 13,
+                                      ),
                                     ),
                                     trailing: Container(
                                       padding: EdgeInsets.all(6),
                                       decoration: BoxDecoration(
-                                        color: Colors.blue[50],
+                                        color: Colors.blue.shade50,
                                         shape: BoxShape.circle,
                                       ),
                                       child: Icon(
                                         Icons.arrow_forward,
-                                        color: Colors.blue[800],
+                                        color: blueTheme,
                                         size: 20,
                                       ),
                                     ),
-                                    onTap: () => _openFeesCollectPage(student),
+                                    onTap: () async {
+                                      // Show loading dialog
+                                      showDialog(
+                                        context: context,
+                                        barrierDismissible: false,
+                                        builder: (context) => Center(
+                                          child: CircularProgressIndicator(
+                                              color: blueTheme),
+                                        ),
+                                      );
+
+                                      final feeData =
+                                          await _fetchStudentFeeData(student);
+
+                                      // Dismiss loading dialog
+                                      Navigator.pop(context);
+
+                                      Navigator.push(
+                                        context,
+                                        PageRouteBuilder(
+                                          pageBuilder: (context, animation,
+                                                  secondaryAnimation) =>
+                                              FeesCollectionPage(
+                                            studentId: student.id,
+                                            studentName: student.name,
+                                            studentClass: student.className,
+                                            studentSection: student.section,
+                                            isNewAdmission: false,
+                                            preloadedData: feeData,
+                                          ),
+                                          transitionsBuilder: (context,
+                                              animation,
+                                              secondaryAnimation,
+                                              child) {
+                                            const begin = Offset(1.0, 0.0);
+                                            const end = Offset.zero;
+                                            const curve = Curves.easeInOut;
+                                            var tween = Tween(
+                                                    begin: begin, end: end)
+                                                .chain(
+                                                    CurveTween(curve: curve));
+                                            return SlideTransition(
+                                              position: animation.drive(tween),
+                                              child: child,
+                                            );
+                                          },
+                                          transitionDuration:
+                                              Duration(milliseconds: 300),
+                                        ),
+                                      );
+                                    },
                                     contentPadding: EdgeInsets.symmetric(
                                         horizontal: 16, vertical: 12),
                                   ),
@@ -528,530 +719,32 @@ class _FeesStudentSearchPageState extends State<FeesStudentSearchPage> {
       ),
     );
   }
-
-  Widget _buildStudentPhoto(String photoPath) {
-    if (photoPath.isEmpty) {
-      return CircleAvatar(
-        backgroundColor: Colors.blue[100],
-        child: Icon(
-          Icons.person,
-          color: Colors.blue[800],
-        ),
-      );
-    }
-    if (photoPath.startsWith('http')) {
-      return CircleAvatar(
-        backgroundImage: NetworkImage(photoPath),
-      );
-    } else {
-      return CircleAvatar(
-        backgroundImage:
-            NetworkImage('http://localhost:1000/uploads/$photoPath'),
-      );
-    }
-  }
 }
 
-class Class {
+class ClassModel {
   final String id;
-  final String className;
-  final String tuitionFees;
+  final String name;
   List<String> sections;
 
-  Class({
+  ClassModel({
     required this.id,
-    required this.className,
-    required this.tuitionFees,
+    required this.name,
     required this.sections,
   });
 }
 
-class Student {
+class StudentModel {
   final String id;
   final String name;
-  final String registrationNumber;
-  final String assignedClassId;
+  final String classId;
   final String className;
-  final String assignedSection;
-  final String studentPhoto;
+  final String section;
 
-  Student({
+  StudentModel({
     required this.id,
     required this.name,
-    required this.registrationNumber,
-    required this.assignedClassId,
+    required this.classId,
     required this.className,
-    required this.assignedSection,
-    required this.studentPhoto,
+    required this.section,
   });
 }
-
-// ==============================================kaam ka code ===============================
-
-// import 'package:flutter/material.dart';
-// import 'package:shared_preferences/shared_preferences.dart';
-// import 'package:sms/pages/services/api_service.dart';
-
-// class ModularFeePage extends StatefulWidget {
-//   @override
-//   _ModularFeePageState createState() => _ModularFeePageState();
-// }
-
-// class _ModularFeePageState extends State<ModularFeePage> {
-//   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-//   List<FeeField> feeFields = [];
-
-//   // Class and Section state
-//   List<Class> classes = [];
-//   Class? selectedClass;
-//   String? selectedSection;
-//   String? token;
-//   List<String> availableSections = [];
-
-//   bool isLoading = false;
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     _addFeeField(); // Add initial fee field
-//     _loadClasses();
-//     _loadToken();
-//   }
-
-//   Future<void> _loadToken() async {
-//     final prefs = await SharedPreferences.getInstance();
-//     setState(() {
-//       token = prefs.getString('token');
-//     });
-//     if (token != null) {
-//       await _loadClasses();
-//     }
-//   }
-
-//   Future<void> _loadClasses() async {
-//     try {
-//       setState(() {
-//         isLoading = true;
-//       });
-
-//       final fetchedClasses = await ApiService.fetchClasses();
-
-//       // Grouping sections by class name
-//       final Map<String, Set<String>> classSectionMap = {};
-//       final List<Class> tempClasses = [];
-
-//       for (final data in fetchedClasses) {
-//         final className =
-//             (data['class_name'] ?? data['className'] ?? '').toString().trim();
-//         final section = (data['section'] ?? '').toString().trim();
-
-//         if (className.isEmpty) continue;
-
-//         if (!classSectionMap.containsKey(className)) {
-//           classSectionMap[className] = {};
-//         }
-
-//         classSectionMap[className]!.add(section);
-//       }
-
-//       // Build Class objects
-//       classSectionMap.forEach((className, sections) {
-//         tempClasses.add(Class(
-//           id: className, // You can adjust ID if you need real IDs
-//           className: className,
-//           sections: sections.toList(),
-//         ));
-//       });
-
-//       setState(() {
-//         classes = tempClasses;
-//         if (classes.isEmpty) {
-//           _showErrorSnackBar(
-//               'No valid classes found. Please add classes first.');
-//         }
-//       });
-//     } catch (error) {
-//       _showErrorSnackBar('Error fetching classes: ${error.toString()}');
-//     } finally {
-//       setState(() {
-//         isLoading = false;
-//       });
-//     }
-//   }
-
-//   void _showErrorSnackBar(String message) {
-//     ScaffoldMessenger.of(context).showSnackBar(
-//       SnackBar(
-//         content: Text(message),
-//         backgroundColor: Colors.red[800],
-//         behavior: SnackBarBehavior.floating,
-//         shape: RoundedRectangleBorder(
-//           borderRadius: BorderRadius.circular(8),
-//         ),
-//       ),
-//     );
-//   }
-
-//   void _addFeeField() {
-//     setState(() {
-//       feeFields.add(FeeField());
-//     });
-//   }
-
-//   void _removeFeeField(int index) {
-//     if (feeFields.length > 1) {
-//       setState(() {
-//         feeFields.removeAt(index);
-//       });
-//     }
-//   }
-
-//   void _submitFees() {
-//     if (_formKey.currentState!.validate()) {
-//       if (selectedClass == null) {
-//         ScaffoldMessenger.of(context).showSnackBar(
-//           SnackBar(
-//             content: Text('Please select a class'),
-//             backgroundColor: Colors.red[700],
-//           ),
-//         );
-//         return;
-//       }
-//       if (selectedSection == null) {
-//         ScaffoldMessenger.of(context).showSnackBar(
-//           SnackBar(
-//             content: Text('Please select a section'),
-//             backgroundColor: Colors.red[700],
-//           ),
-//         );
-//         return;
-//       }
-
-//       _formKey.currentState!.save();
-
-//       List<Map<String, String>> feeData = feeFields
-//           .map((field) => {
-//                 'fee_type': field.feeType.trim(),
-//                 'amount': field.amount.trim(),
-//               })
-//           .toList();
-
-//       print(
-//           "Submitting Fees for Class: ${selectedClass!.className}, Section: $selectedSection");
-//       print("Fee Data: $feeData");
-
-//       // TODO: Send feeData along with class and section to backend using your ApiService
-//       // ApiService.submitFees(className: selectedClass!.className, section: selectedSection, feeData: feeData);
-
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         SnackBar(
-//           content: Text('Fees submitted successfully!'),
-//           backgroundColor: Colors.green[800],
-//         ),
-//       );
-//     }
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text('Modular Fee Entry'),
-//         backgroundColor: Colors.blue[800],
-//       ),
-//       body: isLoading
-//           ? Center(child: CircularProgressIndicator(color: Colors.blue[800]))
-//           : Form(
-//               key: _formKey,
-//               child: Padding(
-//                 padding: const EdgeInsets.all(16.0),
-//                 child: Column(
-//                   children: [
-//                     // Class Dropdown
-//                     DropdownButtonFormField<Class>(
-//                       decoration: InputDecoration(
-//                         labelText: 'Select Class',
-//                         border: OutlineInputBorder(),
-//                       ),
-//                       value: selectedClass,
-//                       items: classes.map((classItem) {
-//                         return DropdownMenuItem<Class>(
-//                           value: classItem,
-//                           child: Text(classItem.className),
-//                         );
-//                       }).toList(),
-//                       onChanged: (Class? newValue) {
-//                         setState(() {
-//                           selectedClass = newValue;
-//                           selectedSection = null;
-//                           availableSections = newValue?.sections ?? [];
-//                         });
-//                       },
-//                       validator: (val) =>
-//                           val == null ? 'Please select a class' : null,
-//                     ),
-//                     SizedBox(height: 12),
-
-//                     // Section Dropdown
-//                     DropdownButtonFormField<String>(
-//                       decoration: InputDecoration(
-//                         labelText: 'Select Section',
-//                         border: OutlineInputBorder(),
-//                       ),
-//                       value: selectedSection,
-//                       items: availableSections.map((section) {
-//                         return DropdownMenuItem<String>(
-//                           value: section,
-//                           child: Text(section),
-//                         );
-//                       }).toList(),
-//                       onChanged: (val) {
-//                         setState(() {
-//                           selectedSection = val;
-//                         });
-//                       },
-//                       validator: (val) =>
-//                           val == null ? 'Please select a section' : null,
-//                     ),
-//                     SizedBox(height: 16),
-
-//                     // Fee Fields List
-//                     Expanded(
-//                       child: ListView.separated(
-//                         itemCount: feeFields.length,
-//                         separatorBuilder: (_, __) => SizedBox(height: 12),
-//                         itemBuilder: (context, index) {
-//                           return Card(
-//                             elevation: 2,
-//                             shape: RoundedRectangleBorder(
-//                                 borderRadius: BorderRadius.circular(12)),
-//                             child: Padding(
-//                               padding: const EdgeInsets.all(12.0),
-//                               child: Column(
-//                                 children: [
-//                                   Row(
-//                                     children: [
-//                                       Text(
-//                                         'Fee ${index + 1}',
-//                                         style: TextStyle(
-//                                           fontWeight: FontWeight.bold,
-//                                           color: Colors.blue[800],
-//                                         ),
-//                                       ),
-//                                       Spacer(),
-//                                       if (feeFields.length > 1)
-//                                         IconButton(
-//                                           icon: Icon(Icons.delete,
-//                                               color: Colors.red[400]),
-//                                           onPressed: () =>
-//                                               _removeFeeField(index),
-//                                         ),
-//                                     ],
-//                                   ),
-//                                   SizedBox(height: 12),
-//                                   TextFormField(
-//                                     decoration: InputDecoration(
-//                                       labelText: 'Fee Type',
-//                                       border: OutlineInputBorder(),
-//                                     ),
-//                                     validator: (value) {
-//                                       if (value == null || value.isEmpty) {
-//                                         return 'Required';
-//                                       }
-//                                       return null;
-//                                     },
-//                                     onChanged: (value) {
-//                                       feeFields[index].feeType = value;
-//                                     },
-//                                   ),
-//                                   SizedBox(height: 12),
-//                                   TextFormField(
-//                                     decoration: InputDecoration(
-//                                       labelText: 'Amount (₹)',
-//                                       border: OutlineInputBorder(),
-//                                     ),
-//                                     keyboardType: TextInputType.number,
-//                                     validator: (value) {
-//                                       if (value == null || value.isEmpty) {
-//                                         return 'Required';
-//                                       }
-//                                       if (double.tryParse(value) == null) {
-//                                         return 'Enter valid number';
-//                                       }
-//                                       return null;
-//                                     },
-//                                     onChanged: (value) {
-//                                       feeFields[index].amount = value;
-//                                     },
-//                                   ),
-//                                 ],
-//                               ),
-//                             ),
-//                           );
-//                         },
-//                       ),
-//                     ),
-
-//                     SizedBox(height: 12),
-//                     Row(
-//                       children: [
-//                         Expanded(
-//                           child: ElevatedButton.icon(
-//                             icon: Icon(Icons.add),
-//                             label: Text('Add Fee Field'),
-//                             style: ElevatedButton.styleFrom(
-//                               backgroundColor: Colors.blue[50],
-//                               foregroundColor: Colors.blue[800],
-//                               shape: RoundedRectangleBorder(
-//                                 borderRadius: BorderRadius.circular(8),
-//                               ),
-//                             ),
-//                             onPressed: _addFeeField,
-//                           ),
-//                         ),
-//                       ],
-//                     ),
-//                     SizedBox(height: 12),
-//                     ElevatedButton(
-//                       child: isLoading
-//                           ? CircularProgressIndicator(color: Colors.white)
-//                           : Text('Submit Fees'),
-//                       onPressed: _submitFees,
-//                       style: ElevatedButton.styleFrom(
-//                         backgroundColor: Colors.blue[800],
-//                         foregroundColor: Colors.white,
-//                         minimumSize: Size(double.infinity, 50),
-//                       ),
-//                     )
-//                   ],
-//                 ),
-//               ),
-//             ),
-//     );
-//   }
-// }
-
-// // Models
-// // Class model
-// class Class {
-//   final String id;
-//   final String className;
-//   final List<String> sections;
-
-//   Class({
-//     required this.id,
-//     required this.className,
-//     required this.sections,
-//   });
-
-//   factory Class.fromJson(Map<String, dynamic> json) {
-//     return Class(
-//       id: (json['_id'] ?? json['id'] ?? '').toString().trim(),
-//       className: (json['class_name'] ?? json['className'] ?? 'Unknown Class')
-//           .toString()
-//           .trim(),
-//       sections: [],
-//     );
-//   }
-// }
-
-// class FeeField {
-//   String feeType = '';
-//   String amount = '';
-// }
-
-// CREATE TABLE fee_structure (
-//   id SERIAL PRIMARY KEY,
-//   year INTEGER UNIQUE NOT NULL,
-//   structure JSONB NOT NULL,
-//   created_at TIMESTAMP DEFAULT NOW()
-// );
-
-
-// app.post('/fee-structure', async (req, res) => {
-//   const { structure } = req.body;
-//   const year = new Date().getFullYear();
-
-//   try {
-//     // Check if already exists for this year
-//     const check = await pool.query('SELECT * FROM fee_structure WHERE year = $1', [year]);
-//     if (check.rows.length > 0) {
-//       return res.status(400).json({ error: 'Fee structure for this year already exists' });
-//     }
-
-//     const result = await pool.query(
-//       'INSERT INTO fee_structure (year, structure) VALUES ($1, $2) RETURNING *',
-//       [year, structure]
-//     );
-//     res.status(201).json(result.rows[0]);
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).send('Server error');
-//   }
-// });
-
-
-
-
-// app.get('/fee-structure/current', async (req, res) => {
-//   const year = new Date().getFullYear();
-
-//   try {
-//     const result = await pool.query('SELECT * FROM fee_structure WHERE year = $1', [year]);
-//     if (result.rows.length === 0) {
-//       return res.status(404).json({ error: 'No structure found for this year' });
-//     }
-//     res.json(result.rows[0].structure);
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).send('Server error');
-//   }
-// });
-
-
-// [
-//   { "fee_type": "Admission Fee", "amount": "5000" },
-//   { "fee_type": "Library Fee", "amount": "1000" }
-// ]
-
-
-// CREATE TABLE fee_structure (
-//   id SERIAL PRIMARY KEY,
-//   year INTEGER NOT NULL UNIQUE,
-//   structure JSONB NOT NULL,  -- stores your dynamic fields
-//   created_at TIMESTAMP DEFAULT NOW()
-// );
-
-
-// const feeData = [
-//   { fee_type: "Admission Fee", amount: "5000" },
-//   { fee_type: "Library Fee", amount: "1000" }
-// ];
-
-// await pool.query(
-//   'INSERT INTO fee_structure (year, structure) VALUES ($1, $2)',
-//   [2025, JSON.stringify(feeData)]
-// );
-
-
-
-// {
-//   "year": 2025,
-//   "class": "Class 10",
-//   "section": "A",
-//   "structure": [
-//     { "fee_type": "Admission Fee", "amount": "5000" },
-//     { "fee_type": "Library Fee", "amount": "1000" }
-//   ]
-// }
-
-
-// CREATE TABLE class_fee_structure (
-//   id SERIAL PRIMARY KEY,
-//   class_name VARCHAR(50) NOT NULL,
-//   section VARCHAR(10) NOT NULL,
-//   year INTEGER NOT NULL,
-//   structure JSONB NOT NULL,
-//   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-//   UNIQUE (class_name, section, year)
-// );

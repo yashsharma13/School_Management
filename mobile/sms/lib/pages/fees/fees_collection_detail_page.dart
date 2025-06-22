@@ -3,14 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class FeesCollectionPage extends StatefulWidget {
   final String studentId;
   final String studentName;
   final String studentClass;
   final String studentSection;
-  final String monthlyFee;
   final bool isNewAdmission;
+  final Map<String, dynamic>? preloadedData;
 
   const FeesCollectionPage({
     Key? key,
@@ -18,8 +19,8 @@ class FeesCollectionPage extends StatefulWidget {
     required this.studentName,
     required this.studentClass,
     required this.studentSection,
-    required this.monthlyFee,
-    this.isNewAdmission = true,
+    this.isNewAdmission = false,
+    this.preloadedData,
   }) : super(key: key);
 
   @override
@@ -29,43 +30,30 @@ class FeesCollectionPage extends StatefulWidget {
 class _FeesCollectionPageState extends State<FeesCollectionPage> {
   final _formKey = GlobalKey<FormState>();
   String? token;
+  String? classId;
   DateTime selectedDate = DateTime.now();
-  String selectedMonth = DateFormat('MMMM').format(DateTime.now());
+  List<String> selectedMonths = []; // Changed to empty list
   bool isLoading = false;
-  bool isMonthlyFeePaidForSelectedMonth = false;
   bool _isMounted = false;
+  bool isYearlyPayment = false;
+  bool isFeeDetailsExpanded = true;
+  bool hasPaidMonthly = false;
+  bool hasPaidYearly = false;
+  static final String baseUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
 
-  // Previous balance and payment history
-  double previousBalance = 0.0;
-  String? lastPaymentMonth;
+  List<FeeStructureModel> feeStructure = [];
+  List<String> paidFeeMasterIds = [];
+  Map<String, bool> paidMonths = {};
+  Set<int> paidOneTimeFees = {};
+  double totalYearlyFee = 0.0;
+  double totalPaid = 0.0;
+  double totalDue = 0.0;
 
-  // Fee suggestions
-  static const double admissionFee = 500.0;
-  static const double registrationFee = 500.0;
-  static const double uniformFee = 1000.0;
-
-  // Fee controllers
-  final TextEditingController monthlyFeeController = TextEditingController();
-  final TextEditingController admissionFeeController = TextEditingController();
-  final TextEditingController registrationFeeController =
-      TextEditingController();
-  final TextEditingController artMaterialController = TextEditingController();
-  final TextEditingController transportController = TextEditingController();
-  final TextEditingController booksController = TextEditingController();
-  final TextEditingController uniformController = TextEditingController();
-  final TextEditingController fineController = TextEditingController();
-  final TextEditingController othersController = TextEditingController();
-  final TextEditingController previousBalanceController =
-      TextEditingController();
+  Map<int, TextEditingController> feeControllers = {};
   final TextEditingController totalDepositController = TextEditingController();
   final TextEditingController depositController = TextEditingController();
   final TextEditingController dueBalanceController = TextEditingController();
   final TextEditingController remarkController = TextEditingController();
-
-  // Fee enablers
-  bool canCollectAdmissionFee = true;
-  bool canCollectRegistrationFee = true;
-  bool canCollectUniformFee = true;
 
   List<String> months = [
     'January',
@@ -89,7 +77,17 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
     _initializeControllers();
     _loadToken().then((_) {
       if (_isMounted) {
-        _loadFeeDetails();
+        if (widget.preloadedData != null) {
+          _initializeWithPreloadedData();
+        } else {
+          _getClassId().then((_) {
+            if (_isMounted) {
+              _loadFeeData();
+              _loadPaymentStatus();
+              _loadYearlySummary();
+            }
+          });
+        }
       }
     });
   }
@@ -97,16 +95,7 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
   @override
   void dispose() {
     _isMounted = false;
-    monthlyFeeController.dispose();
-    admissionFeeController.dispose();
-    registrationFeeController.dispose();
-    artMaterialController.dispose();
-    transportController.dispose();
-    booksController.dispose();
-    uniformController.dispose();
-    fineController.dispose();
-    othersController.dispose();
-    previousBalanceController.dispose();
+    feeControllers.forEach((_, controller) => controller.dispose());
     totalDepositController.dispose();
     depositController.dispose();
     dueBalanceController.dispose();
@@ -115,34 +104,98 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
   }
 
   void _initializeControllers() {
-    monthlyFeeController.text = widget.monthlyFee;
-    admissionFeeController.text = '0';
-    registrationFeeController.text = '0';
-    artMaterialController.text = '0';
-    transportController.text = '0';
-    booksController.text = '0';
-    uniformController.text = '0';
-    fineController.text = '0';
-    othersController.text = '0';
-    previousBalanceController.text = '0';
     depositController.text = '0';
     remarkController.text = '';
+    depositController.addListener(_calculateTotals);
+  }
 
-    [
-      monthlyFeeController,
-      admissionFeeController,
-      registrationFeeController,
-      artMaterialController,
-      transportController,
-      booksController,
-      uniformController,
-      fineController,
-      othersController,
-      previousBalanceController,
-      depositController,
-    ].forEach((controller) {
-      controller.addListener(_calculateTotals);
+  void _initializeWithPreloadedData() {
+    if (!_isMounted || widget.preloadedData == null) return;
+
+    setState(() {
+      classId = widget.preloadedData!['classId']?.toString();
+      final feeStructureData =
+          widget.preloadedData!['feeStructure'] as List<dynamic>? ?? [];
+      feeStructure = feeStructureData.map((item) {
+        if (item is FeeStructureModel) {
+          return item;
+        } else if (item is Map<String, dynamic>) {
+          return FeeStructureModel.fromJson(item);
+        } else {
+          print('Unexpected item type in feeStructure: ${item.runtimeType}');
+          return FeeStructureModel(
+            feeFieldName: '',
+            amount: '0.0',
+            isCollectable: false,
+            isMandatory: false,
+            isMonthly: false,
+            isOneTime: false,
+            feeMasterId: 0,
+          );
+        }
+      }).toList();
+
+      paidFeeMasterIds =
+          (widget.preloadedData!['paidFeeMasterIds'] as List<dynamic>?)
+                  ?.map((id) => id.toString())
+                  .toList() ??
+              [];
+
+      paidOneTimeFees = {};
+      for (var fee in feeStructure) {
+        if (fee.isOneTime &&
+            paidFeeMasterIds.contains(fee.feeMasterId.toString())) {
+          paidOneTimeFees.add(fee.feeMasterId);
+        }
+      }
+
+      totalYearlyFee = feeStructure.fold(
+          0.0, (sum, fee) => sum + (double.tryParse(fee.amount) ?? 0.0));
+      totalPaid =
+          (widget.preloadedData!['total_paid'] as num?)?.toDouble() ?? 0.0;
+      totalDue = totalYearlyFee - totalPaid;
+      if (totalDue < 0) totalDue = 0.0;
+
+      print('Preloaded paidFeeMasterIds: $paidFeeMasterIds');
+      print('Preloaded paidOneTimeFees: $paidOneTimeFees');
+      print(
+          'Preloaded feeStructure: ${feeStructure.map((f) => "${f.feeFieldName}: isOneTime=${f.isOneTime}, feeMasterId=${f.feeMasterId}").toList()}');
+      print('Calculated totalYearlyFee: $totalYearlyFee');
+
+      _initializeFeeControllers();
+      isLoading = false;
     });
+
+    _calculateTotals();
+    _loadPaymentStatus();
+    _loadYearlySummary();
+  }
+
+  void _initializeFeeControllers() {
+    feeControllers.clear();
+    for (var fee in feeStructure) {
+      if (paidFeeMasterIds.contains(fee.feeMasterId.toString())) {
+        print(
+            'Skipping paid fee: ${fee.feeFieldName} (ID: ${fee.feeMasterId})');
+        continue;
+      }
+
+      if (fee.isCollectable) {
+        double amount = double.tryParse(fee.amount) ?? 0.0;
+        if (fee.isMonthly && !isYearlyPayment) {
+          amount /= 12;
+        }
+
+        feeControllers[fee.feeMasterId] = TextEditingController(
+          text: amount.toStringAsFixed(2),
+        );
+        feeControllers[fee.feeMasterId]!.addListener(_calculateTotals);
+
+        print(
+            'Created controller for fee: ${fee.feeFieldName} (ID: ${fee.feeMasterId}), Amount: ${amount.toStringAsFixed(2)}');
+      }
+    }
+    print('Initialized feeControllers: ${feeControllers.keys}');
   }
 
   Future<void> _loadToken() async {
@@ -154,154 +207,270 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
     }
   }
 
-  Future<void> _loadFeeDetails() async {
-    if (token == null) {
-      if (_isMounted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _showErrorSnackBar('Authentication required');
-        });
-      }
-      return;
-    }
-
-    if (_isMounted) {
-      setState(() => isLoading = true);
-    }
+  Future<void> _getClassId() async {
+    if (token == null) return;
 
     try {
-      final responses = await Future.wait([
-        http.get(
-          Uri.parse(
-              'http://localhost:1000/api/eligibility/${widget.studentId}'),
-          headers: {'Authorization': token!},
-        ),
-        http.get(
-          Uri.parse('http://localhost:1000/api/summary/${widget.studentId}'),
-          headers: {'Authorization': token!},
-        ),
-        http.get(
-          Uri.parse(
-              'http://localhost:1000/api/previous-payments/${widget.studentId}/$selectedMonth'),
-          headers: {'Authorization': token!},
-        ),
-      ]);
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/classes'),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
 
-      for (final response in responses) {
-        if (response.statusCode != 200) {
-          throw Exception('Failed to load fee details: ${response.statusCode}');
+      if (response.statusCode == 200) {
+        final List<dynamic> classData = json.decode(response.body);
+        for (final data in classData) {
+          final className =
+              (data['class_name'] ?? data['className'] ?? '').toString().trim();
+          if (className.toLowerCase() == widget.studentClass.toLowerCase()) {
+            classId = data['id']?.toString() ?? data['class_id']?.toString();
+            break;
+          }
+        }
+        if (classId == null) {
+          classId = widget.studentClass;
         }
       }
+    } catch (error) {
+      classId = widget.studentClass;
+    }
+  }
 
-      final eligibilityData = jsonDecode(responses[0].body);
-      final summaryData = jsonDecode(responses[1].body);
-      final previousPaymentsData = jsonDecode(responses[2].body);
+  // Future<void> _loadFeeData() async {
+  //   try {
+  //     final response = await http.get(
+  //       Uri.parse('$baseUrl/api/structure?classId=$classId'),
+  //       headers: {'Authorization': 'Bearer $token'},
+  //     );
 
-      if (eligibilityData['success'] != true ||
-          summaryData['success'] != true ||
-          previousPaymentsData['success'] != true) {
-        throw Exception('Invalid API response format');
+  //     if (response.statusCode == 200) {
+  //       final data = jsonDecode(response.body);
+  //       if (data['success']) {
+  //         setState(() {
+  //           feeStructure = (data['data'] as List)
+  //               .map((item) => FeeStructureModel.fromJson(item))
+  //               .toList();
+  //           print('Loaded feeStructure: $feeStructure');
+  //         });
+  //       } else {
+  //         print('Failed to load fee structure: ${data['message']}');
+  //       }
+  //     } else {
+  //       print('Error fetching fee structure: ${response.statusCode}');
+  //     }
+
+  //     final paidFeesResponse = await http.get(
+  //       Uri.parse('$baseUrl/api/fees/paid?studentId=${widget.studentId}'),
+  //       headers: {'Authorization': 'Bearer $token'},
+  //     );
+
+  //     if (paidFeesResponse.statusCode == 200) {
+  //       final paidFeesData = jsonDecode(paidFeesResponse.body);
+  //       setState(() {
+  //         paidFeeMasterIds = List<String>.from(paidFeesData);
+  //         print('Loaded paidFeeMasterIds: $paidFeeMasterIds');
+  //       });
+  //     }
+
+  //     _initializeFeeControllers();
+  //     _calculateTotals();
+  //   } catch (e) {
+  //     print('Exception loading fee data: $e');
+  //   }
+  // }
+
+  Future<void> _loadFeeData() async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+            '$baseUrl/api/structure?classId=$classId&studentId=${widget.studentId}'), // Updated endpoint
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success']) {
+          setState(() {
+            feeStructure = (data['data'] as List)
+                .map((item) => FeeStructureModel.fromJson(item))
+                .toList();
+            print('Loaded feeStructure: $feeStructure');
+          });
+        } else {
+          print('Failed to load fee structure: ${data['message']}');
+        }
+      } else {
+        print('Error fetching fee structure: ${response.statusCode}');
       }
 
-      final previousPayments = previousPaymentsData['data'] as List;
-      final hasMonthlyFeePaymentForThisMonth = previousPayments.any((payment) =>
-          payment['fee_month'] == selectedMonth && payment['monthly_fee'] > 0);
+      final paidFeesResponse = await http.get(
+        Uri.parse('$baseUrl/api/fees/paid?studentId=${widget.studentId}'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
 
-      if (_isMounted) {
+      if (paidFeesResponse.statusCode == 200) {
+        final paidFeesData = jsonDecode(paidFeesResponse.body);
         setState(() {
-          canCollectAdmissionFee =
-              eligibilityData['data']['canCollectAdmissionFee'] ?? false;
-          canCollectRegistrationFee =
-              eligibilityData['data']['canCollectRegistrationFee'] ?? false;
-          canCollectUniformFee =
-              eligibilityData['data']['canCollectUniformFee'] ?? false;
-
-          if (canCollectAdmissionFee) {
-            admissionFeeController.text = admissionFee.toStringAsFixed(2);
-          } else {
-            admissionFeeController.text = '0';
-          }
-
-          if (canCollectRegistrationFee) {
-            registrationFeeController.text = registrationFee.toStringAsFixed(2);
-          } else {
-            registrationFeeController.text = '0';
-          }
-
-          if (canCollectUniformFee) {
-            uniformController.text = uniformFee.toStringAsFixed(2);
-          } else {
-            uniformController.text = '0';
-          }
-
-          previousBalance =
-              (summaryData['data']['last_due_balance'] ?? 0).toDouble();
-          previousBalanceController.text = previousBalance.toStringAsFixed(2);
-
-          isMonthlyFeePaidForSelectedMonth = hasMonthlyFeePaymentForThisMonth;
-
-          if (isMonthlyFeePaidForSelectedMonth) {
-            monthlyFeeController.text = '0';
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _showInfoSnackBar(
-                  'Monthly Fee Of This Student is Already Added for This Month! So System will Not Add it Again.');
-            });
-          } else {
-            monthlyFeeController.text = widget.monthlyFee;
-          }
-
-          lastPaymentMonth = summaryData['data']['last_payment_month'];
+          paidFeeMasterIds = List<String>.from(paidFeesData);
+          print('Loaded paidFeeMasterIds: $paidFeeMasterIds');
         });
       }
 
+      _initializeFeeControllers();
       _calculateTotals();
-    } on http.ClientException catch (error) {
-      if (_isMounted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _showErrorSnackBar('Network error: ${error.message}');
-        });
-      }
-    } on FormatException catch (_) {
-      if (_isMounted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _showErrorSnackBar('Invalid data format from server');
-        });
+    } catch (e) {
+      print('Exception loading fee data: $e');
+    }
+  }
+
+  Future<void> _loadPaymentStatus() async {
+    if (token == null) return;
+
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/payment-status/${widget.studentId}'),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        Map<String, dynamic> data =
+            responseData is Map ? (responseData['data'] ?? responseData) : {};
+
+        if (_isMounted && data.isNotEmpty) {
+          setState(() {
+            paidMonths = {};
+            hasPaidMonthly = false;
+            hasPaidYearly = false;
+
+            data.forEach((key, value) {
+              bool isPaid = false;
+              if (value is Map && value.containsKey('fullyPaid')) {
+                isPaid = value['fullyPaid'] == true;
+                paidMonths[key] = isPaid;
+              } else if (value is bool) {
+                isPaid = value;
+                paidMonths[key] = isPaid;
+              }
+
+              if (isPaid) {
+                if (key == 'Yearly') {
+                  hasPaidYearly = true;
+                } else if (months.contains(key)) {
+                  hasPaidMonthly = true;
+                }
+              }
+            });
+
+            if (hasPaidYearly) {
+              isYearlyPayment = true;
+            } else if (hasPaidMonthly) {
+              isYearlyPayment = false;
+            }
+
+            // Remove paid months from selectedMonths
+            selectedMonths.removeWhere((month) => paidMonths[month] == true);
+
+            // If selectedMonths is empty and yearly payment is not made, select the next unpaid month
+            if (selectedMonths.isEmpty && !hasPaidYearly) {
+              final currentMonthIndex = DateTime.now().month - 1;
+              for (int i = 0; i < months.length; i++) {
+                int index = (currentMonthIndex + i) % months.length;
+                String month = months[index];
+                if (paidMonths[month] != true) {
+                  selectedMonths.add(month);
+                  break;
+                }
+              }
+            }
+          });
+        }
       }
     } catch (error) {
-      if (_isMounted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _showErrorSnackBar('Error loading fee details: ${error.toString()}');
-        });
+      print('Error loading payment status: $error');
+    }
+  }
+
+  Future<void> _loadYearlySummary() async {
+    if (token == null) return;
+
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/yearly-summary/${widget.studentId}'),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        final data =
+            responseData is Map ? (responseData['data'] ?? responseData) : {};
+
+        if (_isMounted) {
+          setState(() {
+            totalPaid = (data['total_paid']?.toDouble() ?? 0.0);
+            totalDue = totalYearlyFee - totalPaid;
+            if (totalDue < 0) totalDue = 0.0;
+            print(
+                'Yearly Summary: totalYearlyFee=$totalYearlyFee, totalPaid=$totalPaid, totalDue=$totalDue');
+          });
+        }
       }
-    } finally {
-      if (_isMounted) {
-        setState(() => isLoading = false);
-      }
+    } catch (error) {
+      print('Error loading yearly summary: $error');
     }
   }
 
   void _calculateTotals() {
-    double total = 0;
+    if (!_isMounted) return;
 
-    total += double.tryParse(monthlyFeeController.text) ?? 0;
-    total += double.tryParse(admissionFeeController.text) ?? 0;
-    total += double.tryParse(registrationFeeController.text) ?? 0;
-    total += double.tryParse(artMaterialController.text) ?? 0;
-    total += double.tryParse(transportController.text) ?? 0;
-    total += double.tryParse(booksController.text) ?? 0;
-    total += double.tryParse(uniformController.text) ?? 0;
-    total += double.tryParse(fineController.text) ?? 0;
-    total += double.tryParse(othersController.text) ?? 0;
-    total += double.tryParse(previousBalanceController.text) ?? 0;
+    double total = 0.0;
 
-    double deposit = double.tryParse(depositController.text) ?? 0;
+    feeControllers.forEach((feeMasterId, controller) {
+      double amount = double.tryParse(controller.text) ?? 0.0;
+      var fee = feeStructure.firstWhere(
+        (f) => f.feeMasterId == feeMasterId,
+        orElse: () => FeeStructureModel(
+          feeFieldName: '',
+          amount: '0.0',
+          isCollectable: false,
+          isMandatory: false,
+          isMonthly: false,
+          isOneTime: false,
+          feeMasterId: 0,
+        ),
+      );
+
+      if (fee.isCollectable) {
+        if (fee.isMonthly && !isYearlyPayment) {
+          amount *= selectedMonths.length;
+        }
+        total += amount;
+        print(
+            'Adding fee: ${fee.feeFieldName} (ID: $feeMasterId), Amount: $amount');
+      }
+    });
+
+    double deposit = double.tryParse(depositController.text) ?? 0.0;
     double dueBalance = total - deposit;
+    if (dueBalance < 0) dueBalance = 0.0;
 
-    if (_isMounted) {
-      setState(() {
-        totalDepositController.text = total.toStringAsFixed(2);
-        dueBalanceController.text = dueBalance.toStringAsFixed(2);
-      });
-    }
+    setState(() {
+      totalDepositController.text = total.toStringAsFixed(2);
+      dueBalanceController.text = dueBalance.toStringAsFixed(2);
+      print(
+          'Calculated totals: total=$total, deposit=$deposit, dueBalance=$dueBalance');
+    });
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -318,6 +487,71 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
     }
   }
 
+  void _toggleMonthSelection(String month) {
+    if (paidMonths[month] == true) return;
+    if (_isMounted) {
+      setState(() {
+        if (selectedMonths.contains(month)) {
+          selectedMonths.remove(month);
+        } else {
+          selectedMonths.add(month);
+        }
+        _updateFeeAmounts();
+        _calculateTotals();
+      });
+    }
+  }
+
+  void _togglePaymentType(bool value) {
+    if (_isMounted) {
+      if (value && hasPaidMonthly) {
+        _showErrorSnackBar(
+            'Cannot select yearly payment as monthly fees have been paid');
+        return;
+      }
+      if (!value && hasPaidYearly) {
+        _showErrorSnackBar(
+            'Cannot select monthly payment as yearly fee has been paid');
+        return;
+      }
+
+      setState(() {
+        isYearlyPayment = value;
+        selectedMonths = isYearlyPayment ? ['Yearly'] : [];
+        if (!isYearlyPayment && !hasPaidYearly) {
+          // Select the next unpaid month when switching to monthly
+          final currentMonthIndex = DateTime.now().month - 1;
+          for (int i = 0; i < months.length; i++) {
+            int index = (currentMonthIndex + i) % months.length;
+            String month = months[index];
+            if (paidMonths[month] != true) {
+              selectedMonths.add(month);
+              break;
+            }
+          }
+        }
+        _updateFeeAmounts();
+        _calculateTotals();
+      });
+    }
+  }
+
+  void _updateFeeAmounts() {
+    for (var fee in feeStructure) {
+      if (fee.isOneTime &&
+          paidFeeMasterIds.contains(fee.feeMasterId.toString())) {
+        continue;
+      }
+
+      if (feeControllers.containsKey(fee.feeMasterId) && fee.isCollectable) {
+        double baseAmount = double.tryParse(fee.amount) ?? 0.0;
+        double amount =
+            fee.isMonthly && !isYearlyPayment ? (baseAmount / 12) : baseAmount;
+        feeControllers[fee.feeMasterId]!.text = amount.toStringAsFixed(2);
+      }
+    }
+  }
+
   Future<void> _submitFees() async {
     if (!_formKey.currentState!.validate()) return;
     if (token == null) {
@@ -328,13 +562,8 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
       _showErrorSnackBar('Please enter a remark');
       return;
     }
-
-    if (isMonthlyFeePaidForSelectedMonth &&
-        (double.tryParse(monthlyFeeController.text) ?? 0) > 0) {
-      _showErrorSnackBar(
-          'Monthly Fee Of This Student is Already Added for This Month! System will Not Add it Again.');
-      monthlyFeeController.text = '0';
-      _calculateTotals();
+    if (!isYearlyPayment && selectedMonths.isEmpty) {
+      _showErrorSnackBar('Please select at least one month');
       return;
     }
 
@@ -343,58 +572,71 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
     }
 
     try {
+      List<Map<String, dynamic>> feeItems = [];
+      feeControllers.forEach((feeMasterId, controller) {
+        double amount = double.tryParse(controller.text) ?? 0.0;
+        var fee = feeStructure.firstWhere((f) => f.feeMasterId == feeMasterId);
+
+        if (fee.isOneTime &&
+            paidFeeMasterIds.contains(feeMasterId.toString())) {
+          return;
+        }
+
+        if (amount > 0 && fee.isCollectable) {
+          feeItems.add({
+            'fee_master_id': feeMasterId,
+            'fee_name': fee.feeFieldName,
+            'amount': amount,
+            'is_monthly': fee.isMonthly,
+            'is_yearly': isYearlyPayment,
+            'is_one_time': fee.isOneTime,
+          });
+        }
+      });
+
+      if (feeItems.isEmpty) {
+        _showErrorSnackBar('No valid fee items to submit');
+        return;
+      }
+
       final feeData = {
-        'student_id': int.parse(widget.studentId),
+        'student_id': widget.studentId,
         'student_name': widget.studentName,
         'class_name': widget.studentClass,
         'section': widget.studentSection,
-        'fee_month': selectedMonth,
+        'fee_months': isYearlyPayment ? ['Yearly'] : selectedMonths,
         'payment_date': DateFormat('yyyy-MM-dd').format(selectedDate),
-        'monthly_fee': double.tryParse(monthlyFeeController.text) ?? 0,
-        'admission_fee': double.tryParse(admissionFeeController.text) ?? 0,
-        'registration_fee':
-            double.tryParse(registrationFeeController.text) ?? 0,
-        'art_material': double.tryParse(artMaterialController.text) ?? 0,
-        'transport': double.tryParse(transportController.text) ?? 0,
-        'books': double.tryParse(booksController.text) ?? 0,
-        'uniform': double.tryParse(uniformController.text) ?? 0,
-        'fine': double.tryParse(fineController.text) ?? 0,
-        'others': double.tryParse(othersController.text) ?? 0,
-        'previous_balance':
-            double.tryParse(previousBalanceController.text) ?? 0,
-        'deposit': double.tryParse(depositController.text) ?? 0,
+        'deposit': double.tryParse(depositController.text) ?? 0.0,
         'remark': remarkController.text,
         'is_new_admission': widget.isNewAdmission,
+        'is_yearly_payment': isYearlyPayment,
+        'fee_items': feeItems,
       };
 
       final response = await http.post(
-        Uri.parse('http://localhost:1000/api/submit'),
+        Uri.parse('$baseUrl/api/submit'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': token!,
+          'Authorization': 'Bearer $token',
         },
         body: jsonEncode(feeData),
       );
 
+      final responseBody = jsonDecode(response.body);
       if (response.statusCode == 400) {
-        final errorData = jsonDecode(response.body);
-        _showErrorSnackBar(errorData['message']);
+        _showErrorSnackBar(responseBody['message'] ?? 'Invalid data provided');
         return;
       } else if (response.statusCode != 201) {
-        final errorData = jsonDecode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to record fee payment');
+        throw Exception(
+            'Failed to record fee payment: ${response.statusCode} - ${responseBody['message']}');
       }
 
       _showSuccessSnackBar('Fee payment recorded successfully');
       if (_isMounted) {
         Navigator.pop(context, true);
       }
-    } on http.ClientException catch (error) {
-      _showErrorSnackBar('Network error: ${error.message}');
-    } on FormatException catch (_) {
-      _showErrorSnackBar('Invalid server response format');
     } catch (error) {
-      _showErrorSnackBar(error.toString());
+      _showErrorSnackBar('Error submitting fees: $error');
     } finally {
       if (_isMounted) {
         setState(() => isLoading = false);
@@ -403,67 +645,76 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
   }
 
   void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        duration: Duration(seconds: 3),
-      ),
-    );
-  }
-
-  void _showInfoSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.blue,
-        duration: Duration(seconds: 3),
-      ),
-    );
+    if (_isMounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red.shade800,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   void _showSuccessSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-        duration: Duration(seconds: 2),
-      ),
-    );
+    if (_isMounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.green.shade600,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final blueTheme = Colors.blue.shade900;
     final whiteTheme = Colors.white;
 
     return Scaffold(
+      backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
         title: Text(
           'Fees Collection - ${widget.studentName}',
-          style: TextStyle(color: whiteTheme),
+          style: TextStyle(
+              color: whiteTheme, fontSize: 20, fontWeight: FontWeight.bold),
         ),
-        backgroundColor: Colors.blue.shade900,
-        iconTheme: IconThemeData(color: whiteTheme),
-        elevation: 4,
+        backgroundColor: blueTheme,
+        // iconTheme: IconThemeData(color: whiteTheme),
+        // elevation: 4,
+        // actions: [
+        //   IconButton(
+        //     icon: Icon(Icons.refresh),
+        //     onPressed: isLoading
+        //         ? null
+        //         : () {
+        //             _loadYearlySummary();
+        //             _loadPaymentStatus();
+        //             _loadFeeData();
+        //           },
+        //     tooltip: 'Refresh Data',
+        //   ),
+        // ],
       ),
       body: isLoading
-          ? Center(
-              child: CircularProgressIndicator(color: Colors.blue.shade900))
+          ? Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Student Info Card
                     Card(
                       elevation: 4,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                          borderRadius: BorderRadius.circular(12)),
                       child: Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
@@ -480,14 +731,17 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                             children: [
                               Row(
                                 children: [
-                                  Icon(Icons.person, color: whiteTheme),
+                                  Icon(Icons.person,
+                                      color: whiteTheme, size: 20),
                                   SizedBox(width: 8),
-                                  Text(
-                                    'Student: ${widget.studentName}',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: whiteTheme,
+                                  Expanded(
+                                    child: Text(
+                                      'Student: ${widget.studentName}',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: whiteTheme,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -495,21 +749,21 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                               SizedBox(height: 12),
                               Row(
                                 children: [
-                                  Icon(Icons.school, color: whiteTheme),
+                                  Icon(Icons.school,
+                                      color: whiteTheme, size: 20),
                                   SizedBox(width: 8),
                                   Text(
                                     'Class: ${widget.studentClass}',
                                     style: TextStyle(
-                                      fontSize: 16,
-                                      color: whiteTheme,
-                                    ),
+                                        fontSize: 16, color: whiteTheme),
                                   ),
                                 ],
                               ),
                               SizedBox(height: 12),
                               Row(
                                 children: [
-                                  Icon(Icons.school, color: whiteTheme),
+                                  Icon(Icons.class_,
+                                      color: whiteTheme, size: 20),
                                   SizedBox(width: 8),
                                   Text(
                                     'Section: ${widget.studentSection}',
@@ -521,206 +775,252 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                               SizedBox(height: 16),
                               Divider(color: whiteTheme.withOpacity(0.5)),
                               SizedBox(height: 16),
-
-                              // Month and Date Selectors
                               Row(
                                 children: [
                                   Expanded(
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: whiteTheme.withOpacity(0.2),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Padding(
-                                        padding: EdgeInsets.symmetric(
-                                            horizontal: 12),
-                                        child: DropdownButtonFormField<String>(
-                                          decoration: InputDecoration(
-                                            labelText: 'Fee Month*',
-                                            labelStyle:
-                                                TextStyle(color: whiteTheme),
-                                            border: InputBorder.none,
-                                          ),
-                                          dropdownColor: blueTheme,
-                                          style: TextStyle(color: whiteTheme),
-                                          icon: Icon(Icons.arrow_drop_down,
-                                              color: whiteTheme),
-                                          value: selectedMonth,
-                                          items: months.map((String month) {
-                                            return DropdownMenuItem<String>(
-                                              value: month,
-                                              child: Text(month),
-                                            );
-                                          }).toList(),
-                                          onChanged: (value) {
-                                            if (_isMounted) {
-                                              setState(() {
-                                                selectedMonth = value!;
-                                                _loadFeeDetails();
-                                              });
-                                            }
-                                          },
-                                          validator: (value) => value == null
-                                              ? 'Please select month'
-                                              : null,
-                                        ),
+                                    child: Text(
+                                      'Payment Type:',
+                                      style: TextStyle(
+                                        color: whiteTheme,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                   ),
-                                  SizedBox(width: 16),
-                                  Expanded(
-                                    child: InkWell(
-                                      onTap: () => _selectDate(context),
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          color: whiteTheme.withOpacity(0.2),
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                        padding: EdgeInsets.symmetric(
-                                            horizontal: 12, vertical: 16),
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.calendar_today,
-                                                size: 20, color: whiteTheme),
-                                            SizedBox(width: 12),
-                                            Text(
-                                              DateFormat('dd/MM/yyyy')
-                                                  .format(selectedDate),
-                                              style:
-                                                  TextStyle(color: whiteTheme),
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                          color: whiteTheme.withOpacity(0.5)),
+                                    ),
+                                    child: ToggleButtons(
+                                      isSelected: [
+                                        !isYearlyPayment,
+                                        isYearlyPayment,
+                                      ],
+                                      onPressed: (index) {
+                                        if (index == 1 && hasPaidMonthly) {
+                                          return;
+                                        }
+                                        if (index == 0 && hasPaidYearly) {
+                                          return;
+                                        }
+                                        _togglePaymentType(index == 1);
+                                      },
+                                      children: [
+                                        Padding(
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: 16, vertical: 8),
+                                          child: Text(
+                                            'Monthly',
+                                            style: TextStyle(
+                                              color: !isYearlyPayment
+                                                  ? blueTheme
+                                                  : whiteTheme.withOpacity(
+                                                      hasPaidYearly
+                                                          ? 0.5
+                                                          : 1.0),
+                                              fontWeight: !isYearlyPayment
+                                                  ? FontWeight.bold
+                                                  : FontWeight.normal,
                                             ),
-                                          ],
+                                          ),
                                         ),
-                                      ),
+                                        Padding(
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: 16, vertical: 8),
+                                          child: Text(
+                                            'Yearly',
+                                            style: TextStyle(
+                                              color: isYearlyPayment
+                                                  ? blueTheme
+                                                  : whiteTheme.withOpacity(
+                                                      hasPaidMonthly
+                                                          ? 0.5
+                                                          : 1.0),
+                                              fontWeight: isYearlyPayment
+                                                  ? FontWeight.bold
+                                                  : FontWeight.normal,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                      borderColor: Colors.transparent,
+                                      selectedBorderColor: Colors.transparent,
+                                      fillColor: whiteTheme,
+                                      color: whiteTheme,
+                                      selectedColor: blueTheme,
+                                      borderRadius: BorderRadius.circular(6),
                                     ),
                                   ),
                                 ],
+                              ),
+                              SizedBox(height: 16),
+                              if (!isYearlyPayment && !hasPaidYearly) ...[
+                                Text(
+                                  'Select Months:',
+                                  style: TextStyle(
+                                    color: whiteTheme,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: months.map((month) {
+                                    final isPaid = paidMonths[month] == true;
+                                    final isSelected =
+                                        selectedMonths.contains(month);
+                                    return ChoiceChip(
+                                      label: Text(month),
+                                      selected: isSelected,
+                                      onSelected: isPaid
+                                          ? null
+                                          : (selected) =>
+                                              _toggleMonthSelection(month),
+                                      selectedColor: whiteTheme,
+                                      backgroundColor: isPaid
+                                          ? Colors.grey.shade600
+                                          : Colors.blue.shade700,
+                                      labelStyle: TextStyle(
+                                        color:
+                                            isSelected ? blueTheme : whiteTheme,
+                                        fontWeight: isSelected
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        side: BorderSide(
+                                          color: isSelected
+                                              ? blueTheme
+                                              : Colors.transparent,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      disabledColor: Colors.grey.shade600,
+                                    );
+                                  }).toList(),
+                                ),
+                                SizedBox(height: 16),
+                              ],
+                              InkWell(
+                                onTap: () => _selectDate(context),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: whiteTheme.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                        color: whiteTheme.withOpacity(0.3)),
+                                  ),
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 12),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.calendar_today,
+                                          size: 20, color: whiteTheme),
+                                      SizedBox(width: 12),
+                                      Text(
+                                        'Payment Date: ${DateFormat('dd/MM/yyyy').format(selectedDate)}',
+                                        style: TextStyle(
+                                            color: whiteTheme, fontSize: 16),
+                                      ),
+                                      Spacer(),
+                                      Icon(Icons.edit,
+                                          size: 18,
+                                          color: whiteTheme.withOpacity(0.7)),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ],
                           ),
                         ),
                       ),
                     ),
-
                     SizedBox(height: 24),
-                    Padding(
-                      padding: EdgeInsets.only(left: 8),
-                      child: Text(
-                        'Fee Details',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          color: blueTheme,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 12),
-
-                    // Fee Details Card
                     Card(
                       elevation: 4,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                          borderRadius: BorderRadius.circular(12)),
                       child: Padding(
                         padding: EdgeInsets.all(16),
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Monthly Fee
-                            _buildFeeTextField(
-                              controller: monthlyFeeController,
-                              label: 'Monthly Fee',
-                              icon: Icons.money,
-                              enabled: !isMonthlyFeePaidForSelectedMonth,
-                              isRequired: true,
+                            Text(
+                              'Yearly Fee Summary',
+                              style: TextStyle(
+                                color: blueTheme,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                            SizedBox(height: 16),
-
-                            // One-time fees row
+                            SizedBox(height: 12),
                             Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Expanded(
-                                  child: _buildFeeTextField(
-                                    controller: admissionFeeController,
-                                    label: 'Admission Fee',
-                                    icon: Icons.school,
-                                    enabled: canCollectAdmissionFee,
-                                  ),
-                                ),
-                                SizedBox(width: 12),
-                                Expanded(
-                                  child: _buildFeeTextField(
-                                    controller: registrationFeeController,
-                                    label: 'Registration Fee',
-                                    icon: Icons.app_registration,
-                                    enabled: canCollectRegistrationFee,
+                                Text('Total Yearly Fee:',
+                                    style: TextStyle(
+                                        fontSize: 16, color: Colors.black87)),
+                                Text(
+                                  totalYearlyFee == 0.0
+                                      ? 'N/A'
+                                      : '₹${totalYearlyFee.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: totalYearlyFee == 0.0
+                                        ? Colors.grey.shade600
+                                        : blueTheme,
                                   ),
                                 ),
                               ],
                             ),
-                            SizedBox(height: 16),
-
-                            // Additional fees row 1
+                            SizedBox(height: 8),
                             Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Expanded(
-                                  child: _buildFeeTextField(
-                                    controller: artMaterialController,
-                                    label: 'Art Material',
-                                    icon: Icons.color_lens,
-                                  ),
-                                ),
-                                SizedBox(width: 12),
-                                Expanded(
-                                  child: _buildFeeTextField(
-                                    controller: transportController,
-                                    label: 'Transport',
-                                    icon: Icons.directions_bus,
+                                Text('Total Paid:',
+                                    style: TextStyle(
+                                        fontSize: 16, color: Colors.black87)),
+                                Text(
+                                  totalPaid == 0.0
+                                      ? 'N/A'
+                                      : '₹${totalPaid.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: totalPaid == 0.0
+                                        ? Colors.grey.shade600
+                                        : Colors.green.shade600,
                                   ),
                                 ),
                               ],
                             ),
-                            SizedBox(height: 16),
-
-                            // Additional fees row 2
+                            SizedBox(height: 8),
                             Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Expanded(
-                                  child: _buildFeeTextField(
-                                    controller: booksController,
-                                    label: 'Books',
-                                    icon: Icons.book,
-                                  ),
-                                ),
-                                SizedBox(width: 12),
-                                Expanded(
-                                  child: _buildFeeTextField(
-                                    controller: uniformController,
-                                    label: 'Uniform',
-                                    icon: Icons.person_outline,
-                                    enabled: canCollectUniformFee,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 16),
-
-                            // Additional fees row 3
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _buildFeeTextField(
-                                    controller: fineController,
-                                    label: 'Fine',
-                                    icon: Icons.error_outline,
-                                  ),
-                                ),
-                                SizedBox(width: 12),
-                                Expanded(
-                                  child: _buildFeeTextField(
-                                    controller: othersController,
-                                    label: 'Others',
-                                    icon: Icons.more_horiz,
+                                Text('Total Due:',
+                                    style: TextStyle(
+                                        fontSize: 16, color: Colors.black87)),
+                                Text(
+                                  totalYearlyFee > 0 && totalDue == 0.0
+                                      ? '₹${(totalYearlyFee - totalPaid).toStringAsFixed(2)}'
+                                      : totalDue == 0.0
+                                          ? 'N/A'
+                                          : '₹${totalDue.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: totalDue == 0.0 && totalYearlyFee > 0
+                                        ? Colors.red.shade600
+                                        : totalDue == 0.0
+                                            ? Colors.grey.shade600
+                                            : Colors.red.shade600,
                                   ),
                                 ),
                               ],
@@ -729,37 +1029,348 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                         ),
                       ),
                     ),
-
                     SizedBox(height: 24),
-                    Padding(
-                      padding: EdgeInsets.only(left: 8),
-                      child: Text(
-                        'Payment Summary',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          color: blueTheme,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    Card(
+                      elevation: 6,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
+                      child: Column(
+                        children: [
+                          ListTile(
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
+                            title: Text(
+                              'Fee Details',
+                              style: TextStyle(
+                                color: whiteTheme,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20,
+                              ),
+                            ),
+                            subtitle:
+                                !isFeeDetailsExpanded && feeStructure.isNotEmpty
+                                    ? Text(
+                                        '${feeStructure.length} Fee${feeStructure.length > 1 ? 's' : ''} Available',
+                                        style: TextStyle(
+                                            color: Colors.blue.shade300,
+                                            fontSize: 14),
+                                      )
+                                    : null,
+                            trailing: Icon(
+                              isFeeDetailsExpanded
+                                  ? Icons.expand_less
+                                  : Icons.expand_more,
+                              color: whiteTheme,
+                              size: 28,
+                            ),
+                            onTap: () {
+                              setState(() {
+                                isFeeDetailsExpanded = !isFeeDetailsExpanded;
+                              });
+                            },
+                            tileColor: blueTheme,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(16),
+                                bottom: isFeeDetailsExpanded
+                                    ? Radius.zero
+                                    : Radius.circular(16),
+                              ),
+                            ),
+                          ),
+                          AnimatedSize(
+                            duration: Duration(milliseconds: 300),
+                            child: AnimatedOpacity(
+                              opacity: isFeeDetailsExpanded ? 1.0 : 0.0,
+                              duration: Duration(milliseconds: 200),
+                              child: isFeeDetailsExpanded
+                                  ? Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.vertical(
+                                            bottom: Radius.circular(16)),
+                                      ),
+                                      child: Padding(
+                                        padding: EdgeInsets.all(12),
+                                        child: Column(
+                                          children: [
+                                            if (feeStructure.isEmpty)
+                                              Padding(
+                                                padding: EdgeInsets.all(16),
+                                                child: Text(
+                                                  'No fee structure available for this class',
+                                                  style: TextStyle(
+                                                      color:
+                                                          Colors.grey.shade600,
+                                                      fontSize: 14),
+                                                ),
+                                              )
+                                            else
+                                              ...feeStructure.map((fee) {
+                                                if (paidFeeMasterIds.contains(
+                                                    fee.feeMasterId
+                                                        .toString())) {
+                                                  return Container(
+                                                    margin: EdgeInsets.only(
+                                                        bottom: 12),
+                                                    padding: EdgeInsets.all(12),
+                                                    decoration: BoxDecoration(
+                                                      color:
+                                                          Colors.green.shade50,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              8),
+                                                      border: Border.all(
+                                                          color: Colors
+                                                              .green.shade200),
+                                                    ),
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(Icons.check_circle,
+                                                            color: Colors
+                                                                .green.shade600,
+                                                            size: 20),
+                                                        SizedBox(width: 8),
+                                                        Expanded(
+                                                          child: Text(
+                                                            '${fee.feeFieldName} - Already Paid',
+                                                            style: TextStyle(
+                                                              fontSize: 14,
+                                                              color: Colors
+                                                                  .green
+                                                                  .shade700,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        Text(
+                                                          '₹${fee.amount}',
+                                                          style: TextStyle(
+                                                            fontSize: 14,
+                                                            color: Colors
+                                                                .green.shade700,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+                                                }
+
+                                                if (!fee.isCollectable ||
+                                                    !feeControllers.containsKey(
+                                                        fee.feeMasterId)) {
+                                                  return SizedBox.shrink();
+                                                }
+
+                                                final controller =
+                                                    feeControllers[
+                                                        fee.feeMasterId]!;
+                                                final amount = double.tryParse(
+                                                        controller.text) ??
+                                                    0.0;
+                                                final totalAmount = fee
+                                                            .isMonthly &&
+                                                        !isYearlyPayment
+                                                    ? amount *
+                                                        selectedMonths.length
+                                                    : amount;
+
+                                                return Container(
+                                                  margin: EdgeInsets.only(
+                                                      bottom: 12),
+                                                  child: Card(
+                                                    elevation: 3,
+                                                    shape:
+                                                        RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              12),
+                                                      side: BorderSide(
+                                                          color: Colors
+                                                              .blue.shade50,
+                                                          width: 1),
+                                                    ),
+                                                    color: Colors.white,
+                                                    child: ListTile(
+                                                      contentPadding:
+                                                          EdgeInsets.all(12),
+                                                      title: Row(
+                                                        children: [
+                                                          Icon(
+                                                              Icons
+                                                                  .currency_rupee,
+                                                              size: 18,
+                                                              color: Colors.blue
+                                                                  .shade600),
+                                                          SizedBox(width: 8),
+                                                          Expanded(
+                                                            child: Text(
+                                                              fee.feeFieldName,
+                                                              style: TextStyle(
+                                                                fontSize: 16,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                                color: Colors
+                                                                    .blue
+                                                                    .shade800,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          if (fee.isMandatory)
+                                                            Container(
+                                                              padding: EdgeInsets
+                                                                  .symmetric(
+                                                                      horizontal:
+                                                                          6,
+                                                                      vertical:
+                                                                          2),
+                                                              decoration:
+                                                                  BoxDecoration(
+                                                                color: Colors
+                                                                    .red
+                                                                    .shade600,
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            4),
+                                                              ),
+                                                              child: Text(
+                                                                'Required',
+                                                                style:
+                                                                    TextStyle(
+                                                                  color: Colors
+                                                                      .white,
+                                                                  fontSize: 10,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          if (fee.isMonthly)
+                                                            Padding(
+                                                              padding: EdgeInsets
+                                                                  .only(
+                                                                      left: 8),
+                                                              child: Chip(
+                                                                label: Text(
+                                                                  isYearlyPayment
+                                                                      ? 'Yearly'
+                                                                      : 'Monthly',
+                                                                  style: TextStyle(
+                                                                      fontSize:
+                                                                          11,
+                                                                      color: Colors
+                                                                          .white),
+                                                                ),
+                                                                backgroundColor:
+                                                                    Colors.blue
+                                                                        .shade600,
+                                                                padding: EdgeInsets
+                                                                    .symmetric(
+                                                                        horizontal:
+                                                                            6),
+                                                                labelPadding:
+                                                                    null,
+                                                              ),
+                                                            ),
+                                                          if (fee.isOneTime)
+                                                            Padding(
+                                                              padding: EdgeInsets
+                                                                  .only(
+                                                                      left: 8),
+                                                              child: Chip(
+                                                                label: Text(
+                                                                  'One-Time',
+                                                                  style: TextStyle(
+                                                                      fontSize:
+                                                                          11,
+                                                                      color: Colors
+                                                                          .white),
+                                                                ),
+                                                                backgroundColor:
+                                                                    Colors
+                                                                        .purple
+                                                                        .shade600,
+                                                                padding: EdgeInsets
+                                                                    .symmetric(
+                                                                        horizontal:
+                                                                            6),
+                                                                labelPadding:
+                                                                    null,
+                                                              ),
+                                                            ),
+                                                        ],
+                                                      ),
+                                                      subtitle: Column(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        children: [
+                                                          SizedBox(height: 8),
+                                                          Text(
+                                                            'Base: ₹${amount.toStringAsFixed(2)} ${fee.isMonthly ? (isYearlyPayment ? '/year' : '/month') : ''}',
+                                                            style: TextStyle(
+                                                                fontSize: 13,
+                                                                color: Colors
+                                                                    .grey
+                                                                    .shade600),
+                                                          ),
+                                                          if (fee.isMonthly)
+                                                            Text(
+                                                              isYearlyPayment
+                                                                  ? 'Total (1 year): ₹${totalAmount.toStringAsFixed(2)}'
+                                                                  : 'Total (${selectedMonths.length} month${selectedMonths.length > 1 ? 's' : ''}): ₹${totalAmount.toStringAsFixed(2)}',
+                                                              style: TextStyle(
+                                                                fontSize: 13,
+                                                                color: Colors
+                                                                    .green
+                                                                    .shade600,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                              ),
+                                                            ),
+                                                          SizedBox(height: 12),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                );
+                                              }).toList(),
+                                          ],
+                                        ),
+                                      ),
+                                    )
+                                  : SizedBox.shrink(),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 24),
+                    Text(
+                      'Payment Summary',
+                      style: TextStyle(
+                        color: blueTheme,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                     SizedBox(height: 12),
-
-                    // Payment Summary Card
                     Card(
                       elevation: 4,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                          borderRadius: BorderRadius.circular(12)),
                       child: Padding(
                         padding: EdgeInsets.all(16),
                         child: Column(
                           children: [
-                            _buildSummaryField(
-                              controller: previousBalanceController,
-                              label: 'Previous Balance',
-                              icon: Icons.history,
-                              isEditable: false,
-                            ),
-                            SizedBox(height: 16),
                             _buildSummaryField(
                               controller: totalDepositController,
                               label: 'Total Amount',
@@ -782,40 +1393,32 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                               isEditable: false,
                             ),
                             SizedBox(height: 16),
-                            _buildSummaryField(
-                              controller: remarkController,
-                              label: 'Remark',
-                              icon: Icons.note,
-                              isEditable: true,
-                              isRequired: true,
-                            ),
+                            _buildRemarkField(),
                           ],
                         ),
                       ),
                     ),
-
                     SizedBox(height: 32),
-                    // Submit Button
                     SizedBox(
                       width: double.infinity,
-                      height: 50,
+                      height: 56,
                       child: ElevatedButton(
-                        onPressed: _submitFees,
+                        onPressed: isLoading ? null : _submitFees,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: blueTheme,
                           foregroundColor: whiteTheme,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+                              borderRadius: BorderRadius.circular(12)),
                           elevation: 4,
+                          padding: EdgeInsets.symmetric(vertical: 16),
                         ),
-                        child: Text(
-                          'Submit Fee Payment',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        child: isLoading
+                            ? CircularProgressIndicator(color: whiteTheme)
+                            : Text(
+                                'Submit Fee Payment',
+                                style: TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
                       ),
                     ),
                     SizedBox(height: 16),
@@ -823,47 +1426,6 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                 ),
               ),
             ),
-    );
-  }
-
-  Widget _buildFeeTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    bool enabled = true,
-    bool isRequired = false,
-  }) {
-    return TextFormField(
-      controller: controller,
-      enabled: enabled,
-      decoration: InputDecoration(
-        labelText: label + (isRequired ? '*' : ''),
-        labelStyle: TextStyle(color: Colors.blue.shade800),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.blue.shade200),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.blue.shade200),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.blue.shade800, width: 2),
-        ),
-        prefixIcon: Icon(icon, color: Colors.blue.shade600),
-        filled: true,
-        fillColor: enabled ? Colors.white : Colors.grey.shade100,
-      ),
-      keyboardType: TextInputType.number,
-      validator: isRequired
-          ? (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter amount';
-              }
-              return null;
-            }
-          : null,
     );
   }
 
@@ -880,45 +1442,128 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
       decoration: InputDecoration(
         labelText: label + (isRequired ? '*' : ''),
         labelStyle: TextStyle(
-          color: isEditable ? Colors.blue.shade800 : Colors.grey.shade700,
+          color: isEditable ? Colors.blue.shade600 : Colors.grey.shade600,
+          fontSize: 12,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.blue.shade200),
+          borderSide: BorderSide(color: Colors.blue.shade100),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.blue.shade200),
+          borderSide: BorderSide(color: Colors.blue.shade100),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.blue.shade800, width: 2),
+          borderSide: BorderSide(color: Colors.blue.shade600, width: 2),
         ),
         prefixIcon: Icon(
           icon,
           color: isEditable ? Colors.blue.shade600 : Colors.grey.shade600,
+          size: 20,
         ),
         filled: true,
-        fillColor: isEditable ? Colors.white : Colors.grey.shade100,
+        fillColor: isEditable ? Colors.blue.shade50 : Colors.grey.shade100,
       ),
       style: TextStyle(
         color: isEditable ? Colors.black : Colors.grey.shade700,
         fontWeight: isEditable ? FontWeight.normal : FontWeight.bold,
+        fontSize: 14,
       ),
       keyboardType: TextInputType.number,
       validator: isRequired
           ? (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter amount';
-              }
+              if (value == null || value.isEmpty) return 'Please enter amount';
               double? deposit = double.tryParse(value);
+              if (deposit == null) return 'Please enter a valid number';
               double total = double.tryParse(totalDepositController.text) ?? 0;
-              if (deposit != null && deposit > total) {
+              if (deposit > total)
                 return 'Deposit cannot be greater than total amount';
-              }
               return null;
             }
           : null,
+    );
+  }
+
+  Widget _buildRemarkField() {
+    return TextFormField(
+      controller: remarkController,
+      decoration: InputDecoration(
+        labelText: 'Remark*',
+        labelStyle: TextStyle(color: Colors.blue.shade600, fontSize: 12),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.blue.shade100),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.blue.shade100),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.blue.shade600, width: 2),
+        ),
+        prefixIcon: Icon(Icons.note, color: Colors.blue.shade600),
+        filled: true,
+        fillColor: Colors.blue.shade50,
+      ),
+      style: TextStyle(fontSize: 14, color: Colors.black87),
+      maxLines: 2,
+      validator: (value) =>
+          value == null || value.isEmpty ? 'Please enter a remark' : null,
+    );
+  }
+}
+
+class FeeStructureModel {
+  final String feeFieldName;
+  final String amount;
+  final bool isCollectable;
+  final bool isMandatory;
+  final bool isMonthly;
+  final bool isOneTime;
+  final int feeMasterId;
+
+  FeeStructureModel({
+    required this.feeFieldName,
+    required this.amount,
+    required this.isCollectable,
+    required this.isMandatory,
+    required this.isMonthly,
+    required this.isOneTime,
+    required this.feeMasterId,
+  });
+
+  factory FeeStructureModel.fromJson(Map<String, dynamic> json) {
+    String amountStr = '0.0';
+    if (json['amount'] != null) {
+      amountStr = json['amount'] is num
+          ? json['amount'].toString()
+          : json['amount'].trim();
+    }
+
+    print(
+        'Parsing fee: ${json['fee_field_name']}, is_one_time=${json['is_one_time']}, fee_master_id=${json['fee_master_id']}');
+
+    return FeeStructureModel(
+      feeFieldName: json['fee_field_name']?.toString() ?? '',
+      amount: amountStr,
+      isCollectable: json['is_collectable'] == true,
+      isMandatory: json['is_mandatory'] == true,
+      isMonthly: (json['fee_field_name']
+                  ?.toString()
+                  .toLowerCase()
+                  .contains('tution') ??
+              false) ||
+          (json['fee_field_name']
+                  ?.toString()
+                  .toLowerCase()
+                  .contains('monthly') ??
+              false),
+      isOneTime: json['is_one_time'] == true,
+      feeMasterId: json['fee_master_id'] is int
+          ? json['fee_master_id']
+          : int.tryParse(json['fee_master_id'].toString()) ?? 0,
     );
   }
 }

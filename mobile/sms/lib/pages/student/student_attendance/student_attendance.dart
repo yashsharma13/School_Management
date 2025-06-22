@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sms/pages/admin/admin_dashboard.dart';
+import 'package:sms/pages/principle/principle_dashboard.dart';
+import 'package:sms/widgets/button.dart';
 
 class AttendancePage extends StatefulWidget {
   const AttendancePage({super.key});
@@ -46,10 +48,12 @@ class _AttendancePageState extends State<AttendancePage> {
   TextEditingController searchController = TextEditingController();
   String? token;
   bool isLoading = false;
+  static final String baseeUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
 
   // For dynamic class and section
   List<Class> classes = [];
   String? selectedClass;
+  String? selectedClassId; // Add this to store class_id
   String? selectedSection;
   List<String> availableSections = [];
   bool _isInitialLoading = true;
@@ -81,7 +85,7 @@ class _AttendancePageState extends State<AttendancePage> {
       });
 
       final response = await http.get(
-        Uri.parse('http://localhost:1000/api/classes'),
+        Uri.parse('$baseeUrl/api/classes'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -92,31 +96,35 @@ class _AttendancePageState extends State<AttendancePage> {
       if (response.statusCode == 200) {
         final List<dynamic> classData = json.decode(response.body);
 
-        // Create a map to group sections by class
-        final Map<String, Set<String>> classSectionMap = {};
+        // Create a map to group sections by class and store class_id
+        final Map<String, Map<String, dynamic>> classSectionMap = {};
         final List<Class> tempClasses = [];
 
         for (final data in classData) {
           final className =
               (data['class_name'] ?? data['className'] ?? '').toString().trim();
           final section = (data['section'] ?? '').toString().trim();
+          final classId = (data['_id'] ?? data['id'] ?? '').toString().trim();
 
           if (className.isEmpty) continue;
 
           if (!classSectionMap.containsKey(className)) {
-            classSectionMap[className] = {};
+            classSectionMap[className] = {
+              'id': classId,
+              'sections': <String>{},
+            };
           }
 
           if (section.isNotEmpty) {
-            classSectionMap[className]!.add(section);
+            classSectionMap[className]!['sections'].add(section);
           }
         }
 
-        classSectionMap.forEach((className, sections) {
+        classSectionMap.forEach((className, classInfo) {
           tempClasses.add(Class(
-            id: className,
+            id: classInfo['id'],
             className: className,
-            sections: sections.toList(),
+            sections: (classInfo['sections'] as Set<String>).toList(),
           ));
         });
 
@@ -150,7 +158,7 @@ class _AttendancePageState extends State<AttendancePage> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:1000/api/students'),
+        Uri.parse('$baseeUrl/api/students'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -192,8 +200,10 @@ class _AttendancePageState extends State<AttendancePage> {
         final selectedClassObj =
             classes.firstWhere((c) => c.className == className);
         availableSections = selectedClassObj.sections;
+        selectedClassId = selectedClassObj.id; // Store the class_id
       } else {
         availableSections = [];
+        selectedClassId = null;
       }
       selectedSection = null;
       _filterStudents(); // Filter students when class changes
@@ -266,6 +276,11 @@ class _AttendancePageState extends State<AttendancePage> {
       return;
     }
 
+    if (selectedClassId == null) {
+      _showErrorSnackBar('Class ID not found. Please reselect the class.');
+      return;
+    }
+
     setState(() {
       isLoading = true;
     });
@@ -274,14 +289,14 @@ class _AttendancePageState extends State<AttendancePage> {
       return {
         'student_id': student.id,
         'is_present': student.isPresent,
-        'class_name': selectedClass,
+        'class_id': selectedClassId, // Send class_id instead of class_name
         'section': selectedSection,
       };
     }).toList();
 
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:1000/api/attendance'),
+        Uri.parse('$baseeUrl/api/attendance'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -297,7 +312,7 @@ class _AttendancePageState extends State<AttendancePage> {
         _showSuccessSnackBar('Attendance saved successfully');
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => AdminDashboard()),
+          MaterialPageRoute(builder: (context) => PrincipleDashboard()),
         );
       } else if (response.statusCode == 401) {
         _handleUnauthorized();
@@ -609,34 +624,12 @@ class _AttendancePageState extends State<AttendancePage> {
                               },
                             ),
                     ),
-                  SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed:
-                          filteredStudents.isEmpty ? null : saveAttendance,
-                      style: ElevatedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        backgroundColor: Colors.blue,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        elevation: 3,
-                      ),
-                      child: isLoading
-                          ? SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : Text('Save Attendance',
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold)),
-                    ),
+                  const SizedBox(height: 16),
+                  CustomButton(
+                    text: 'Save',
+                    width: 150,
+                    onPressed: filteredStudents.isEmpty ? null : saveAttendance,
+                    isLoading: isLoading,
                   ),
                 ],
               ),

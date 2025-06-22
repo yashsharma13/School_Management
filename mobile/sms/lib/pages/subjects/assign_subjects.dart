@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sms/pages/services/api_service.dart';
+import 'package:sms/widgets/button.dart';
 
 class AssignSubjectPage extends StatefulWidget {
   @override
@@ -33,6 +34,56 @@ class _AssignSubjectPageState extends State<AssignSubjectPage> {
     }
   }
 
+  // Future<void> _loadClasses() async {
+  //   try {
+  //     setState(() {
+  //       isLoading = true;
+  //     });
+
+  //     final fetchedClasses = await ApiService.fetchClasses();
+
+  //     // Grouping sections by class name
+  //     final Map<String, Set<String>> classSectionMap = {};
+  //     final List<Class> tempClasses = [];
+
+  //     for (final data in fetchedClasses) {
+  //       final className =
+  //           (data['class_name'] ?? data['className'] ?? '').toString().trim();
+  //       final section = (data['section'] ?? '').toString().trim();
+
+  //       if (className.isEmpty) continue;
+
+  //       if (!classSectionMap.containsKey(className)) {
+  //         classSectionMap[className] = {};
+  //       }
+
+  //       classSectionMap[className]!.add(section);
+  //     }
+
+  //     // Build Class objects
+  //     classSectionMap.forEach((className, sections) {
+  //       tempClasses.add(Class(
+  //         id: className, // You can adjust ID if you need real IDs
+  //         className: className,
+  //         sections: sections.toList(),
+  //       ));
+  //     });
+
+  //     setState(() {
+  //       classes = tempClasses;
+  //       if (classes.isEmpty) {
+  //         _showErrorSnackBar(
+  //             'No valid classes found. Please add classes first.');
+  //       }
+  //     });
+  //   } catch (error) {
+  //     _showErrorSnackBar('Error fetching classes: ${error.toString()}');
+  //   } finally {
+  //     setState(() {
+  //       isLoading = false;
+  //     });
+  //   }
+  // }
   Future<void> _loadClasses() async {
     try {
       setState(() {
@@ -41,35 +92,33 @@ class _AssignSubjectPageState extends State<AssignSubjectPage> {
 
       final fetchedClasses = await ApiService.fetchClasses();
 
-      // Grouping sections by class name
-      final Map<String, Set<String>> classSectionMap = {};
-      final List<Class> tempClasses = [];
+      final Map<String, Class> classMap = {}; // ✅ Key: class_name
 
       for (final data in fetchedClasses) {
-        final className =
-            (data['class_name'] ?? data['className'] ?? '').toString().trim();
+        final className = (data['class_name'] ?? '').toString().trim();
         final section = (data['section'] ?? '').toString().trim();
+        final classId = data['id']; // you can still keep the first one
 
         if (className.isEmpty) continue;
 
-        if (!classSectionMap.containsKey(className)) {
-          classSectionMap[className] = {};
+        // If class doesn't exist in the map yet, add it
+        if (!classMap.containsKey(className)) {
+          classMap[className] = Class(
+            id: classId, // just pick first ID you get for this class name
+            className: className,
+            sections: [],
+          );
         }
 
-        classSectionMap[className]!.add(section);
+        // Add section if it's not already added
+        if (section.isNotEmpty &&
+            !classMap[className]!.sections.contains(section)) {
+          classMap[className]!.sections.add(section);
+        }
       }
 
-      // Build Class objects
-      classSectionMap.forEach((className, sections) {
-        tempClasses.add(Class(
-          id: className, // You can adjust ID if you need real IDs
-          className: className,
-          sections: sections.toList(),
-        ));
-      });
-
       setState(() {
-        classes = tempClasses;
+        classes = classMap.values.toList();
         if (classes.isEmpty) {
           _showErrorSnackBar(
               'No valid classes found. Please add classes first.');
@@ -124,6 +173,53 @@ class _AssignSubjectPageState extends State<AssignSubjectPage> {
     }
   }
 
+  // Future<void> _submitForm() async {
+  //   if (!_formKey.currentState!.validate()) return;
+  //   if (selectedClass == null) {
+  //     _showErrorSnackBar('Please select a class');
+  //     return;
+  //   }
+  //   if (selectedSection == null) {
+  //     _showErrorSnackBar('Please select a section');
+  //     return;
+  //   }
+
+  //   setState(() {
+  //     isLoading = true;
+  //   });
+
+  //   try {
+  //     final List<Map<String, dynamic>> subjectsData = subjectFields
+  //         .map((field) => {
+  //               'subject_name': field.subjectName.trim(),
+  //               'marks': field.marks.trim(),
+  //             })
+  //         .toList();
+
+  //     final success = await ApiService.registerSubject(
+  //       classId: selectedClass!.id,
+  //       // section: selectedSection!,
+  //       subjectsData: subjectsData,
+  //     );
+
+  //     if (success) {
+  //       _showSuccessSnackBar('Subjects assigned successfully!');
+  //       setState(() {
+  //         subjectFields.clear();
+  //         _formKey.currentState!.reset();
+  //       });
+  //     } else {
+  //       _showErrorSnackBar('Failed to assign subjects');
+  //     }
+  //   } catch (error) {
+  //     _showErrorSnackBar('Error: ${error.toString()}');
+  //   } finally {
+  //     setState(() {
+  //       isLoading = false;
+  //     });
+  //   }
+  // }
+
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
     if (selectedClass == null) {
@@ -148,8 +244,7 @@ class _AssignSubjectPageState extends State<AssignSubjectPage> {
           .toList();
 
       final success = await ApiService.registerSubject(
-        className: selectedClass!.className,
-        section: selectedSection!,
+        classId: selectedClass!.id,
         subjectsData: subjectsData,
       );
 
@@ -157,6 +252,8 @@ class _AssignSubjectPageState extends State<AssignSubjectPage> {
         _showSuccessSnackBar('Subjects assigned successfully!');
         setState(() {
           subjectFields.clear();
+          selectedClass = null;
+          selectedSection = null;
           _formKey.currentState!.reset();
         });
       } else {
@@ -437,36 +534,21 @@ class _AssignSubjectPageState extends State<AssignSubjectPage> {
                   ),
                 ),
                 SizedBox(height: 16),
-                ElevatedButton.icon(
-                  icon: Icon(Icons.add),
-                  label: Text('Add Subject'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue[50],
-                    foregroundColor: Colors.blue[800],
-                    padding: EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  onPressed: _addSubjectField,
+                CustomButton(
+                  text: 'Add Subject',
+                  icon: Icons.add,
+                  onPressed: () async {
+                    _addSubjectField();
+                  },
+                  color: Colors.red,
                 ),
+
                 SizedBox(height: 12),
-                ElevatedButton(
+                CustomButton(
+                  text: 'Assign Subjects',
                   onPressed: _submitForm,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue[800],
-                    foregroundColor: Colors.white,
-                    minimumSize: Size(double.infinity, 50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: isLoading
-                      ? CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        )
-                      : Text('Assign Subjects'),
+                  isLoading: isLoading,
+                  // color: Colors.blue.shade900,
                 ),
               ],
             ],
@@ -479,7 +561,7 @@ class _AssignSubjectPageState extends State<AssignSubjectPage> {
 
 // Class model
 class Class {
-  final String id;
+  final int id;
   final String className;
   final List<String> sections;
 
@@ -491,7 +573,7 @@ class Class {
 
   factory Class.fromJson(Map<String, dynamic> json) {
     return Class(
-      id: (json['_id'] ?? json['id'] ?? '').toString().trim(),
+      id: json['_id'],
       className: (json['class_name'] ?? json['className'] ?? 'Unknown Class')
           .toString()
           .trim(),

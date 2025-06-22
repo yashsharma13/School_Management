@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sms/pages/student/student_registration/student_registration_controller.dart';
@@ -9,17 +10,55 @@ import 'package:sms/pages/student/student_registration/student_registration_cont
 class ApiService {
   // API URLs
   // use ipconfig to check niche wala jo url hai vo localhost ki jagh use krna hai agar phone mein use krna hai toh
-  static const String apiUrlRegister =
-      'http://localhost:1000/api/auth/register';
-  static const String apiUrlLogin = 'http://localhost:1000/api/auth/login';
-  static const String apiUrlRegisterStudent =
-      'http://localhost:1000/api/registerstudent';
-  static const String apiUrlRegisterTeacher =
-      'http://localhost:1000/api/registerteacher';
+  static final String baseeUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
+  static final String apiUrlRegister = '$baseeUrl/api/auth/register';
+  static final String apiUrlLogin = '$baseeUrl/api/auth/login';
+  static final String apiUrlRegisterStudent = '$baseeUrl/api/registerstudent';
+  static final String apiUrlRegisterTeacher = '$baseeUrl/api/registerteacher';
+  static final String apiUrlRegisterSubject = '$baseeUrl/api/registersubject';
+  static final String apiUrlDeleteSubject = '$baseeUrl/api/deletesubject';
+  static final String apiUrlUpdateSubject = '$baseeUrl/api/updatesubject';
 
-  // Register user with role
+  // // Register user with role
+  // static Future<bool> register(String email, String phone, String password,
+  //     String confirmpassword, String selectedRole) async {
+  //   try {
+  //     final response = await http.post(
+  //       Uri.parse(apiUrlRegister),
+  //       headers: {'Content-Type': 'application/json'},
+  //       body: jsonEncode({
+  //         'email': email,
+  //         'phone': phone,
+  //         'password': password,
+  //         'confirmpassword': confirmpassword,
+  //         'role': selectedRole, // Include role here
+  //       }),
+  //     );
+
+  //     if (response.statusCode == 200) {
+  //       final responseData = jsonDecode(response.body);
+  //       return responseData['success'] ?? false; // Return success status
+  //     } else {
+  //       print('Registration failed with status code: ${response.statusCode}');
+  //       print('Register request body: ${jsonEncode({
+  //             'email': email,
+  //             'phone': phone,
+  //             'password': password,
+  //             'confirmpassword': confirmpassword,
+  //             'role': selectedRole,
+  //           })}');
+
+  //       return false;
+  //     }
+  //   } catch (error) {
+  //     print('Error: $error');
+  //     return false;
+  //   }
+  // }
+
   static Future<bool> register(String email, String phone, String password,
-      String confirmpassword, String selectedRole) async {
+      String confirmpassword, String selectedRole,
+      {required String schoolId}) async {
     try {
       final response = await http.post(
         Uri.parse(apiUrlRegister),
@@ -29,19 +68,28 @@ class ApiService {
           'phone': phone,
           'password': password,
           'confirmpassword': confirmpassword,
-          'role': selectedRole, // Include role here
+          'role': selectedRole,
+          'school_id': schoolId, // ✅ include this in body
         }),
       );
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        return responseData['success'] ?? false; // Return success status
+        return responseData['success'] ?? false;
       } else {
-        // print('Registration failed with status code: ${response.statusCode}');
+        print('Registration failed with status code: ${response.statusCode}');
+        print('Register request body: ${jsonEncode({
+              'email': email,
+              'phone': phone,
+              'password': password,
+              'confirmpassword': confirmpassword,
+              'role': selectedRole,
+              'schoolId': schoolId,
+            })}');
         return false;
       }
     } catch (error) {
-      // print('Error: $error');
+      print('Error: $error');
       return false;
     }
   }
@@ -172,7 +220,7 @@ class ApiService {
           tempController.generateCredentials(studentName, registrationNumber);
       final username = credentials['username'];
       final password = credentials['password'];
-      var uri = Uri.parse('http://localhost:1000/api/registerstudent');
+      var uri = Uri.parse(apiUrlRegisterStudent);
       var request = http.MultipartRequest('POST', uri);
 
       // Add headers
@@ -268,8 +316,7 @@ class ApiService {
         return null;
       }
 
-      final uri =
-          Uri.parse('http://localhost:1000/api/last-registration-number');
+      final uri = Uri.parse('$baseeUrl/api/last-registration-number');
       // print("Request URL: $uri"); // Debug print
 
       final response = await http.get(
@@ -300,6 +347,7 @@ class ApiService {
   static Future<bool> registerTeacher({
     required String teacherName,
     required String email,
+    required String password,
     required String dob,
     required String doj,
     required String gender,
@@ -329,6 +377,7 @@ class ApiService {
       // Add text fields
       request.fields['teacher_name'] = teacherName;
       request.fields['email'] = email;
+      request.fields['password'] = password;
       request.fields['date_of_birth'] = dob; // Use formatted DOB
       request.fields['date_of_joining'] = doj; // Use formatted DOJ
       request.fields['gender'] = gender;
@@ -393,12 +442,12 @@ class ApiService {
     }
   }
 
-  static const String apiUrlRegisterClass = 'http://localhost:1000/api/classes';
+  static final String apiUrlRegisterClass = '$baseeUrl/api/classes';
   static Future<bool> registerClass({
     required String className,
     required String section,
     required String tuitionFees,
-    required String teacherName, // Changed parameter name
+    required String teacherId,
   }) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -418,7 +467,7 @@ class ApiService {
           'class_name': className,
           'section': section,
           'tuition_fees': tuitionFees,
-          'teacher_name': teacherName, // Match backend expectation
+          'teacher_id': teacherId, // Match backend expectation
         }),
       );
 
@@ -434,7 +483,7 @@ class ApiService {
     }
   }
 
-  static const String baseUrl = 'http://localhost:1000/api';
+  // static const String baseUrl = 'http://localhost:1000/api';
 
   // Get token from SharedPreferences
   static Future<String?> getToken() async {
@@ -452,7 +501,7 @@ class ApiService {
 
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/classes'),
+        Uri.parse('$baseeUrl/api/classes'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -478,7 +527,7 @@ class ApiService {
     required String classId,
     required String className,
     required String tuitionFees,
-    required String teacherName,
+    required String teacherId,
   }) async {
     try {
       // print('[DEBUG] Starting updateClass with ID: $classId'); // Add this
@@ -495,8 +544,8 @@ class ApiService {
       }
 
       // Use const for baseUrl to prevent accidental modification
-      const String baseUrl = 'http://localhost:1000/api';
-      final url = '$baseUrl/classes/$classId';
+      // const String baseUrl = 'http://localhost:1000/api';
+      final url = '$baseeUrl/api/classes/$classId';
 
       // print('[DEBUG] Full update URL: $url'); // Add this
 
@@ -510,7 +559,7 @@ class ApiService {
         body: json.encode({
           'class_name': className,
           'tuition_fees': tuitionFees,
-          'teacher_name': teacherName,
+          'teacher_id': teacherId,
         }),
       );
 
@@ -543,8 +592,8 @@ class ApiService {
         throw Exception('Class ID cannot be empty');
       }
 
-      const String baseUrl = 'http://localhost:1000/api';
-      final url = '$baseUrl/classes/$classId';
+      // const String baseUrl = 'http://localhost:1000/api';
+      final url = '$baseeUrl/api/classes/$classId';
 
       // print('[DEBUG] Full delete URL: $url'); // Add this
 
@@ -571,12 +620,53 @@ class ApiService {
     }
   }
 
-  static const String apiUrlRegisterSubject =
-      'http://localhost:1000/api/registersubject';
+  // static Future<bool> registerSubject({
+  //   required int classId,
+  //   // required String section,
+  //   required List<Map<String, dynamic>> subjectsData,
+  // }) async {
+  //   try {
+  //     final prefs = await SharedPreferences.getInstance();
+  //     final token = prefs.getString('token');
+
+  //     if (token == null) {
+  //       throw Exception('No token found. Please log in.');
+  //     }
+
+  //     // Prepare comma-separated subject names and marks
+  //     String subjectNames =
+  //         subjectsData.map((subject) => subject['subject_name']).join(', ');
+  //     String marks = subjectsData.map((subject) => subject['marks']).join(', ');
+
+  //     final response = await http.post(
+  //       Uri.parse(apiUrlRegisterSubject),
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         'Authorization': token,
+  //       },
+  //       body: json.encode({
+  //         'class_id': classId,
+  //         // 'section': section,
+  //         'subject_name': subjectNames, // Send comma-separated subject names
+  //         'marks': marks, // Send comma-separated marks
+  //       }),
+  //     );
+
+  //     if (response.statusCode == 200 || response.statusCode == 201) {
+  //       return true;
+  //     } else {
+  //       final errorData = json.decode(response.body);
+  //       throw Exception(errorData['message'] ?? 'Failed to register subject');
+  //     }
+  //   } catch (e) {
+  //     // print('Error during subject registration: $e');
+  //     rethrow;
+  //   }
+  // }
 
   static Future<bool> registerSubject({
-    required String className,
-    required String section,
+    required int classId,
+    // required String section, // Uncomment if section is needed
     required List<Map<String, dynamic>> subjectsData,
   }) async {
     try {
@@ -587,22 +677,17 @@ class ApiService {
         throw Exception('No token found. Please log in.');
       }
 
-      // Prepare comma-separated subject names and marks
-      String subjectNames =
-          subjectsData.map((subject) => subject['subject_name']).join(', ');
-      String marks = subjectsData.map((subject) => subject['marks']).join(', ');
-
       final response = await http.post(
-        Uri.parse(apiUrlRegisterSubject),
+        Uri.parse(apiUrlRegisterSubject), // Ensure this is the correct endpoint
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': token,
+          'Authorization':
+              'Bearer $token', // Adjust if your backend expects 'Bearer'
         },
         body: json.encode({
-          'class_name': className,
-          'section': section,
-          'subject_name': subjectNames, // Send comma-separated subject names
-          'marks': marks, // Send comma-separated marks
+          'class_id': classId,
+          // 'section': section, // Include if your backend requires it
+          'subjects': subjectsData, // Send subjects as an array of objects
         }),
       );
 
@@ -618,8 +703,7 @@ class ApiService {
     }
   }
 
-  static const String apiUrlgetSubject =
-      'http://localhost:1000/api/getallsubjects';
+  static final String apiUrlgetSubject = '$baseeUrl/api/getallsubjects';
   static Future<List<dynamic>> fetchClassesWithSubjects() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -637,8 +721,8 @@ class ApiService {
         },
       );
 
-      // print('Response status: ${response.statusCode}');
-      // print('Response body: ${response.body}');
+      debugPrint('Response status: ${response.statusCode}');
+      debugPrint('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseBody = json.decode(response.body);
@@ -662,17 +746,69 @@ class ApiService {
     }
   }
 
-  static const String apiUrlUpdateSubject =
-      'http://localhost:1000/api/updatesubject';
+  // static Future<bool> updateSubject({
+  //   required String subjectId,
+  //   required String classId,
+  //   required List<Map<String, dynamic>> subjectsData,
+  // }) async {
+  //   try {
+  //     print('[DEBUG] Starting updateSubject with ID: $subjectId');
 
-  static Future<bool> updateSubject({
-    required String subjectId,
+  //     // 1. Get token from SharedPreferences
+  //     final prefs = await SharedPreferences.getInstance();
+  //     final token = prefs.getString('token');
+
+  //     if (token == null || token.isEmpty) {
+  //       throw Exception('Authentication token not found');
+  //     }
+
+  //     if (subjectId.isEmpty) {
+  //       throw Exception('Subject ID cannot be empty');
+  //     }
+
+  //     // 2. Prepare the request
+  //     print('[DEBUG] Full update URL: $apiUrlUpdateSubject');
+  //     print('[DEBUG] Request payload: ${{
+  //       'subject_id': subjectId,
+  //       'class_id': classId,
+  //       'subjects': subjectsData
+  //     }}');
+
+  //     // 3. Make the request
+  //     final response = await http.put(
+  //       Uri.parse(apiUrlUpdateSubject),
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         'Authorization': token, // Important: Add Bearer prefix
+  //       },
+  //       body: json.encode({
+  //         'subject_id': subjectId,
+  //         'class_id': classId,
+  //         'subjects': subjectsData,
+  //       }),
+  //     );
+
+  //     // 4. Handle response
+  //     print('[DEBUG] Response status: ${response.statusCode}');
+  //     print('[DEBUG] Response body: ${response.body}');
+
+  //     if (response.statusCode == 200) {
+  //       return true;
+  //     } else {
+  //       throw Exception(
+  //           'Failed to update subject: ${response.statusCode} - ${response.body}');
+  //     }
+  //   } catch (e) {
+  //     print('[ERROR] in updateSubject: $e');
+  //     rethrow;
+  //   }
+  // }
+
+  static Future<bool> updateSubjects({
+    required String classId,
     required List<Map<String, dynamic>> subjectsData,
   }) async {
     try {
-      // print('[DEBUG] Starting updateSubject with ID: $subjectId');
-
-      // 1. Get token from SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
 
@@ -680,48 +816,30 @@ class ApiService {
         throw Exception('Authentication token not found');
       }
 
-      if (subjectId.isEmpty) {
-        throw Exception('Subject ID cannot be empty');
-      }
-
-      // 2. Prepare the request
-      // print('[DEBUG] Full update URL: $apiUrlUpdateSubject');
-      // print('[DEBUG] Request payload: ${{
-      //   'subject_id': subjectId,
-      //   'subjects': subjectsData
-      // }}');
-
-      // 3. Make the request
       final response = await http.put(
-        Uri.parse(apiUrlUpdateSubject),
+        Uri.parse(
+            '$baseeUrl/api/updatesubject'), // Update with your correct endpoint
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': token, // Important: Add Bearer prefix
+          'Authorization': token,
         },
         body: json.encode({
-          'subject_id': subjectId,
+          'class_id': classId,
           'subjects': subjectsData,
         }),
       );
 
-      // 4. Handle response
-      // print('[DEBUG] Response status: ${response.statusCode}');
-      // print('[DEBUG] Response body: ${response.body}');
-
       if (response.statusCode == 200) {
         return true;
       } else {
-        throw Exception(
-            'Failed to update subject: ${response.statusCode} - ${response.body}');
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to update subjects');
       }
     } catch (e) {
-      // print('[ERROR] in updateSubject: $e');
+      print('[ERROR] in updateSubjects: $e');
       rethrow;
     }
   }
-
-  static const String apiUrlDeleteSubject =
-      'http://localhost:1000/api/deletesubject';
 
   static Future<bool> deleteSubject(String subjectId) async {
     try {
@@ -761,7 +879,7 @@ class ApiService {
         throw Exception('Authentication required');
       }
 
-      final url = '$baseUrl/api/students/count-by-class';
+      final url = '$baseeUrl/api/api/students/count-by-class';
       // print('Fetching counts from: $url');
 
       final response = await http.get(

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:sms/pages/classes/edit_class.dart';
 import 'package:sms/pages/classes/new_class.dart';
 import 'package:sms/pages/services/api_service.dart';
 import 'package:http/http.dart' as http;
@@ -16,6 +18,7 @@ class _AllClassesPageState extends State<AllClassesPage> {
   bool isLoading = true;
   bool isFetchingTeachers = false;
   String? token;
+  static final String baseeUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
 
   @override
   void initState() {
@@ -80,13 +83,13 @@ class _AllClassesPageState extends State<AllClassesPage> {
             print('Class: $className, Students: $studentCount');
 
             // Handle case where teacher might be deleted
-            final teacherName =
-                classData['teacher_name']?.toString() ?? 'No Teacher Assigned';
+            final teacherId =
+                classData['teacher_id']?.toString() ?? 'No Teacher Assigned';
 
             return Class.fromJson({
               ...classData,
               'student_count': studentCount,
-              'teacher_name': teacherName,
+              'teacher_id': teacherId,
               'section': classData['section'] ?? '',
             });
           })
@@ -120,7 +123,7 @@ class _AllClassesPageState extends State<AllClassesPage> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:1000/api/teachers'),
+        Uri.parse('$baseeUrl/api/teachers'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -235,7 +238,56 @@ class _AllClassesPageState extends State<AllClassesPage> {
     );
   }
 
+  // Widget _buildClassCard(Class classItem) {
+  //   return Card(
+  //     elevation: 2,
+  //     shape: RoundedRectangleBorder(
+  //       borderRadius: BorderRadius.circular(12),
+  //     ),
+  //     child: InkWell(
+  //       borderRadius: BorderRadius.circular(12),
+  //       onTap: () => _openEditDialog(classItem),
+  //       child: Padding(
+  //         padding: EdgeInsets.all(16),
+  //         child: Column(
+  //           crossAxisAlignment: CrossAxisAlignment.start,
+  //           children: [
+  //             Row(
+  //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //               children: [
+  //                 Text(
+  //                   '${classItem.className} (${classItem.section})',
+  //                   style: TextStyle(
+  //                     fontSize: 18,
+  //                     fontWeight: FontWeight.bold,
+  //                     color: Colors.blue[900],
+  //                   ),
+  //                 ),
+  //                 _buildStudentCountBadge(classItem.studentCount),
+  //               ],
+  //             ),
+  //             SizedBox(height: 12),
+  //             _buildInfoRow(Icons.person, classItem.teacherId),
+  //             SizedBox(height: 8),
+  //             _buildInfoRow(
+  //                 Icons.attach_money, 'Fees: ${classItem.tuitionFees}'),
+  //             SizedBox(height: 12),
+  //             _buildActionButtons(classItem),
+  //           ],
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
   Widget _buildClassCard(Class classItem) {
+    // Find teacher name from teachers list by teacherId
+    final teacherName = teachers
+        .firstWhere(
+          (teacher) => teacher.id == classItem.teacherId,
+          orElse: () => Teacher(id: '', name: 'No Teacher Assigned'),
+        )
+        .name;
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -264,7 +316,8 @@ class _AllClassesPageState extends State<AllClassesPage> {
                 ],
               ),
               SizedBox(height: 12),
-              _buildInfoRow(Icons.person, classItem.teacherName),
+              _buildInfoRow(
+                  Icons.person, teacherName), // <-- Show teacherName here
               SizedBox(height: 8),
               _buildInfoRow(
                   Icons.attach_money, 'Fees: ${classItem.tuitionFees}'),
@@ -407,186 +460,22 @@ class _AllClassesPageState extends State<AllClassesPage> {
     }
   }
 
-  void _openEditDialog(Class classItem) {
-    if (classItem.id.isEmpty) {
-      _showErrorSnackBar('Cannot edit - invalid class ID');
-      return;
-    }
-
-    final classNameController =
-        TextEditingController(text: classItem.className);
-    final tuitionFeesController =
-        TextEditingController(text: classItem.tuitionFees);
-
-    String? selectedTeacherName =
-        teachers.any((t) => t.name == classItem.teacherName)
-            ? classItem.teacherName
-            : null;
-    final sectionController = TextEditingController(text: classItem.section);
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title:
-                  Text('Edit Class', style: TextStyle(color: Colors.blue[900])),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextFormField(
-                      controller: classNameController,
-                      readOnly: true,
-                      enabled:
-                          false, // 🚫 disables editing AND shows default greyed-out style
-                      decoration: InputDecoration(
-                        labelText: 'Class Name',
-                        labelStyle: TextStyle(color: Colors.blue[900]),
-                        disabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(
-                            color: Colors.grey[400]!,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        filled: true,
-                        fillColor: Colors.grey[
-                            100], // 👈 Light grey background for non-editable field
-                        suffixIcon: Icon(Icons.lock,
-                            color: Colors.grey), // 🔒 locked icon
-                      ),
-                      style: TextStyle(
-                        color: Colors
-                            .grey[700], // Grey text to indicate disabled state
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    TextFormField(
-                      controller: sectionController,
-                      readOnly: true,
-                      enabled:
-                          false, // 🚫 disables editing AND shows default greyed-out style
-                      decoration: InputDecoration(
-                        labelText: 'Section',
-                        labelStyle: TextStyle(color: Colors.blue[900]),
-                        disabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(
-                            color: Colors.grey[400]!,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        filled: true,
-                        fillColor: Colors.grey[
-                            100], // 👈 Light grey background for non-editable field
-                        suffixIcon: Icon(Icons.lock,
-                            color: Colors.grey), // 🔒 locked icon
-                      ),
-                      style: TextStyle(
-                        color: Colors
-                            .grey[700], // Grey text to indicate disabled state
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    TextField(
-                      controller: tuitionFeesController,
-                      decoration: InputDecoration(
-                        labelText: 'Tuition Fees',
-                        labelStyle: TextStyle(color: Colors.blue[900]),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(
-                              color: Colors.blue[900]!.withOpacity(0.3)),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.blue[900]!),
-                        ),
-                      ),
-                      keyboardType: TextInputType.number,
-                    ),
-                    if (teachers.isNotEmpty) ...[
-                      SizedBox(height: 16),
-                      DropdownButtonFormField<String>(
-                        value: selectedTeacherName,
-                        items: [
-                          if (selectedTeacherName == null)
-                            DropdownMenuItem<String>(
-                              value: null,
-                              child: Text('Select a teacher',
-                                  style: TextStyle(color: Colors.grey)),
-                            ),
-                          ...teachers
-                              .map((teacher) => DropdownMenuItem<String>(
-                                    value: teacher.name,
-                                    child: Text(teacher.name),
-                                  ))
-                              .toList(),
-                        ],
-                        onChanged: (value) =>
-                            setState(() => selectedTeacherName = value),
-                        decoration: InputDecoration(
-                          labelText: 'Teacher',
-                          labelStyle: TextStyle(color: Colors.blue[900]),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                                color: Colors.blue[900]!.withOpacity(0.3)),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.blue[900]!),
-                          ),
-                        ),
-                        style: TextStyle(color: Colors.blue[900]),
-                        dropdownColor: Colors.white,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child:
-                      Text('Cancel', style: TextStyle(color: Colors.blue[900])),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (selectedTeacherName == null) {
-                      _showErrorSnackBar('Please select a teacher');
-                      return;
-                    }
-
-                    try {
-                      final success = await ApiService.updateClass(
-                        classId: classItem.id,
-                        className: classNameController.text,
-                        tuitionFees: tuitionFeesController.text,
-                        teacherName: selectedTeacherName!,
-                      );
-
-                      if (success) {
-                        await _loadClasses();
-                        Navigator.pop(context);
-                        _showSuccessSnackBar('Class updated successfully');
-                      } else {
-                        _showErrorSnackBar('Failed to update class');
-                      }
-                    } catch (error) {
-                      _showErrorSnackBar('Error updating class: $error');
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue[900],
-                  ),
-                  child: Text('Save', style: TextStyle(color: Colors.white)),
-                ),
-              ],
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            );
-          },
-        );
-      },
+  // Inside your class, replace _openEditDialog with:
+  void _openEditDialog(Class classItem) async {
+    final updated = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditClassPage(
+          classItem: classItem,
+          teachers: teachers,
+        ),
+      ),
     );
+
+    if (updated == true) {
+      await _loadClasses();
+      _showSuccessSnackBar('Class updated successfully');
+    }
   }
 
   void _showErrorSnackBar(String message) {
@@ -620,7 +509,7 @@ class Class {
   final String id;
   final String className;
   final String tuitionFees;
-  final String teacherName;
+  final String teacherId;
   final int studentCount;
   final String section;
 
@@ -628,7 +517,7 @@ class Class {
     required this.id,
     required this.className,
     required this.tuitionFees,
-    required this.teacherName,
+    required this.teacherId,
     required this.studentCount,
     required this.section,
   });
@@ -638,7 +527,7 @@ class Class {
       id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
       className: json['class_name']?.toString() ?? 'Unknown Class',
       tuitionFees: json['tuition_fees']?.toString() ?? '0',
-      teacherName: json['teacher_name']?.toString() ?? 'No Teacher Assigned',
+      teacherId: json['teacher_id']?.toString() ?? 'No Teacher Assigned',
       studentCount: json['student_count'] ?? 0,
       section: json['section']?.toString() ?? '',
     );

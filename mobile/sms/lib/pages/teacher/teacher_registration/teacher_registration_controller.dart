@@ -19,6 +19,7 @@ class TeacherRegistrationController {
   final teacherexperienceController = TextEditingController();
   final teacherqualificationController = TextEditingController();
   final guardianController = TextEditingController();
+  final passwordController = TextEditingController();
 
   String? gender;
   XFile? teacherPhoto;
@@ -126,6 +127,7 @@ class TeacherRegistrationController {
 
     String teacherName = teacherNameController.text;
     String email = emailController.text;
+    String password = passwordController.text;
 
     try {
       String dob = dobController.text;
@@ -154,6 +156,7 @@ class TeacherRegistrationController {
       bool success = await ApiService.registerTeacher(
         teacherName: teacherName,
         email: email,
+        password: password,
         dob: formattedDate,
         doj: formattedjoinDate, // Corrected here
         gender: gender ?? 'Male',

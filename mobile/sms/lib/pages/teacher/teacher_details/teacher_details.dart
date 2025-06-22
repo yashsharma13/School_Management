@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
@@ -9,7 +10,9 @@ import 'teacher_service.dart';
 import 'teacher_photo_widget.dart';
 import 'pdf_viewer_widget.dart';
 
-const String baseUrl = 'http://localhost:1000/uploads';
+// const String baseUrl = 'http://localhost:1000/uploads';
+final String baseeUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
+final String uploadBaseUrl = '$baseeUrl/uploads';
 
 class TeacherProfileManagementPage extends StatefulWidget {
   const TeacherProfileManagementPage({super.key});
@@ -108,7 +111,6 @@ class _TeacherProfileManagementPageState
   Future<void> _editTeacher(Teacher teacher) async {
     final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController(text: teacher.name);
-    final emailController = TextEditingController(text: teacher.email);
     final dobController =
         TextEditingController(text: formatDate(teacher.dateOfBirth));
     final dojController =
@@ -241,7 +243,8 @@ class _TeacherProfileManagementPageState
                                         ),
                                         child: ClipOval(
                                           child: buildTeacherPhoto(
-                                              teacher.teacherPhoto, baseUrl),
+                                              teacher.teacherPhoto,
+                                              uploadBaseUrl),
                                         ),
                                       ),
                                     ],
@@ -315,7 +318,6 @@ class _TeacherProfileManagementPageState
                               ),
                               SizedBox(height: 20),
                               _buildEditField(nameController, 'Name', true),
-                              _buildEditField(emailController, 'Email', true),
                               TextFormField(
                                 controller: dobController,
                                 decoration: InputDecoration(
@@ -417,7 +419,6 @@ class _TeacherProfileManagementPageState
                                   try {
                                     final updatedTeacher = {
                                       'teacher_name': nameController.text,
-                                      'email': emailController.text,
                                       'date_of_birth':
                                           parseDate(dobController.text),
                                       'date_of_joining':
@@ -670,7 +671,7 @@ class _TeacherProfileManagementPageState
                                     ),
                                     child: ClipOval(
                                       child: buildTeacherPhoto(
-                                          teacher.teacherPhoto, baseUrl),
+                                          teacher.teacherPhoto, uploadBaseUrl),
                                     ),
                                   ),
                                   title: Text(
@@ -758,7 +759,7 @@ class _TeacherProfileManagementPageState
                                                 PDFViewerScreen(
                                               pdfData: teacher
                                                   .qualificationCertificate,
-                                              baseUrl: baseUrl,
+                                              baseUrl: uploadBaseUrl,
                                             ),
                                           ),
                                         );

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sms/pages/services/api_service.dart';
+import 'package:sms/widgets/button.dart';
 
 class AddClassPage extends StatefulWidget {
   @override
@@ -14,12 +16,14 @@ class _AddClassPageState extends State<AddClassPage> {
   String _className = '';
   String? _selectedSection;
   String _tuitionFees = '';
-  String? _selectedTeacherName;
+  // String? _selectedTeacherName;
+  String? _selectedTeacherId;
   String? token;
 
   bool isLoading = false;
   bool isFetchingTeachers = false;
   List<Teacher> teachers = [];
+  static final String baseeUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
 
   final List<String> classOptions = [
     'Nursery',
@@ -72,7 +76,7 @@ class _AddClassPageState extends State<AddClassPage> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:1000/api/teachers'),
+        Uri.parse('$baseeUrl/api/teachers'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -132,7 +136,7 @@ class _AddClassPageState extends State<AddClassPage> {
           className: _className,
           section: _selectedSection!,
           tuitionFees: _tuitionFees,
-          teacherName: _selectedTeacherName!,
+          teacherId: _selectedTeacherId!,
         );
 
         if (success) {
@@ -151,7 +155,7 @@ class _AddClassPageState extends State<AddClassPage> {
                     SizedBox(height: 8),
                     Text('Fees: $_tuitionFees', style: TextStyle(fontSize: 16)),
                     SizedBox(height: 8),
-                    Text('Teacher: $_selectedTeacherName',
+                    Text('Teacher: $_selectedTeacherId',
                         style: TextStyle(fontSize: 16)),
                   ],
                 ),
@@ -398,15 +402,15 @@ class _AddClassPageState extends State<AddClassPage> {
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(horizontal: 8),
               ),
-              value: _selectedTeacherName,
+              value: _selectedTeacherId,
               onChanged: (String? newValue) {
                 setState(() {
-                  _selectedTeacherName = newValue;
+                  _selectedTeacherId = newValue;
                 });
               },
               items: teachers.map((teacher) {
                 return DropdownMenuItem<String>(
-                  value: teacher.name,
+                  value: teacher.id,
                   child: Text(teacher.name),
                 );
               }).toList(),
@@ -458,31 +462,10 @@ class _AddClassPageState extends State<AddClassPage> {
   }
 
   Widget _buildSubmitButton() {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: isLoading || teachers.isEmpty ? null : _submitForm,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blue[900],
-          padding: EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          elevation: 0,
-        ),
-        child: isLoading
-            ? SizedBox(
-                height: 24,
-                width: 24,
-                child: CircularProgressIndicator(
-                    color: Colors.white, strokeWidth: 2),
-              )
-            : Text(
-                'Add Class',
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white),
-              ),
-      ),
+    return CustomButton(
+      text: 'Add Class',
+      isLoading: isLoading,
+      onPressed: teachers.isEmpty ? () async {} : _submitForm,
     );
   }
 }

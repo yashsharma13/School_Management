@@ -1,38 +1,53 @@
-import { createClass, getClassesByUser, updateClass, deleteClass } from '../models/classModel.js';
-
-// Register class
+import { createClass, getClassesBySchoolId, updateClass, deleteClass } from '../models/classModel.js';
+import { getActiveSessionFromDB } from '../models/sessionModel.js';
 export const registerClass = async (req, res) => {
   try {
-    const { class_name, section, tuition_fees, teacher_name } = req.body;
-    const user_email = req.user_email;
+    const { class_name, section, tuition_fees, teacher_id } = req.body;
+    const signup_id = req.signup_id;
 
-    if (!class_name || !section || !tuition_fees || !teacher_name || !user_email) {
+    if (!class_name || !section || !tuition_fees || !teacher_id || !signup_id) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
-    const result = await createClass({ class_name, section, tuition_fees, teacher_name, user_email });
-    
-    res.status(201).json({ 
+    // ✅ Get active session
+  const activeSession = await getActiveSessionFromDB(signup_id);
+     if (!activeSession) {
+       return res.status(400).json({ message: 'No active session found for this school' });
+     }
+ 
+     const session_id = activeSession.id;
+
+    // ✅ Register class with session_id
+    const result = await createClass({
+      class_name,
+      section,
+      tuition_fees,
+      teacher_id,
+      signup_id,
+      session_id
+    });
+
+    res.status(201).json({
       success: true,
       message: 'Class registered successfully',
-      classId: result.id // Changed from insertId to id
+      classId: result.id,
     });
+
   } catch (err) {
     console.error('Error registering class:', err);
     res.status(500).json({ message: 'Error registering class' });
   }
 };
 
-// Fetch classes by user
 export const getAllClasses = async (req, res) => {
   try {
-    const user_email = req.user_email;
+    const signup_id = req.signup_id;
 
-    if (!user_email) {
-      return res.status(400).json({ message: 'User email is required' });
+    if (!signup_id) {
+      return res.status(400).json({ message: 'Signup ID is required' });
     }
 
-    const results = await getClassesByUser(user_email);
+    const results = await getClassesBySchoolId(signup_id);  // school id ke hisaab se classes fetch ho rahe hain
     res.status(200).json(results);
   } catch (err) {
     console.error('Error fetching classes:', err);
@@ -44,15 +59,15 @@ export const getAllClasses = async (req, res) => {
 export const updateClassDetails = async (req, res) => {
   try {
     const classId = req.params.id;
-    const { class_name, tuition_fees, teacher_name } = req.body;
+    const { class_name, tuition_fees, teacher_id } = req.body;
 
-    if (!classId || !class_name || !tuition_fees || !teacher_name) {
+    if (!classId || !class_name || !tuition_fees || !teacher_id) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
-    const results = await updateClass(classId, { class_name, tuition_fees, teacher_name });
+    const results = await updateClass(classId, { class_name, tuition_fees, teacher_id });
     
-    if (results.rowCount === 0) { // Changed from affectedRows to rowCount
+    if (results.rowCount === 0) {
       return res.status(404).json({ message: 'Class not found' });
     }
     
@@ -77,7 +92,7 @@ export const deleteClassById = async (req, res) => {
 
     const results = await deleteClass(classId);
     
-    if (results.rowCount === 0) { // Changed from affectedRows to rowCount
+    if (results.rowCount === 0) {
       return res.status(404).json({ message: 'Class not found' });
     }
     

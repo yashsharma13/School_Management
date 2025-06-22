@@ -14,6 +14,11 @@ import classRoutes from './routes/classRoutes.js';
 import subjectRoutes from './routes/subjectRoutes.js';
 import feeRoutes from './routes/feeRoutes.js';
 import noticeRoutes from './routes/noticeRoutes.js';
+import profileRoutes from './routes/profileRoutes.js';
+import sessionRoutes from './routes/sessionRoutes.js';
+import feeMasterRoutes from './routes/feeMasterRoutes.js';
+import feeStructureRoutes from './routes/feeStructureRoutes.js';
+import teacherAssignRoutes from './routes/teacherAssignRoutes.js';
 // Setup for file path management
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -94,6 +99,11 @@ app.use('/api',classRoutes);
 app.use('/api',subjectRoutes);
 app.use('/api',feeRoutes);
 app.use('/api',noticeRoutes);
+app.use('/api',profileRoutes);
+app.use('/api',sessionRoutes);
+app.use('/api',feeMasterRoutes);
+app.use('/api',feeStructureRoutes);
+app.use('/api',teacherAssignRoutes);
 
 // If no route matches, return 404
 app.use((req, res) => {

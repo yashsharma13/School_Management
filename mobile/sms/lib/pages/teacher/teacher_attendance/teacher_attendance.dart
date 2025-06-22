@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sms/pages/admin/admin_dashboard.dart';
+import 'package:sms/pages/principle/principle_dashboard.dart';
+import 'package:sms/widgets/button.dart';
 
 class TeacherAttendancePage extends StatefulWidget {
   const TeacherAttendancePage({super.key});
@@ -19,6 +21,7 @@ class _TeacherAttendancePageState extends State<TeacherAttendancePage> {
   String? token;
   bool isLoading = false;
   bool _isInitialLoading = true;
+  static final String baseeUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
 
   @override
   void initState() {
@@ -51,7 +54,7 @@ class _TeacherAttendancePageState extends State<TeacherAttendancePage> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:1000/api/teachers'),
+        Uri.parse('$baseeUrl/api/teachers'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -103,7 +106,7 @@ class _TeacherAttendancePageState extends State<TeacherAttendancePage> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:1000/api/attendance'),
+        Uri.parse('$baseeUrl/api/attendance'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -119,7 +122,7 @@ class _TeacherAttendancePageState extends State<TeacherAttendancePage> {
         _showSuccessSnackBar('Teacher attendance saved successfully');
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => AdminDashboard()),
+          MaterialPageRoute(builder: (context) => PrincipleDashboard()),
         );
       } else if (response.statusCode == 401) {
         _handleUnauthorized();
@@ -387,32 +390,11 @@ class _TeacherAttendancePageState extends State<TeacherAttendancePage> {
                             ),
                     ),
                   SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: teachers.isEmpty ? null : saveAttendance,
-                      style: ElevatedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        backgroundColor: Colors.blue,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        elevation: 3,
-                      ),
-                      child: isLoading
-                          ? SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : Text('Save Attendance',
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold)),
-                    ),
+                  CustomButton(
+                    text: 'Save',
+                    isLoading: isLoading,
+                    width: 150,
+                    onPressed: teachers.isEmpty ? null : saveAttendance,
                   ),
                 ],
               ),

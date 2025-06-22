@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'student_model.dart';
 
-const String baseUrl = 'http://localhost:1000/api';
+// const String baseUrl = 'http://localhost:1000/api';
+final String baseeUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
 
 class StudentService {
   // Helper method to get the JWT token from shared_preferences
@@ -22,7 +24,7 @@ class StudentService {
     }
 
     final response = await http.get(
-      Uri.parse('$baseUrl/students'),
+      Uri.parse('$baseeUrl/api/students'),
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
@@ -51,7 +53,7 @@ class StudentService {
       // Create a multipart request for the update
       final request = http.MultipartRequest(
         'PUT',
-        Uri.parse('$baseUrl/students/${student.id}'),
+        Uri.parse('$baseeUrl/api/students/${student.id}'),
       );
 
       // Add headers
@@ -117,7 +119,7 @@ class StudentService {
     }
 
     final response = await http.delete(
-      Uri.parse('$baseUrl/students/$studentId'),
+      Uri.parse('$baseeUrl/api/students/$studentId'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': token, // Include the token in the header

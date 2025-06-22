@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'package:sms/pages/admission/admission_letter.dart';
+import 'package:sms/pages/student/admission/admission_letter.dart';
+import 'package:sms/widgets/button.dart';
 
 class AdmissionConfirmationPage extends StatelessWidget {
   final Student student;
+  static final String baseeUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
 
   const AdmissionConfirmationPage({Key? key, required this.student})
       : super(key: key);
@@ -100,7 +103,7 @@ class AdmissionConfirmationPage extends StatelessWidget {
                                   Icon(Icons.person,
                                       size: 48, color: Colors.blue[900]))
                           : Image.network(
-                              'http://localhost:1000/uploads/${student.studentPhoto}',
+                              '$baseeUrl/uploads/${student.studentPhoto}',
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) =>
                                   Icon(Icons.person,
@@ -214,19 +217,28 @@ class AdmissionConfirmationPage extends StatelessWidget {
             SizedBox(height: 30),
 
             // Print Admission Letter button
-            ElevatedButton.icon(
-              icon: Icon(Icons.print, color: Colors.white),
-              label: Text('Print Admission Letter',
-                  style: TextStyle(color: Colors.white)),
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                backgroundColor: Colors.blue[900],
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                elevation: 3,
-              ),
-              onPressed: () => _generatePdf(context),
+            // ElevatedButton.icon(
+            //   icon: Icon(Icons.print, color: Colors.white),
+            //   label: Text('Print Admission Letter',
+            //       style: TextStyle(color: Colors.white)),
+            //   style: ElevatedButton.styleFrom(
+            //     padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            //     backgroundColor: Colors.blue[900],
+            //     shape: RoundedRectangleBorder(
+            //       borderRadius: BorderRadius.circular(8),
+            //     ),
+            //     elevation: 3,
+            //   ),
+            //   onPressed: () => _generatePdf(context),
+            // ),
+            CustomButton(
+              text: 'Print',
+              icon: Icons.print,
+              onPressed: () async {
+                await _generatePdf(context);
+              },
+              // color: Colors.blue.shade900,
+              width: 150,
             ),
           ],
         ),
@@ -312,7 +324,7 @@ class AdmissionConfirmationPage extends StatelessWidget {
         final response = await http.get(Uri.parse(
           student.studentPhoto.startsWith('http')
               ? student.studentPhoto
-              : 'http://localhost:1000/uploads/${student.studentPhoto}',
+              : '$baseeUrl/uploads/${student.studentPhoto}',
         ));
         if (response.statusCode == 200) {
           studentImage = pw.MemoryImage(response.bodyBytes);

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:sms/pages/admin/admin_dashboard.dart';
-import 'package:sms/pages/auth/Signup.dart';
+import 'package:sms/pages/principle/principle_dashboard.dart';
 import 'package:sms/pages/auth/forgotpassword.dart';
+import 'package:sms/pages/profile_setting/profile_setup.dart';
 import 'package:sms/pages/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sms/pages/stud_dashboard/student_dashboard.dart';
+import 'package:sms/widgets/button.dart';
+import 'package:sms/pages/services/profile_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -20,8 +23,67 @@ class _LoginPageState extends State<LoginPage> {
   bool _isLoading = false;
   String? _errorMessage;
 
-  bool _obscurePassword = true; // 👈 for eye toggle
+  bool _obscurePassword = true;
 
+  final Color primaryColor = Colors.deepPurple;
+  final Color backgroundColor = Colors.white;
+  final Color inputFillColor = Colors.deepPurple.shade50;
+
+  // Future<void> _login() async {
+  //   if (!_formKey.currentState!.validate()) return;
+
+  //   setState(() {
+  //     _isLoading = true;
+  //     _errorMessage = null;
+  //   });
+
+  //   try {
+  //     final username = usernameController.text.trim();
+  //     final password = passwordController.text.trim();
+
+  //     final response = await ApiService.login(username, password);
+
+  //     if (response['success'] == true) {
+  //       if (response['user_email'] == null) {
+  //         throw Exception('Server response missing user_email');
+  //       }
+
+  //       final prefs = await SharedPreferences.getInstance();
+  //       await Future.wait([
+  //         prefs.setString('token', response['token']),
+  //         prefs.setString('role', response['role']),
+  //         prefs.setString('user_email', response['user_email']),
+  //         if (response['user_id'] != null)
+  //           prefs.setString('user_id', response['user_id'].toString()),
+  //       ]);
+
+  //       if (!mounted) return;
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(
+  //           content: const Text('Login Successful'),
+  //           backgroundColor: primaryColor,
+  //         ),
+  //       );
+
+  //       _navigateToRoleDashboard(response['role']);
+  //     } else {
+  //       setState(() {
+  //         _errorMessage = response['message'] ?? 'Invalid Credentials';
+  //       });
+  //     }
+  //   } catch (e) {
+  //     debugPrint('Login error: $e');
+  //     setState(() {
+  //       _errorMessage = 'Login failed. Please try again.';
+  //     });
+  //   } finally {
+  //     if (mounted) {
+  //       setState(() {
+  //         _isLoading = false;
+  //       });
+  //     }
+  //   }
+  // }
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -52,10 +114,26 @@ class _LoginPageState extends State<LoginPage> {
 
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login Successful')),
+          SnackBar(
+            content: const Text('Login Successful'),
+            backgroundColor: primaryColor,
+          ),
         );
 
-        _navigateToRoleDashboard(response['role']);
+        // 🔁 Check if profile is set
+        final profile = await ProfileService.getProfile();
+        final isProfileSet = profile['success'] == true &&
+            profile['data']['institute_name'] != null &&
+            profile['data']['institute_name'].toString().isNotEmpty;
+
+        if (!isProfileSet) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const ProfileSetupPage()),
+          );
+        } else {
+          _navigateToRoleDashboard(response['role']);
+        }
       } else {
         setState(() {
           _errorMessage = response['message'] ?? 'Invalid Credentials';
@@ -82,8 +160,11 @@ class _LoginPageState extends State<LoginPage> {
       case 'student':
         dashboard = const StudentDashboard();
         break;
-      case 'admin':
+      case 'principal':
       case 'operator':
+        dashboard = const PrincipleDashboard(); // Replace with your actual page
+        break;
+      case 'admin':
       default:
         dashboard = const AdminDashboard();
     }
@@ -97,7 +178,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: backgroundColor,
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 25),
         child: Center(
@@ -110,12 +191,12 @@ class _LoginPageState extends State<LoginPage> {
                   backgroundImage: AssetImage('assets/images/almanet1.jpg'),
                 ),
                 const SizedBox(height: 20),
-                const Text(
+                Text(
                   "Login",
                   style: TextStyle(
-                    fontSize: 28,
+                    fontSize: 30,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: primaryColor,
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -145,30 +226,11 @@ class _LoginPageState extends State<LoginPage> {
                       buildTextField(
                           "Password", Icons.lock, true, passwordController),
                       const SizedBox(height: 25),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _login,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue.shade900,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                          ),
-                          child: _isLoading
-                              ? const CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white),
-                                )
-                              : const Text(
-                                  "Log In",
-                                  style: TextStyle(
-                                      fontSize: 18,
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                        ),
+                      CustomButton(
+                        text: "Log In",
+                        onPressed: _login,
+                        isLoading: _isLoading,
+                        color: primaryColor,
                       ),
                       const SizedBox(height: 20),
                       TextButton(
@@ -179,35 +241,10 @@ class _LoginPageState extends State<LoginPage> {
                                 builder: (context) => const ForgetPage()),
                           );
                         },
-                        child: const Text(
+                        child: Text(
                           'Forgot Password?',
-                          style: TextStyle(color: Colors.black),
+                          style: TextStyle(color: primaryColor),
                         ),
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text("Don't have an account?",
-                              style:
-                                  TextStyle(fontSize: 16, color: Colors.grey)),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => SignUpPage(),
-                                ),
-                              );
-                            },
-                            child: const Text(
-                              "Sign Up",
-                              style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blue),
-                            ),
-                          ),
-                        ],
                       ),
                     ],
                   ),
@@ -226,11 +263,11 @@ class _LoginPageState extends State<LoginPage> {
       controller: controller,
       obscureText: isPassword ? _obscurePassword : false,
       decoration: InputDecoration(
-        prefixIcon: Icon(icon, color: Colors.blue.shade900),
+        prefixIcon: Icon(icon, color: primaryColor),
         hintText: hintText,
         hintStyle: const TextStyle(color: Colors.grey),
         filled: true,
-        fillColor: Colors.grey.shade100,
+        fillColor: inputFillColor,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
           borderSide: BorderSide.none,

@@ -1,31 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:sms/pages/admission/admission_letter.dart';
-import 'package:sms/pages/classes/all_class.dart';
-import 'package:sms/pages/classes/new_class.dart';
-import 'package:sms/pages/fees/fees_student_search.dart';
-import 'package:sms/pages/notices/notice_model.dart';
-import 'package:sms/pages/student/student_attendance/student_attendance.dart';
-import 'package:sms/pages/student/student_details/Student_details.dart';
-import 'package:sms/pages/student/student_registration/student_registration_page.dart';
-import 'package:sms/pages/student/student_report/Student_reports.dart';
-import 'package:sms/pages/subjects/assign_subjects.dart';
-import 'package:sms/pages/subjects/class_with_subjects.dart';
-import 'package:sms/pages/teacher/Job_letter/job_letter.dart';
-import 'package:sms/pages/teacher/teacher_attendance/teacher_attendance.dart';
-import 'package:sms/pages/teacher/teacher_details/teacher_details.dart';
-import 'package:sms/pages/teacher/teacher_registration/teacher_registration.dart';
-import 'package:sms/pages/teacher/teacher_report/teacher_report.dart';
-import 'package:sms/widgets/dashboard_card.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+// import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:sms/pages/auth/Signup.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sms/pages/auth/login.dart'; // Import your login page
-import 'package:sms/pages/notices/notice.dart';
+import 'package:sms/pages/auth/login.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _AdminDashboardState createState() => _AdminDashboardState();
 }
 
@@ -34,13 +17,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
   int totalTeachers = 0;
   bool isLoading = false; // To show loading state
   String? userEmail;
-  List<Notice> notices = [];
+  // static final String baseeUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
-    fetchNotices(); // fetch notices on dashboard load
   }
 
   Future<void> _loadUserData() async {
@@ -51,117 +33,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
         userEmail = prefs.getString('user_email'); // This should set the value
       });
       if (userEmail != null) {
-        await _fetchCounts();
+        // await _fetchCounts();
       }
     } catch (e) {
       // handle error
     } finally {
       setState(() => isLoading = false);
     }
-  }
-
-  // Function to fetch total students and teachers from the backend
-  Future<void> _fetchCounts() async {
-    print("User email: $userEmail");
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token');
-
-      if (token == null) {
-        throw Exception('No token found. Please log in.');
-      }
-      final studentResponse = await http.get(
-        Uri.parse(
-            'http://localhost:1000/api/api/students/count?user_email=$userEmail'),
-        headers: {
-          'Authorization': token,
-        },
-        // Replace with your API
-      );
-      final teacherResponse = await http.get(
-        Uri.parse(
-            'http://localhost:1000/api/api/teachers/count?user_email=$userEmail'), // Replace with your API
-        headers: {
-          'Authorization': token,
-        },
-      );
-
-      if (studentResponse.statusCode == 200 &&
-          teacherResponse.statusCode == 200) {
-        final studentData = json.decode(studentResponse.body);
-        final teacherData = json.decode(teacherResponse.body);
-
-        setState(() {
-          totalStudents = studentData['totalStudents']; // Update student count
-          totalTeachers = teacherData['totalTeachers']; // Update teacher count
-        });
-      } else {
-        throw Exception('Failed to load counts');
-      }
-    } catch (e) {
-      // print('Error fetching counts: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to fetch counts: $e')),
-      );
-    }
-  }
-
-  Future<void> fetchNotices() async {
-    setState(() {
-      isLoading = true;
-      // error = '';
-    });
-
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token');
-
-      if (token == null) {
-        setState(() => 'Please login again.');
-        // Navigate to login page if needed
-        return;
-      }
-
-      final response = await http.get(
-        Uri.parse('http://localhost:1000/api/notices'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final jsonData = json.decode(response.body);
-        print('Notices from API: ${jsonData['data']}');
-
-        final List<dynamic> data = jsonData['data'];
-        setState(() {
-          notices = data.map((n) => Notice.fromJson(n)).toList();
-        });
-      } else if (response.statusCode == 401) {
-        setState(() => 'Session expired. Please login again.');
-      } else {
-        setState(() => 'Failed to fetch notices.');
-      }
-    } catch (e) {
-      setState(() => e.toString());
-    } finally {
-      setState(() => isLoading = false);
-    }
-  }
-
-  // Function to update the student count
-  void incrementStudentCount() {
-    setState(() {
-      totalStudents += 1; // Increment student count
-    });
-  }
-
-  // Function to update teacher count
-  void incrementTeacherCount() {
-    setState(() {
-      totalTeachers += 1; // Increment teacher count
-    });
   }
 
   // Function to handle logout
@@ -182,6 +60,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
       // Navigate to the login page after delay
       Navigator.pushReplacement(
+        // ignore: use_build_context_synchronously
         context,
         MaterialPageRoute(
           builder: (context) => const LoginPage(),
@@ -284,249 +163,22 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   ),
                   ExpansionTile(
                     leading: const Icon(Icons.class_, color: Colors.black87),
-                    title: const Text("Classes",
+                    title: const Text("Signup",
                         style: TextStyle(
                             fontSize: 16, fontWeight: FontWeight.bold)),
                     children: [
                       ListTile(
                         leading: const Icon(Icons.add, color: Colors.black54),
-                        title: const Text("New Class"),
+                        title: const Text("Add user"),
                         onTap: () {
                           Navigator.pop(context);
                           Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => AddClassPage()));
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.view_agenda_rounded,
-                            color: Colors.black54),
-                        title: const Text("All Classes"),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => AllClassesPage()));
+                                  builder: (context) => SignUpPage()));
                         },
                       ),
                     ],
-                  ),
-                  ExpansionTile(
-                    leading: const Icon(Icons.subject, color: Colors.black87),
-                    title: const Text("Subjects",
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
-                    children: [
-                      ListTile(
-                        leading: const Icon(Icons.add, color: Colors.black54),
-                        title: const Text("Classes with Subjects"),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) =>
-                                      ClassWithSubjectsPage()));
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.view_agenda_rounded,
-                            color: Colors.black54),
-                        title: const Text("Assign Subjects"),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => AssignSubjectPage()));
-                        },
-                      ),
-                    ],
-                  ),
-                  ExpansionTile(
-                    leading: const Icon(Icons.school, color: Colors.black87),
-                    title: const Text("Students",
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
-                    children: [
-                      ListTile(
-                        leading: const Icon(Icons.add, color: Colors.black54),
-                        title: const Text("Add New Student"),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => StudentRegistrationPage(
-                                  onStudentRegistered: incrementStudentCount),
-                            ),
-                          );
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.view_agenda_rounded,
-                            color: Colors.black54),
-                        title: const Text("View Student details"),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) =>
-                                      StudentProfileManagementPage()));
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.calendar_month,
-                            color: Colors.black54),
-                        title: const Text("Student attendance"),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => AttendancePage()));
-                        },
-                      ),
-                      ListTile(
-                        leading:
-                            const Icon(Icons.report, color: Colors.black54),
-                        title: const Text("Student Reports"),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => StudentReportPage()));
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.insert_drive_file,
-                            color: Colors.black54),
-                        title: const Text("Admission Letter"),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => AdmissionLetterPage()));
-                        },
-                      ),
-                    ],
-                  ),
-                  ExpansionTile(
-                    leading: const Icon(Icons.payment, color: Colors.black87),
-                    title: const Text("Fees",
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
-                    children: [
-                      ListTile(
-                        leading: const Icon(Icons.add, color: Colors.black54),
-                        title: const Text("Collect Fees"),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => FeesStudentSearchPage()
-                                  // ModularFeePage()
-                                  ));
-                        },
-                      ),
-                    ],
-                  ),
-                  ExpansionTile(
-                    leading: const Icon(Icons.person, color: Colors.black87),
-                    title: const Text("Teacher",
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
-                    children: [
-                      ListTile(
-                        leading: const Icon(Icons.add, color: Colors.black54),
-                        title: const Text("Add New Teacher"),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => TeacherRegistrationPage(
-                                  onTeacherRegistered: incrementTeacherCount),
-                            ),
-                          );
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.view_agenda_rounded,
-                            color: Colors.black54),
-                        title: const Text("View Teacher details"),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) =>
-                                      TeacherProfileManagementPage()));
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.calendar_month,
-                            color: Colors.black54),
-                        title: const Text("Teacher attendance"),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) =>
-                                      TeacherAttendancePage()));
-                        },
-                      ),
-                      ListTile(
-                        leading:
-                            const Icon(Icons.report, color: Colors.black54),
-                        title: const Text("Teacher Reports"),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => TeacherReportPage()));
-                        },
-                      ),
-                      ListTile(
-                        leading:
-                            const Icon(Icons.report, color: Colors.black54),
-                        title: const Text("Job letter"),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) =>
-                                      TeacherAdmissionLetterPage()));
-                        },
-                      ),
-                    ],
-                  ),
-                  // buildDrawerItem(Icons.family_restroom, "Parents", context),
-                  ListTile(
-                    leading:
-                        const Icon(Icons.announcement, color: Colors.black87),
-                    // title: const Text("Notices"),
-                    title: const Text(
-                      "Notices",
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => NoticesPage()));
-                    },
                   ),
                 ],
               ),
@@ -543,59 +195,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
               "Admin Dashboard",
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 20),
-            isLoading
-                ? const Center(
-                    child: CircularProgressIndicator()) // Show loading spinner
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Wrap the cards with Expanded or Flexible widgets
-                      Expanded(
-                        child: buildDashboardCard("Total Students",
-                            totalStudents.toString(), Icons.group, Colors.blue),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: buildDashboardCard(
-                            "Total Teachers",
-                            totalTeachers.toString(),
-                            Icons.person,
-                            Colors.green),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: buildDashboardCard(
-                            "Total Classes", "0", Icons.class_, Colors.orange),
-                      ),
-                    ],
-                  ),
-            const SizedBox(height: 30),
-            const Text(
-              "Notices",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            notices.isEmpty
-                ? Text("No notices available.")
-                : Column(
-                    children: notices.map((notice) {
-                      return Card(
-                        elevation: 3,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10)),
-                        child: ListTile(
-                          title: Text(
-                            notice.title,
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          subtitle: Text("Posted on ${notice.noticeDate}"),
-                          leading: Icon(Icons.notification_important,
-                              color: Colors.red.shade700),
-                        ),
-                      );
-                    }).toList(),
-                  )
           ],
         ),
       ),

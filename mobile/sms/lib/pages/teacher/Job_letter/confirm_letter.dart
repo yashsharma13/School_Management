@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart';
+// import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:sms/pages/teacher/Job_letter/job_letter.dart';
+import 'package:sms/widgets/button.dart';
 
 class TeacherAdmissionConfirmationPage extends StatelessWidget {
   final Teacher teacher;
+  static final String baseeUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
 
   const TeacherAdmissionConfirmationPage({Key? key, required this.teacher})
       : super(key: key);
@@ -99,7 +102,7 @@ class TeacherAdmissionConfirmationPage extends StatelessWidget {
                                   Icon(Icons.person,
                                       size: 48, color: Colors.blue[900]))
                           : Image.network(
-                              'http://localhost:1000/uploads/${teacher.teacherPhoto}',
+                              '$baseeUrl/uploads/${teacher.teacherPhoto}',
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) =>
                                   Icon(Icons.person,
@@ -165,29 +168,29 @@ class TeacherAdmissionConfirmationPage extends StatelessWidget {
                             status: true, context: context),
                       ],
                     ),
-                    // TableRow(
-                    //   children: [
-                    //     _buildTableCell('Username', true, context: context),
-                    //     _buildTableCell(teacher.username, false,
-                    //         copyEnabled: true, context: context),
-                    //   ],
-                    // ),
-                    // TableRow(
-                    //   decoration: BoxDecoration(
-                    //     color: Colors.blue[50],
-                    //     borderRadius: BorderRadius.only(
-                    //       bottomLeft: Radius.circular(12),
-                    //       bottomRight: Radius.circular(12),
-                    //     ),
-                    //   ),
-                    //   children: [
-                    //     _buildTableCell('Password', true, context: context),
-                    //     _buildTableCell(teacher.password, false,
-                    //         copyEnabled: true,
-                    //         isPassword: true,
-                    //         context: context),
-                    //   ],
-                    // ),
+                    TableRow(
+                      children: [
+                        _buildTableCell('Username', true, context: context),
+                        _buildTableCell(teacher.username, false,
+                            copyEnabled: true, context: context),
+                      ],
+                    ),
+                    TableRow(
+                      decoration: BoxDecoration(
+                        color: Colors.blue[50],
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(12),
+                          bottomRight: Radius.circular(12),
+                        ),
+                      ),
+                      children: [
+                        _buildTableCell('Password', true, context: context),
+                        _buildTableCell(teacher.password, false,
+                            copyEnabled: true,
+                            isPassword: true,
+                            context: context),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -195,19 +198,10 @@ class TeacherAdmissionConfirmationPage extends StatelessWidget {
 
             SizedBox(height: 30),
 
-            // Print Admission Letter button
-            ElevatedButton.icon(
-              icon: Icon(Icons.print, color: Colors.white),
-              label: Text('Print Admission Letter',
-                  style: TextStyle(color: Colors.white)),
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                backgroundColor: Colors.blue[900],
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                elevation: 3,
-              ),
+            CustomButton(
+              text: 'Print',
+              icon: Icons.print,
+              width: 150,
               onPressed: () => _generatePdf(context),
             ),
           ],
@@ -294,7 +288,7 @@ class TeacherAdmissionConfirmationPage extends StatelessWidget {
         final response = await http.get(Uri.parse(
           teacher.teacherPhoto.startsWith('http')
               ? teacher.teacherPhoto
-              : 'http://localhost:1000/uploads/${teacher.teacherPhoto}',
+              : '$baseeUrl/uploads/${teacher.teacherPhoto}',
         ));
         if (response.statusCode == 200) {
           teacherImage = pw.MemoryImage(response.bodyBytes);
@@ -413,8 +407,8 @@ class TeacherAdmissionConfirmationPage extends StatelessWidget {
                     //     DateFormat('dd MMMM, yyyy')
                     //         .format(teacher.admissionDate)),
                     // _buildPdfTableStatusRow('Account Status', 'Active'),
-                    // _buildPdfTableRow('Username', teacher.username),
-                    // _buildPdfTableRow('Password', teacher.password,
+                    _buildPdfTableRow('Username', teacher.username),
+                    _buildPdfTableRow('Password', teacher.password),
                     //     isPassword: true),
                   ],
                 ),
@@ -518,31 +512,31 @@ class TeacherAdmissionConfirmationPage extends StatelessWidget {
     );
   }
 
-  pw.TableRow _buildPdfTableStatusRow(String header, String value) {
-    return pw.TableRow(
-      children: [
-        _buildPdfTableCell(header, true),
-        pw.Container(
-          padding: pw.EdgeInsets.all(12),
-          child: pw.Container(
-            padding: pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: pw.BoxDecoration(
-              color: PdfColors.green100,
-              borderRadius: pw.BorderRadius.circular(12),
-            ),
-            child: pw.Text(
-              value,
-              style: pw.TextStyle(
-                color: PdfColors.green800,
-                fontWeight: pw.FontWeight.bold,
-                fontSize: 10,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+  // pw.TableRow _buildPdfTableStatusRow(String header, String value) {
+  //   return pw.TableRow(
+  //     children: [
+  //       _buildPdfTableCell(header, true),
+  //       pw.Container(
+  //         padding: pw.EdgeInsets.all(12),
+  //         child: pw.Container(
+  //           padding: pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+  //           decoration: pw.BoxDecoration(
+  //             color: PdfColors.green100,
+  //             borderRadius: pw.BorderRadius.circular(12),
+  //           ),
+  //           child: pw.Text(
+  //             value,
+  //             style: pw.TextStyle(
+  //               color: PdfColors.green800,
+  //               fontWeight: pw.FontWeight.bold,
+  //               fontSize: 10,
+  //             ),
+  //           ),
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
 
   pw.Widget _buildPdfTableCell(String text, bool isHeader) {
     return pw.Container(

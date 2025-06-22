@@ -1,0 +1,94 @@
+import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+
+class FeeStructureService {
+  static final String baseUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
+  static Future<bool> submitFeeStructure({
+    required String classId,
+    required List<Map<String, dynamic>> structure,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null) {
+        print('No token found');
+        return false;
+      }
+
+      final numericClassId = int.tryParse(classId);
+      if (numericClassId == null) {
+        print('Invalid classId: $classId');
+        return false;
+      }
+
+      final requestBody = {
+        'class_id': numericClassId,
+        'structure': structure,
+      };
+
+      print('Sending fee structure data: $requestBody');
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/registerfee'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        print('✅ Fee structure submitted successfully: ${response.body}');
+        return true;
+      } else {
+        print(
+            '❌ Failed to submit fee structure: ${response.statusCode} - ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      print('❌ Error submitting fee structure: $e');
+      return false;
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getFeeStructure(
+      String classId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null) {
+        print('No token found');
+        return [];
+      }
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/feestructure/$classId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        final List rawData = body['data'];
+
+        return List<Map<String, dynamic>>.from(rawData.map((item) => {
+              'fee_field_name': item['fee_field_name'],
+              'amount': item['amount'],
+              'is_collectable': item['is_collectable'],
+            }));
+      } else {
+        print(
+            'Failed to load fee structure: ${response.statusCode} - ${response.body}');
+        return [];
+      }
+    } catch (e) {
+      print('Error fetching fee structure: $e');
+      return [];
+    }
+  }
+}

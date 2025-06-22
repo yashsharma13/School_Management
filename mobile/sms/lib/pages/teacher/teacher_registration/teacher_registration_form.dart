@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sms/pages/teacher/teacher_registration/teacher_form/teacher_advance.dart';
 import 'package:sms/pages/teacher/teacher_registration/teacher_form/teacher_document.dart';
+import 'package:sms/widgets/button.dart';
 import 'teacher_registration_controller.dart';
 import 'teacher_form/teacher_info.dart';
 
@@ -88,44 +89,24 @@ class _TeacherRegistrationFormState extends State<TeacherRegistrationForm> {
                   const SizedBox(height: 32),
 
                   // Register Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        _controller.showConfirmationDialog(context, () async {
-                          if (await _controller.registerteacher(context)) {
-                            widget.onRegistered();
-                            Navigator.pop(context);
-                          }
-                        });
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue.shade700,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        elevation: 2,
-                      ),
-                      child: _controller.isLoading
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 3,
-                              ),
-                            )
-                          : const Text(
-                              'Register Teacher',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                    ),
+                  CustomButton(
+                    text: 'Register Teacher',
+                    icon:
+                        Icons.person_add, // optional icon, remove if not needed
+                    isLoading: _controller.isLoading,
+                    // color: Colors.blue.shade700,
+                    // height: 50,
+                    width: 40, // or 48/60 based on your UI preference
+                    onPressed: () async {
+                      _controller.showConfirmationDialog(context, () async {
+                        if (await _controller.registerteacher(context)) {
+                          widget.onRegistered();
+                          Navigator.pop(context);
+                        }
+                      });
+                    },
                   ),
+
                   const SizedBox(height: 16),
                 ],
               ),

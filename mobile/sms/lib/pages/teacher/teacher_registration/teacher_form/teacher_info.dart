@@ -63,6 +63,21 @@ class _TeacherInfoState extends State<TeacherInfo> {
             },
           ),
           const SizedBox(height: 16),
+          _buildFormField(
+            controller: widget.controller.passwordController,
+            label: 'Password',
+            icon: Icons.lock_outline,
+            isRequired: true,
+            validator: (value) {
+              if (value!.isEmpty) {
+                return 'Please enter password';
+              } else if (value.length < 6) {
+                return 'Password must be at least 6 characters';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
           TextFormField(
             controller: widget.controller.dobController,
             decoration: InputDecoration(

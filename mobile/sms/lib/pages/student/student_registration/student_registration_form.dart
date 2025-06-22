@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:sms/pages/admission/admission_letter.dart';
+import 'package:sms/pages/student/admission/admission_letter.dart';
+import 'package:sms/widgets/button.dart';
 import 'student_registration_controller.dart';
 import 'student_form_sections/student_info_section.dart';
 import 'student_form_sections/parent_info_section.dart';
@@ -91,52 +92,27 @@ class _StudentRegistrationFormState extends State<StudentRegistrationForm> {
                   const SizedBox(height: 16),
                   DocumentsSection(controller: _controller),
                   const SizedBox(height: 32),
-
-                  // Register Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        _controller.showConfirmationDialog(context, () async {
-                          if (await _controller.registerStudent(context)) {
-                            widget.onRegistered();
-                            Navigator.pop(context);
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => AdmissionLetterPage(),
-                              ),
-                            );
-                          }
-                        });
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue.shade700,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        elevation: 2,
-                      ),
-                      child: _controller.isLoading
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 3,
-                              ),
-                            )
-                          : const Text(
-                              'Register Student',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
+                  CustomButton(
+                    text: 'Register Student',
+                    icon: Icons.app_registration,
+                    onPressed: () async {
+                      _controller.showConfirmationDialog(context, () async {
+                        if (await _controller.registerStudent(context)) {
+                          widget.onRegistered();
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => AdmissionLetterPage(),
                             ),
-                    ),
+                          );
+                        }
+                      });
+                    },
+                    isLoading: _controller.isLoading,
+                    // color: Colors.blue.shade700,
                   ),
+
                   const SizedBox(height: 16),
                 ],
               ),
