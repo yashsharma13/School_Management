@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sms/pages/services/session_service.dart';
+import 'package:sms/widgets/date_picker.dart'; // Import the custom date picker
 
 class CreateSessionPage extends StatefulWidget {
   @override
@@ -8,20 +9,29 @@ class CreateSessionPage extends StatefulWidget {
 
 class _CreateSessionPageState extends State<CreateSessionPage> {
   final TextEditingController sessionNameController = TextEditingController();
-  final TextEditingController startDateController = TextEditingController();
-  final TextEditingController endDateController = TextEditingController();
-
+  DateTime? startDate;
+  DateTime? endDate;
   bool isLoading = false;
 
   Future<void> createSession() async {
+    if (startDate == null || endDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please select both start and end dates'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       isLoading = true;
     });
 
     final result = await SessionService.createSession(
       sessionName: sessionNameController.text.trim(),
-      startDate: startDateController.text.trim(),
-      endDate: endDateController.text.trim(),
+      startDate: startDate!.toIso8601String().split('T').first,
+      endDate: endDate!.toIso8601String().split('T').first,
     );
 
     setState(() {
@@ -37,21 +47,10 @@ class _CreateSessionPageState extends State<CreateSessionPage> {
 
     if (result['success'] == true) {
       sessionNameController.clear();
-      startDateController.clear();
-      endDateController.clear();
-    }
-  }
-
-  Future<void> _selectDate(
-      BuildContext context, TextEditingController controller) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-    );
-    if (picked != null) {
-      controller.text = picked.toIso8601String().split('T').first;
+      setState(() {
+        startDate = null;
+        endDate = null;
+      });
     }
   }
 
@@ -86,48 +85,37 @@ class _CreateSessionPageState extends State<CreateSessionPage> {
               ),
             ),
             const SizedBox(height: 16),
-            TextFormField(
-              controller: startDateController,
-              readOnly: true,
-              onTap: () => _selectDate(context, startDateController),
-              decoration: InputDecoration(
-                labelText: 'Start Date (YYYY-MM-DD)*',
-                prefixIcon:
-                    Icon(Icons.calendar_today, color: Colors.blue.shade600),
-                labelStyle: TextStyle(color: Colors.blue.shade700),
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue.shade300),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue.shade700, width: 2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
+            CustomDatePicker(
+              selectedDate: startDate ?? DateTime.now(),
+              onDateSelected: (DateTime newDate) {
+                setState(() {
+                  startDate = newDate;
+                });
+              },
+              labelText: 'Start Date',
+              isExpanded: true,
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.blue.shade700,
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              firstDate: DateTime(2000),
+              lastDate: DateTime(2100),
             ),
             const SizedBox(height: 16),
-            TextFormField(
-              controller: endDateController,
-              readOnly: true,
-              onTap: () => _selectDate(context, endDateController),
-              decoration: InputDecoration(
-                labelText: 'End Date (YYYY-MM-DD)*',
-                prefixIcon:
-                    Icon(Icons.calendar_today, color: Colors.blue.shade600),
-                labelStyle: TextStyle(color: Colors.blue.shade700),
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue.shade300),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue.shade700, width: 2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
+            CustomDatePicker(
+              selectedDate: endDate ?? DateTime.now(),
+              onDateSelected: (DateTime newDate) {
+                setState(() {
+                  endDate = newDate;
+                });
+              },
+              labelText: 'End Date',
+              isExpanded: true,
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.blue.shade700,
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              firstDate: startDate ??
+                  DateTime(2000), // End date can't be before start date
+              lastDate: DateTime(2100),
             ),
             const SizedBox(height: 24),
             isLoading

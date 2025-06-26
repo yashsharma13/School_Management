@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:sms/pages/classes/edit_class.dart';
 import 'package:sms/pages/classes/new_class.dart';
-import 'package:sms/pages/services/api_service.dart';
+import 'package:sms/pages/services/class_service.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -43,12 +43,12 @@ class _AllClassesPageState extends State<AllClassesPage> {
       setState(() => isLoading = true);
 
       // Fetch classes first
-      final fetchedClasses = await ApiService.fetchClasses();
-      print('Fetched ${fetchedClasses.length} classes');
+      final fetchedClasses = await ClassService.fetchClasses();
+      debugPrint('Fetched ${fetchedClasses.length} classes');
 
       // Then fetch student counts
-      final studentCounts = await ApiService.modelgetStudentCountByClass();
-      print('Fetched ${studentCounts.length} student count records');
+      final studentCounts = await ClassService.modelgetStudentCountByClass();
+      debugPrint('Fetched ${studentCounts.length} student count records');
 
       // Create case-insensitive count map
       final Map<String, int> countMap = {};
@@ -66,7 +66,7 @@ class _AllClassesPageState extends State<AllClassesPage> {
             countMap[key] = count;
           }
         } catch (e) {
-          print('Error processing count item: $e');
+          debugPrint('Error processing count item: $e');
         }
       }
 
@@ -80,7 +80,7 @@ class _AllClassesPageState extends State<AllClassesPage> {
                 '${className.toLowerCase().trim()}|${section.toLowerCase().trim()}';
             final studentCount = countMap[key] ?? 0;
 
-            print('Class: $className, Students: $studentCount');
+            debugPrint('Class: $className, Students: $studentCount');
 
             // Handle case where teacher might be deleted
             final teacherId =
@@ -98,7 +98,7 @@ class _AllClassesPageState extends State<AllClassesPage> {
 
       setState(() => classes = classesWithCounts);
     } catch (error) {
-      print('Error in _loadClasses: $error');
+      debugPrint('Error in _loadClasses: $error');
       _showErrorSnackBar('Failed to load classes. Please try again.');
     } finally {
       if (mounted) {
@@ -444,7 +444,7 @@ class _AllClassesPageState extends State<AllClassesPage> {
 
     if (confirmDelete == true) {
       try {
-        final success = await ApiService.deleteClass(classItem.id);
+        final success = await ClassService.deleteClass(classItem.id);
 
         if (success) {
           setState(() {

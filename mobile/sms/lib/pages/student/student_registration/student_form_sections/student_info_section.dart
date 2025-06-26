@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sms/pages/services/api_service.dart';
+import 'package:sms/pages/services/student_service.dart';
 import '../student_registration_controller.dart';
 
 class StudentInfoSection extends StatefulWidget {
@@ -24,7 +24,7 @@ class _StudentInfoSectionState extends State<StudentInfoSection> {
   Future<void> _fetchLastRegistrationNumber() async {
     setState(() => _isLoading = true);
     try {
-      final lastReg = await ApiService.getLastRegistrationNumber();
+      final lastReg = await StudentService.getLastRegistrationNumber();
       setState(() => _lastRegistrationNumber = lastReg);
     } catch (e) {
       debugPrint('Error fetching last registration: $e');

@@ -11,7 +11,8 @@ import {
   getTotalStudentCount,
   modelgetStudentCountByClass,
   ggetLastRegistrationNumber,
-  getStudentDashboardDetails
+  getStudentDashboardDetails,
+  ggetStudentsByTeacherClass,
 } from '../controllers/studentController.js';
 
 const router = express.Router();
@@ -27,6 +28,7 @@ router.get('/api/students/count-by-class', verifyToken,modelgetStudentCountByCla
 router.get('/last-registration-number', verifyToken, ggetLastRegistrationNumber);
 // Add this to your studentRoutes.js
 router.get('/students/dashboard/:id', verifyToken, getStudentDashboardDetails);
+router.get('/getstudents/teacher-class', verifyToken, ggetStudentsByTeacherClass);
 
 
 export default router;

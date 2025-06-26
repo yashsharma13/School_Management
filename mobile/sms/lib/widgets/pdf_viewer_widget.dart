@@ -5,14 +5,21 @@ import 'package:url_launcher/url_launcher.dart';
 class PDFViewerScreen extends StatelessWidget {
   final String pdfData;
   final String baseUrl;
+  final String title;
+  final String label;
 
-  const PDFViewerScreen(
-      {super.key, required this.pdfData, required this.baseUrl});
+  const PDFViewerScreen({
+    super.key,
+    required this.pdfData,
+    required this.baseUrl,
+    required this.title,
+    required this.label,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Birth Certificate')),
+      appBar: AppBar(title: Text(title)),
       body: _buildPDFViewer(context),
     );
   }
@@ -22,23 +29,11 @@ class PDFViewerScreen extends StatelessWidget {
       return Center(child: Text('No PDF available'));
     }
 
-    // Clean up the PDF path by removing any backslashes and ensuring it's a clean filename
     final cleanPdfPath = pdfData.replaceAll('\\', '/').split('/').last;
-
-    // Ensure the baseUrl doesn't end with a slash
     final cleanBaseUrl = baseUrl.endsWith('/')
         ? baseUrl.substring(0, baseUrl.length - 1)
         : baseUrl;
-
-    // Construct the full URL
     final fullUrl = '$cleanBaseUrl/$cleanPdfPath';
-
-    // print('PDF Viewer Debug Info:');
-    // print('Original PDF data: $pdfData');
-    // print('Base URL: $baseUrl');
-    // print('Clean base URL: $cleanBaseUrl');
-    // print('Clean PDF path: $cleanPdfPath');
-    // print('Full URL: $fullUrl');
 
     return Center(
       child: Column(
@@ -46,7 +41,7 @@ class PDFViewerScreen extends StatelessWidget {
         children: [
           Icon(Icons.picture_as_pdf, size: 64, color: Colors.red),
           SizedBox(height: 16),
-          Text('Birth Certificate PDF'),
+          Text(label),
           SizedBox(height: 16),
           ElevatedButton.icon(
             icon: Icon(Icons.open_in_new),
@@ -54,12 +49,8 @@ class PDFViewerScreen extends StatelessWidget {
             onPressed: () async {
               try {
                 final Uri url = Uri.parse(fullUrl);
-                // print('Attempting to open URL: $url');
-
-                if (!await launchUrl(
-                  url,
-                  mode: LaunchMode.externalApplication,
-                )) {
+                if (!await launchUrl(url,
+                    mode: LaunchMode.externalApplication)) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
@@ -69,8 +60,6 @@ class PDFViewerScreen extends StatelessWidget {
                   );
                 }
               } catch (e) {
-                // print('Error launching URL: $e');
-                // print('URL that failed: $fullUrl');
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text('Error opening PDF: $e'),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sms/pages/services/api_service.dart';
+import 'package:sms/pages/services/class_service.dart';
 import 'package:sms/widgets/button.dart'; // Assuming your custom button is here
 import 'package:sms/pages/classes/all_class.dart'; // For Class and Teacher models
 
@@ -54,7 +54,7 @@ class _EditClassPageState extends State<EditClassPage> {
       return;
     }
 
-    final success = await ApiService.updateClass(
+    final success = await ClassService.updateClass(
       classId: widget.classItem.id,
       className: widget.classItem.className,
       tuitionFees: _tuitionFeesController.text,

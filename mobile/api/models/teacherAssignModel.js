@@ -34,8 +34,7 @@ export const assignTeacher = async (assignmentData) => {
     client.release();
   }
 };
-
-export const getTeacherAssignments = async () => {
+export const getTeacherAssignments = async (school_id) => {
   const query = `
     SELECT 
       ta.id,
@@ -47,19 +46,16 @@ export const getTeacherAssignments = async () => {
       s.id as subject_id,
       s.subject_name
     FROM teacher_assignments ta
-    JOIN teachers t ON ta.teacher_id = t.id
+    JOIN teacher t ON ta.teacher_id = t.id
+    JOIN signup u ON t.signup_id = u.id  -- 👈 signup table join
     JOIN classes c ON ta.class_id = c.id
     JOIN subjects s ON ta.subject_id = s.id
+    WHERE u.school_id = $1  -- 👈 Filter by school
     ORDER BY c.class_name, ta.section, t.teacher_name
   `;
   
-  try {
-    const result = await pool.query(query);
-    return result.rows;
-  } catch (err) {
-    console.error('PostgreSQL Error in getTeacherAssignments:', err);
-    throw err;
-  }
+  const result = await pool.query(query, [school_id]);
+  return result.rows;
 };
 
 export const getTeachersByClass = async (class_id, section) => {
@@ -69,7 +65,7 @@ export const getTeachersByClass = async (class_id, section) => {
       t.teacher_name,
       string_agg(s.subject_name, ', ') as subjects
     FROM teacher_assignments ta
-    JOIN teachers t ON ta.teacher_id = t.id
+    JOIN teacher t ON ta.teacher_id = t.id
     JOIN subjects s ON ta.subject_id = s.id
     WHERE ta.class_id = $1 AND ta.section = $2
     GROUP BY t.id, t.teacher_name

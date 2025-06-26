@@ -19,6 +19,7 @@ import sessionRoutes from './routes/sessionRoutes.js';
 import feeMasterRoutes from './routes/feeMasterRoutes.js';
 import feeStructureRoutes from './routes/feeStructureRoutes.js';
 import teacherAssignRoutes from './routes/teacherAssignRoutes.js';
+import homeworkRoutes from './routes/homeworkRoutes.js';
 // Setup for file path management
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -104,7 +105,7 @@ app.use('/api',sessionRoutes);
 app.use('/api',feeMasterRoutes);
 app.use('/api',feeStructureRoutes);
 app.use('/api',teacherAssignRoutes);
-
+app.use('/api',homeworkRoutes);
 // If no route matches, return 404
 app.use((req, res) => {
   // console.log('404 for route:', req.url);

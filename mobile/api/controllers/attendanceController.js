@@ -46,26 +46,19 @@ export const saveAttendance = async (req, res) => {
   }
 };
 
-// ✅ Get attendance report by class & section & date
+// // ✅ Get attendance report by class & section & date
 export const getAttendanceReportBySection = async (req, res) => {
   try {
-    const className = decodeURIComponent(req.params.class);
+    const classId = parseInt(req.params.class); // Directly treat as classId
     const section = decodeURIComponent(req.params.section);
     const date = req.params.date;
     const signup_id = req.signup_id;
 
-    const classId = await getClassIdByNameAndSection(className, section, signup_id);
-    if (!classId) {
-      return res.status(404).json({
-        message: `Class not found for ${className} - ${section}`
-      });
-    }
+    const attendance = await getStudentAttendanceByClassIdAndDate(classId, date, signup_id);
 
-    const attendance = await getStudentAttendanceByClassIdAndDate(classId, date,signup_id);
-    
-    if (!attendance) {
+    if (!attendance || attendance.length === 0) {
       return res.status(200).json({
-        message: `No attendance found for ${className} - ${section} on ${date}`,
+        message: `No attendance found for classId ${classId} - ${section} on ${date}`,
         students: []
       });
     }
@@ -78,6 +71,7 @@ export const getAttendanceReportBySection = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 // ✅ Get only teacher attendance
 export const getTeacherAttendanceOnly = async (req, res) => {

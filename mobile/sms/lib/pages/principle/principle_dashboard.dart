@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sms/pages/assign_teacher_class_subjects/assign_teacher.dart';
+import 'package:sms/pages/assign_teacher_class_subjects/view_teacher_assign.dart';
 import 'package:sms/pages/session/session.dart';
 import 'package:sms/pages/session/manage_session.dart';
 import 'package:sms/pages/student/admission/admission_letter.dart';
@@ -536,16 +537,48 @@ class _PrincipleDashboardState extends State<PrincipleDashboard> {
                       ),
                     ],
                   ),
-                  ListTile(
-                    leading: const Icon(Icons.add, color: Colors.black54),
-                    title: const Text("Assign teacher"),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => AssignTeacherPage()));
-                    },
+                  // ListTile(
+                  //   leading: const Icon(Icons.add, color: Colors.black54),
+                  //   title: const Text("Assign teacher"),
+                  //   onTap: () {
+                  //     Navigator.pop(context);
+                  //     Navigator.push(
+                  //         context,
+                  //         MaterialPageRoute(
+                  //             builder: (context) => AssignTeacherPage()));
+                  //   },
+                  // ),
+                  ExpansionTile(
+                    leading: const Icon(Icons.class_, color: Colors.black87),
+                    title: const Text("	Teacher Assignment",
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold)),
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.add, color: Colors.black54),
+                        title: const Text("Assign Teacher"),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => AssignTeacherPage()));
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.view_agenda_rounded,
+                            color: Colors.black54),
+                        title: const Text("View Assigned Teachers"),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      ViewTeacherAssignmentsPage()));
+                        },
+                      ),
+                    ],
                   ),
                   ExpansionTile(
                     leading: const Icon(Icons.class_, color: Colors.black87),

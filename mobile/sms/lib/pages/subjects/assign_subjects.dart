@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sms/pages/services/api_service.dart';
+import 'package:sms/pages/services/class_service.dart';
+import 'package:sms/pages/services/subject_service.dart';
 import 'package:sms/widgets/button.dart';
 
 class AssignSubjectPage extends StatefulWidget {
@@ -34,63 +35,13 @@ class _AssignSubjectPageState extends State<AssignSubjectPage> {
     }
   }
 
-  // Future<void> _loadClasses() async {
-  //   try {
-  //     setState(() {
-  //       isLoading = true;
-  //     });
-
-  //     final fetchedClasses = await ApiService.fetchClasses();
-
-  //     // Grouping sections by class name
-  //     final Map<String, Set<String>> classSectionMap = {};
-  //     final List<Class> tempClasses = [];
-
-  //     for (final data in fetchedClasses) {
-  //       final className =
-  //           (data['class_name'] ?? data['className'] ?? '').toString().trim();
-  //       final section = (data['section'] ?? '').toString().trim();
-
-  //       if (className.isEmpty) continue;
-
-  //       if (!classSectionMap.containsKey(className)) {
-  //         classSectionMap[className] = {};
-  //       }
-
-  //       classSectionMap[className]!.add(section);
-  //     }
-
-  //     // Build Class objects
-  //     classSectionMap.forEach((className, sections) {
-  //       tempClasses.add(Class(
-  //         id: className, // You can adjust ID if you need real IDs
-  //         className: className,
-  //         sections: sections.toList(),
-  //       ));
-  //     });
-
-  //     setState(() {
-  //       classes = tempClasses;
-  //       if (classes.isEmpty) {
-  //         _showErrorSnackBar(
-  //             'No valid classes found. Please add classes first.');
-  //       }
-  //     });
-  //   } catch (error) {
-  //     _showErrorSnackBar('Error fetching classes: ${error.toString()}');
-  //   } finally {
-  //     setState(() {
-  //       isLoading = false;
-  //     });
-  //   }
-  // }
   Future<void> _loadClasses() async {
     try {
       setState(() {
         isLoading = true;
       });
 
-      final fetchedClasses = await ApiService.fetchClasses();
+      final fetchedClasses = await ClassService.fetchClasses();
 
       final Map<String, Class> classMap = {}; // ✅ Key: class_name
 
@@ -173,53 +124,6 @@ class _AssignSubjectPageState extends State<AssignSubjectPage> {
     }
   }
 
-  // Future<void> _submitForm() async {
-  //   if (!_formKey.currentState!.validate()) return;
-  //   if (selectedClass == null) {
-  //     _showErrorSnackBar('Please select a class');
-  //     return;
-  //   }
-  //   if (selectedSection == null) {
-  //     _showErrorSnackBar('Please select a section');
-  //     return;
-  //   }
-
-  //   setState(() {
-  //     isLoading = true;
-  //   });
-
-  //   try {
-  //     final List<Map<String, dynamic>> subjectsData = subjectFields
-  //         .map((field) => {
-  //               'subject_name': field.subjectName.trim(),
-  //               'marks': field.marks.trim(),
-  //             })
-  //         .toList();
-
-  //     final success = await ApiService.registerSubject(
-  //       classId: selectedClass!.id,
-  //       // section: selectedSection!,
-  //       subjectsData: subjectsData,
-  //     );
-
-  //     if (success) {
-  //       _showSuccessSnackBar('Subjects assigned successfully!');
-  //       setState(() {
-  //         subjectFields.clear();
-  //         _formKey.currentState!.reset();
-  //       });
-  //     } else {
-  //       _showErrorSnackBar('Failed to assign subjects');
-  //     }
-  //   } catch (error) {
-  //     _showErrorSnackBar('Error: ${error.toString()}');
-  //   } finally {
-  //     setState(() {
-  //       isLoading = false;
-  //     });
-  //   }
-  // }
-
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
     if (selectedClass == null) {
@@ -243,7 +147,7 @@ class _AssignSubjectPageState extends State<AssignSubjectPage> {
               })
           .toList();
 
-      final success = await ApiService.registerSubject(
+      final success = await SubjectService.registerSubject(
         classId: selectedClass!.id,
         subjectsData: subjectsData,
       );

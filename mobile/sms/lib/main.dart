@@ -65,6 +65,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:sms/firebase_options.dart';
+import 'package:sms/pages/auth/login.dart';
+import 'package:sms/pages/teacher_dashboard/t_dashboard.dart';
 import 'package:sms/pages/welcome/welcome.dart';
 import 'package:sms/pages/admin/admin_dashboard.dart';
 import 'package:sms/pages/principle/principle_dashboard.dart';
@@ -93,13 +95,15 @@ void main() async {
       case 'student':
         initialPage = const StudentDashboard();
         break;
-      case 'principal':
+      case 'teacher':
+        initialPage = const TeacherDashboard();
       case 'operator':
         initialPage = const PrincipleDashboard();
         break;
       case 'admin':
-      default:
         initialPage = const AdminDashboard();
+      default:
+        initialPage = const LoginPage();
         break;
     }
   } else {

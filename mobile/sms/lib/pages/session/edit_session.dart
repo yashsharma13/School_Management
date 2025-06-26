@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sms/pages/services/session_service.dart';
 import 'package:sms/pages/session/manage_session.dart'; // for Session model
 import 'package:intl/intl.dart'; // For date formatting
+import 'package:sms/widgets/date_picker.dart'; // Import the custom date picker
 
 class EditSessionDialog extends StatefulWidget {
   final Session session;
@@ -14,49 +15,32 @@ class EditSessionDialog extends StatefulWidget {
 
 class _EditSessionDialogState extends State<EditSessionDialog> {
   late TextEditingController _sessionNameController;
-  late TextEditingController _startDateController;
-  late TextEditingController _endDateController;
-
-  final DateFormat _dateFormat = DateFormat('yyyy-MM-dd');
+  late DateTime _startDate;
+  late DateTime _endDate;
 
   @override
   void initState() {
     super.initState();
     _sessionNameController =
         TextEditingController(text: widget.session.sessionName);
-    _startDateController =
-        TextEditingController(text: widget.session.startDate);
-    _endDateController = TextEditingController(text: widget.session.endDate);
+    _startDate = DateTime.tryParse(widget.session.startDate) ?? DateTime.now();
+    _endDate = DateTime.tryParse(widget.session.endDate) ?? DateTime.now();
   }
 
   @override
   void dispose() {
     _sessionNameController.dispose();
-    _startDateController.dispose();
-    _endDateController.dispose();
     super.dispose();
   }
 
-  Future<void> _selectDate(
-      BuildContext context, TextEditingController controller) async {
-    final DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: DateTime.tryParse(controller.text) ?? DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-    );
-
-    if (pickedDate != null) {
-      controller.text = _dateFormat.format(pickedDate);
-    }
-  }
-
   Future<void> _updateSession() async {
+    final DateFormat dateFormat = DateFormat('yyyy-MM-dd');
+
     final result = await SessionService.updateSession(
       id: widget.session.id,
       sessionName: _sessionNameController.text,
-      startDate: _startDateController.text,
-      endDate: _endDateController.text,
+      startDate: dateFormat.format(_startDate),
+      endDate: dateFormat.format(_endDate),
     );
 
     if (result['success'] == true) {
@@ -64,7 +48,9 @@ class _EditSessionDialogState extends State<EditSessionDialog> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text(result['message'] ?? 'Failed to update session')),
+          content: Text(result['message'] ?? 'Failed to update session'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -82,29 +68,45 @@ class _EditSessionDialogState extends State<EditSessionDialog> {
               decoration: InputDecoration(
                 labelText: 'Session Name',
                 border: OutlineInputBorder(),
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               ),
             ),
-            SizedBox(height: 12),
-            TextField(
-              controller: _startDateController,
-              readOnly: true,
-              onTap: () => _selectDate(context, _startDateController),
-              decoration: InputDecoration(
-                labelText: 'Start Date (YYYY-MM-DD)',
-                border: OutlineInputBorder(),
-                suffixIcon: Icon(Icons.calendar_today),
-              ),
+            SizedBox(height: 16),
+            CustomDatePicker(
+              selectedDate: _startDate,
+              onDateSelected: (DateTime newDate) {
+                setState(() {
+                  _startDate = newDate;
+                  // Ensure end date is not before start date
+                  if (_endDate.isBefore(_startDate)) {
+                    _endDate = _startDate;
+                  }
+                });
+              },
+              labelText: 'Start Date',
+              isExpanded: true,
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.blue[900],
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              firstDate: DateTime(2000),
+              lastDate: DateTime(2100),
             ),
-            SizedBox(height: 12),
-            TextField(
-              controller: _endDateController,
-              readOnly: true,
-              onTap: () => _selectDate(context, _endDateController),
-              decoration: InputDecoration(
-                labelText: 'End Date (YYYY-MM-DD)',
-                border: OutlineInputBorder(),
-                suffixIcon: Icon(Icons.calendar_today),
-              ),
+            SizedBox(height: 16),
+            CustomDatePicker(
+              selectedDate: _endDate,
+              onDateSelected: (DateTime newDate) {
+                setState(() {
+                  _endDate = newDate;
+                });
+              },
+              labelText: 'End Date',
+              isExpanded: true,
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.blue[900],
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              firstDate: _startDate, // Can't be before start date
+              lastDate: DateTime(2100),
             ),
           ],
         ),
@@ -116,10 +118,16 @@ class _EditSessionDialogState extends State<EditSessionDialog> {
         ),
         ElevatedButton(
           onPressed: _updateSession,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue[900],
+            foregroundColor: Colors.white,
+          ),
           child: Text('Save'),
         ),
       ],
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
     );
   }
 }

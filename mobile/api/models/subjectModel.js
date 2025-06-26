@@ -23,18 +23,6 @@ export const createSubject = async (classData) => {
   }
 };
 
-// export const getSubjectsByUser = async (signup_id) => {
-//   const query = 'SELECT * FROM subjects WHERE signup_id = $1';
-  
-//   try {
-//     const result = await pool.query(query, [signup_id]);
-//     return result.rows;
-//   } catch (err) {
-//     console.error('PostgreSQL Error in getSubjectsByUser:', err);
-//     throw err;
-//   }
-// };
-
 export const getSubjectsByUser = async (signup_id) => {
   const query = `
     SELECT s.*, c.class_name, c.section 
@@ -50,35 +38,6 @@ export const getSubjectsByUser = async (signup_id) => {
     throw err;
   }
 };
-
-
-// export const updateSubjectById = async (id, updatedData, userEmail) => {
-//   const { subject_name, marks } = updatedData;
-//   const query = `
-//     UPDATE subjects 
-//     SET subject_name = $1, marks = $2
-//     WHERE id = $3 AND user_email = $4
-//     RETURNING *
-//   `;
-
-//   try {
-//     const result = await pool.query(query, [
-//       subject_name,
-//       marks,
-//       id,
-//       userEmail
-//     ]);
-    
-//     if (result.rowCount === 0) {
-//       return null; // No subject found
-//     }
-    
-//     return result.rows[0];
-//   } catch (err) {
-//     console.error('PostgreSQL Error in updateSubjectById:', err);
-//     throw err;
-//   }
-// };
 
 export const updateSubjectById = async (id, updatedData, signup_id) => {
   const { subject_name, marks, class_id } = updatedData;

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,13 +15,13 @@ class FeeStructureService {
       final token = prefs.getString('token');
 
       if (token == null) {
-        print('No token found');
+        debugPrint('No token found');
         return false;
       }
 
       final numericClassId = int.tryParse(classId);
       if (numericClassId == null) {
-        print('Invalid classId: $classId');
+        debugPrint('Invalid classId: $classId');
         return false;
       }
 
@@ -29,7 +30,7 @@ class FeeStructureService {
         'structure': structure,
       };
 
-      print('Sending fee structure data: $requestBody');
+      debugPrint('Sending fee structure data: $requestBody');
 
       final response = await http.post(
         Uri.parse('$baseUrl/api/registerfee'),
@@ -41,15 +42,15 @@ class FeeStructureService {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        print('✅ Fee structure submitted successfully: ${response.body}');
+        debugPrint('✅ Fee structure submitted successfully: ${response.body}');
         return true;
       } else {
-        print(
+        debugPrint(
             '❌ Failed to submit fee structure: ${response.statusCode} - ${response.body}');
         return false;
       }
     } catch (e) {
-      print('❌ Error submitting fee structure: $e');
+      debugPrint('❌ Error submitting fee structure: $e');
       return false;
     }
   }
@@ -61,7 +62,7 @@ class FeeStructureService {
       final token = prefs.getString('token');
 
       if (token == null) {
-        print('No token found');
+        debugPrint('No token found');
         return [];
       }
 
@@ -82,12 +83,12 @@ class FeeStructureService {
               'is_collectable': item['is_collectable'],
             }));
       } else {
-        print(
+        debugPrint(
             'Failed to load fee structure: ${response.statusCode} - ${response.body}');
         return [];
       }
     } catch (e) {
-      print('Error fetching fee structure: $e');
+      debugPrint('Error fetching fee structure: $e');
       return [];
     }
   }

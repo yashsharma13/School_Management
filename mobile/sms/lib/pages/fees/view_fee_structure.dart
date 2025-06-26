@@ -32,7 +32,7 @@ class _ViewFeeStructurePageState extends State<ViewFeeStructurePage> {
     if (token != null) {
       await _fetchClasses();
     } else {
-      print('❌ Token not found!');
+      debugPrint('❌ Token not found!');
     }
   }
 
@@ -61,10 +61,10 @@ class _ViewFeeStructurePageState extends State<ViewFeeStructurePage> {
           classes = uniqueClasses.values.toList();
         });
       } else {
-        print("❌ Error loading classes: ${response.body}");
+        debugPrint("❌ Error loading classes: ${response.body}");
       }
     } catch (e) {
-      print("❌ Error fetching classes: $e");
+      debugPrint("❌ Error fetching classes: $e");
     }
   }
 
@@ -91,10 +91,10 @@ class _ViewFeeStructurePageState extends State<ViewFeeStructurePage> {
               data.map((item) => FeeStructureModel.fromJson(item)).toList();
         });
       } else {
-        print("❌ Failed to fetch fee structure: ${response.body}");
+        debugPrint("❌ Failed to fetch fee structure: ${response.body}");
       }
     } catch (e) {
-      print("❌ Error: $e");
+      debugPrint("❌ Error: $e");
     } finally {
       setState(() => isLoading = false);
     }

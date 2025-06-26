@@ -216,10 +216,10 @@ class AdmissionConfirmationPage extends StatelessWidget {
 
             SizedBox(height: 30),
 
-            // Print Admission Letter button
+            // debugPrint Admission Letter button
             // ElevatedButton.icon(
-            //   icon: Icon(Icons.print, color: Colors.white),
-            //   label: Text('Print Admission Letter',
+            //   icon: Icon(Icons.debugPrint, color: Colors.white),
+            //   label: Text('debugPrint Admission Letter',
             //       style: TextStyle(color: Colors.white)),
             //   style: ElevatedButton.styleFrom(
             //     padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -330,7 +330,7 @@ class AdmissionConfirmationPage extends StatelessWidget {
           studentImage = pw.MemoryImage(response.bodyBytes);
         }
       } catch (e) {
-        print('Failed to load student image: $e');
+        debugPrint('Failed to load student image: $e');
       }
     }
 

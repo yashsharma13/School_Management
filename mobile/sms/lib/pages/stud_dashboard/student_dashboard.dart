@@ -61,8 +61,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
       );
 
       // Debug output
-      print('API Response Status: ${response.statusCode}');
-      print('API Response Body: ${response.body}');
+      debugPrint('API Response Status: ${response.statusCode}');
+      debugPrint('API Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
@@ -104,13 +104,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
         ),
       );
 
-      print('Error fetching student details: $e');
+      debugPrint('Error fetching student details: $e');
     }
   }
 
   String _getStudentIdFromToken(String token) {
     try {
-      print('Raw token: $token');
+      debugPrint('Raw token: $token');
       final parts = token.split('.');
       if (parts.length != 3) return "";
 
@@ -126,16 +126,16 @@ class _StudentDashboardState extends State<StudentDashboard> {
       }
 
       final decoded = utf8.decode(base64Url.decode(paddedPayload));
-      print('Decoded payload: $decoded'); // Debug payload
+      debugPrint('Decoded payload: $decoded'); // Debug payload
       final payloadMap = json.decode(decoded);
-      print('Payload content: $payloadMap'); // Debug payload content
+      debugPrint('Payload content: $payloadMap'); // Debug payload content
 
       return payloadMap['id']?.toString() ??
           payloadMap['studentId']?.toString() ??
           payloadMap['userId']?.toString() ??
           "";
     } catch (e) {
-      print('Error decoding token: $e');
+      debugPrint('Error decoding token: $e');
       return "";
     }
   }

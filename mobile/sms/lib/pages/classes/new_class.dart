@@ -3,7 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sms/pages/services/api_service.dart';
+import 'package:sms/pages/services/class_service.dart';
 import 'package:sms/widgets/button.dart';
 
 class AddClassPage extends StatefulWidget {
@@ -132,7 +132,7 @@ class _AddClassPageState extends State<AddClassPage> {
       });
 
       try {
-        final success = await ApiService.registerClass(
+        final success = await ClassService.registerClass(
           className: _className,
           section: _selectedSection!,
           tuitionFees: _tuitionFees,

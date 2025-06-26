@@ -1,38 +1,23 @@
-import { createClass, getClassesBySchoolId, updateClass, deleteClass } from '../models/classModel.js';
-import { getActiveSessionFromDB } from '../models/sessionModel.js';
+import pool from '../config/db.js';
+import { createClass, getClassesBySchoolId, updateClass, deleteClass , getClassByTeacherId } from '../models/classModel.js';
+
+// Register class
 export const registerClass = async (req, res) => {
   try {
     const { class_name, section, tuition_fees, teacher_id } = req.body;
-    const signup_id = req.signup_id;
+    const signup_id = req.signup_id; // ✅ Extract from token/session
 
     if (!class_name || !section || !tuition_fees || !teacher_id || !signup_id) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
-    // ✅ Get active session
-  const activeSession = await getActiveSessionFromDB(signup_id);
-     if (!activeSession) {
-       return res.status(400).json({ message: 'No active session found for this school' });
-     }
- 
-     const session_id = activeSession.id;
-
-    // ✅ Register class with session_id
-    const result = await createClass({
-      class_name,
-      section,
-      tuition_fees,
-      teacher_id,
-      signup_id,
-      session_id
-    });
+    const result = await createClass({ class_name, section, tuition_fees, teacher_id, signup_id });
 
     res.status(201).json({
       success: true,
       message: 'Class registered successfully',
       classId: result.id,
     });
-
   } catch (err) {
     console.error('Error registering class:', err);
     res.status(500).json({ message: 'Error registering class' });
@@ -103,5 +88,37 @@ export const deleteClassById = async (req, res) => {
   } catch (err) {
     console.error('Error deleting class:', err);
     res.status(500).json({ message: 'Error deleting class' });
+  }
+};
+
+export const getAssignedClass = async (req, res) => {
+  try {
+    const signup_id = req.signup_id; // From auth middleware
+
+    if (!signup_id) {
+      return res.status(400).json({ message: 'Signup ID is required' });
+    }
+
+    // Fetch the teacher's ID from the teacher table using signup_id
+    const teacherQuery = 'SELECT id FROM teacher WHERE signup_id = $1';
+    const teacherResult = await pool.query(teacherQuery, [signup_id]);
+
+    if (!teacherResult.rows.length) {
+      return res.status(404).json({ message: 'Teacher not found' });
+    }
+
+    const teacher_id = teacherResult.rows[0].id;
+
+    // Fetch the assigned class
+    const classResult = await getClassByTeacherId(teacher_id);
+
+    if (!classResult) {
+      return res.status(404).json({ message: 'No class assigned to this teacher' });
+    }
+
+    res.status(200).json(classResult);
+  } catch (err) {
+    console.error('Error fetching assigned class:', err);
+    res.status(500).json({ message: 'Error fetching assigned class' });
   }
 };

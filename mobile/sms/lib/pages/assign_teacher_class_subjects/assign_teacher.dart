@@ -3,7 +3,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'package:sms/pages/services/api_service.dart';
+import 'package:sms/pages/services/class_service.dart';
+import 'package:sms/pages/services/subject_service.dart';
 import 'package:sms/widgets/button.dart';
 
 class AssignTeacherPage extends StatefulWidget {
@@ -85,7 +86,7 @@ class _AssignTeacherPageState extends State<AssignTeacherPage> {
   Future<void> fetchClasses() async {
     setState(() => isFetchingClasses = true);
     try {
-      final data = await ApiService.fetchClasses();
+      final data = await ClassService.fetchClasses();
 
       final Map<String, ClassModel> map = {};
 
@@ -122,7 +123,7 @@ class _AssignTeacherPageState extends State<AssignTeacherPage> {
     });
 
     try {
-      final data = await ApiService.fetchClassesWithSubjects();
+      final data = await SubjectService.fetchClassesWithSubjects();
 
       final cls = data.firstWhere(
         (e) =>

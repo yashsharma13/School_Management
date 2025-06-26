@@ -74,7 +74,7 @@ class _FeeStructurePageState extends State<FeeStructurePage> {
         });
       }
     } catch (e) {
-      print('Error loading classes: $e');
+      debugPrint('Error loading classes: $e');
     } finally {
       setState(() => isLoading = false);
     }
@@ -100,7 +100,7 @@ class _FeeStructurePageState extends State<FeeStructurePage> {
         }).toList();
       });
     } catch (e) {
-      print('Error loading fee fields: $e');
+      debugPrint('Error loading fee fields: $e');
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text("Error loading fee fields: ${e.toString()}"),
         backgroundColor: Colors.red,

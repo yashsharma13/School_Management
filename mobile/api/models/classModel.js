@@ -1,23 +1,24 @@
-// // classModel.js
+// // // classModel.js
 import pool from '../config/db.js';
 
+// Create a new class
 export const createClass = async (classData) => {
-  const { class_name, section, tuition_fees, teacher_id, signup_id, session_id } = classData;
-
+  const { class_name, section, tuition_fees, teacher_id, signup_id } = classData;
   const sql = `
-    INSERT INTO classes (class_name, section, tuition_fees, teacher_id, signup_id, session_id)
-    VALUES ($1, $2, $3, $4, $5, $6)
+    INSERT INTO classes (class_name, section, tuition_fees, teacher_id, signup_id)
+    VALUES ($1, $2, $3, $4, $5)
     RETURNING *
   `;
   
   try {
-    const result = await pool.query(sql, [class_name, section, tuition_fees, teacher_id, signup_id, session_id]);
+    const result = await pool.query(sql, [class_name, section, tuition_fees, teacher_id, signup_id]);
     return result.rows[0];
   } catch (err) {
     console.error('PostgreSQL Error in createClass:', err);
     throw err;
   }
 };
+
 
 export const getClassesBySchoolId = async (signup_id) => {
   const query = `
@@ -66,6 +67,21 @@ export const deleteClass = async (classId) => {
     return result;
   } catch (err) {
     console.error('PostgreSQL Error in deleteClass:', err);
+    throw err;
+  }
+};
+
+export const getClassByTeacherId = async (teacher_id) => {
+  const query = `
+    SELECT id AS class_id, class_name, section
+    FROM classes
+    WHERE teacher_id = $1
+  `;
+  try {
+    const result = await pool.query(query, [teacher_id]);
+    return result.rows[0]; // Return the first (and only) class assigned to the teacher
+  } catch (err) {
+    console.error('PostgreSQL Error in getClassByTeacherId:', err);
     throw err;
   }
 };

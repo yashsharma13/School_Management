@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:sms/pages/services/class_service.dart';
 import '../student_registration_controller.dart';
-import 'package:sms/pages/services/api_service.dart';
 
 class ClassSectionInfo extends StatefulWidget {
   final StudentRegistrationController controller;
@@ -26,7 +26,7 @@ class _ClassSectionInfoState extends State<ClassSectionInfo> {
   Future<void> _loadClasses() async {
     try {
       setState(() => isLoading = true);
-      final fetchedClasses = await ApiService.fetchClasses();
+      final fetchedClasses = await ClassService.fetchClasses();
 
       final Map<String, Set<String>> classSectionMap = {};
       final List<Class> tempClasses = [];

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../teacher_registration_controller.dart';
+import 'package:sms/widgets/date_picker.dart'; // Import the custom date picker
 
 class TeacherInfo extends StatefulWidget {
   final TeacherRegistrationController controller;
@@ -78,52 +80,42 @@ class _TeacherInfoState extends State<TeacherInfo> {
             },
           ),
           const SizedBox(height: 16),
-          TextFormField(
-            controller: widget.controller.dobController,
-            decoration: InputDecoration(
-              labelText: 'Date of Birth*',
-              labelStyle: TextStyle(color: Colors.blue.shade700),
-              prefixIcon:
-                  Icon(Icons.calendar_today, color: Colors.blue.shade600),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: Colors.blue.shade300),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: Colors.blue.shade700, width: 2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            readOnly: true,
-            onTap: () => widget.controller.selectDate(context),
-            validator: (value) => value!.isEmpty ? 'Required field' : null,
+          CustomDatePicker(
+            selectedDate: widget.controller.dob ?? DateTime.now(),
+            onDateSelected: (DateTime newDate) {
+              setState(() {
+                widget.controller.dob = newDate;
+                widget.controller.dobController.text =
+                    DateFormat('yyyy-MM-dd').format(newDate);
+              });
+            },
+            labelText: 'Date of Birth',
+            isExpanded: true,
+            backgroundColor: Colors.white,
+            foregroundColor: Colors.blue.shade700,
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            firstDate: DateTime(1900),
+            lastDate: DateTime.now(),
+            icon: Icons.calendar_today,
           ),
           const SizedBox(height: 16),
-          TextFormField(
-            controller: widget.controller.dojController,
-            decoration: InputDecoration(
-              labelText: 'Date of Joining*',
-              labelStyle: TextStyle(color: Colors.blue.shade700),
-              prefixIcon:
-                  Icon(Icons.calendar_today, color: Colors.blue.shade600),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: Colors.blue.shade300),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: Colors.blue.shade700, width: 2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            readOnly: true,
-            onTap: () => widget.controller.selectJoiningDate(context),
-            validator: (value) => value!.isEmpty ? 'Required field' : null,
+          CustomDatePicker(
+            selectedDate: widget.controller.doj ?? DateTime.now(),
+            onDateSelected: (DateTime newDate) {
+              setState(() {
+                widget.controller.doj = newDate;
+                widget.controller.dojController.text =
+                    DateFormat('yyyy-MM-dd').format(newDate);
+              });
+            },
+            labelText: 'Date of Joining',
+            isExpanded: true,
+            backgroundColor: Colors.white,
+            foregroundColor: Colors.blue.shade700,
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            firstDate: DateTime(2000),
+            lastDate: DateTime.now(),
+            icon: Icons.calendar_today,
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(

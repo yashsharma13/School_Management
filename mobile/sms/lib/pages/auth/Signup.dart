@@ -1,6 +1,6 @@
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sms/pages/admin/admin_dashboard.dart';
-import 'package:sms/pages/services/api_service.dart';
+import 'package:sms/pages/services/auth_service.dart';
 import 'otp_verification.dart';
 import 'package:sms/widgets/button.dart';
 import 'package:flutter/material.dart';
@@ -76,8 +76,7 @@ class _SignUpPageState extends State<SignUpPage> {
     setState(() {
       _isSigningUp = true;
     });
-
-    final success = await ApiService.register(
+    final success = await AuthService.register(
       _emailController.text.trim(),
       _phoneController.text.trim(),
       _passwordController.text.trim(),

@@ -32,10 +32,12 @@ export const assignTeacherToClass = async (req, res) => {
     });
   }
 };
-
 export const getAllTeacherAssignments = async (req, res) => {
   try {
-    const assignments = await getTeacherAssignments();
+    const school_id = req.school_id; // 👈 assume JWT token se aa raha hai
+
+    const assignments = await getTeacherAssignments(school_id);
+
     res.status(200).json({
       success: true,
       data: assignments

@@ -3,11 +3,14 @@ import 'package:sms/pages/admin/admin_dashboard.dart';
 import 'package:sms/pages/principle/principle_dashboard.dart';
 import 'package:sms/pages/auth/forgotpassword.dart';
 import 'package:sms/pages/profile_setting/profile_setup.dart';
-import 'package:sms/pages/services/api_service.dart';
+
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sms/pages/services/auth_service.dart';
+
 import 'package:sms/pages/stud_dashboard/student_dashboard.dart';
 import 'package:sms/widgets/button.dart';
 import 'package:sms/pages/services/profile_service.dart';
+import 'package:sms/pages/teacher_dashboard/t_dashboard.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -28,62 +31,6 @@ class _LoginPageState extends State<LoginPage> {
   final Color primaryColor = Colors.deepPurple;
   final Color backgroundColor = Colors.white;
   final Color inputFillColor = Colors.deepPurple.shade50;
-
-  // Future<void> _login() async {
-  //   if (!_formKey.currentState!.validate()) return;
-
-  //   setState(() {
-  //     _isLoading = true;
-  //     _errorMessage = null;
-  //   });
-
-  //   try {
-  //     final username = usernameController.text.trim();
-  //     final password = passwordController.text.trim();
-
-  //     final response = await ApiService.login(username, password);
-
-  //     if (response['success'] == true) {
-  //       if (response['user_email'] == null) {
-  //         throw Exception('Server response missing user_email');
-  //       }
-
-  //       final prefs = await SharedPreferences.getInstance();
-  //       await Future.wait([
-  //         prefs.setString('token', response['token']),
-  //         prefs.setString('role', response['role']),
-  //         prefs.setString('user_email', response['user_email']),
-  //         if (response['user_id'] != null)
-  //           prefs.setString('user_id', response['user_id'].toString()),
-  //       ]);
-
-  //       if (!mounted) return;
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         SnackBar(
-  //           content: const Text('Login Successful'),
-  //           backgroundColor: primaryColor,
-  //         ),
-  //       );
-
-  //       _navigateToRoleDashboard(response['role']);
-  //     } else {
-  //       setState(() {
-  //         _errorMessage = response['message'] ?? 'Invalid Credentials';
-  //       });
-  //     }
-  //   } catch (e) {
-  //     debugPrint('Login error: $e');
-  //     setState(() {
-  //       _errorMessage = 'Login failed. Please try again.';
-  //     });
-  //   } finally {
-  //     if (mounted) {
-  //       setState(() {
-  //         _isLoading = false;
-  //       });
-  //     }
-  //   }
-  // }
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -96,7 +43,7 @@ class _LoginPageState extends State<LoginPage> {
       final username = usernameController.text.trim();
       final password = passwordController.text.trim();
 
-      final response = await ApiService.login(username, password);
+      final response = await AuthService.login(username, password);
 
       if (response['success'] == true) {
         if (response['user_email'] == null) {
@@ -160,13 +107,16 @@ class _LoginPageState extends State<LoginPage> {
       case 'student':
         dashboard = const StudentDashboard();
         break;
+      case 'teacher':
+        dashboard = const TeacherDashboard();
+        break;
       case 'principal':
-      case 'operator':
         dashboard = const PrincipleDashboard(); // Replace with your actual page
         break;
       case 'admin':
-      default:
         dashboard = const AdminDashboard();
+      default:
+        dashboard = const LoginPage();
     }
 
     Navigator.pushReplacement(

@@ -122,7 +122,8 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
         } else if (item is Map<String, dynamic>) {
           return FeeStructureModel.fromJson(item);
         } else {
-          print('Unexpected item type in feeStructure: ${item.runtimeType}');
+          debugPrint(
+              'Unexpected item type in feeStructure: ${item.runtimeType}');
           return FeeStructureModel(
             feeFieldName: '',
             amount: '0.0',
@@ -156,11 +157,11 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
       totalDue = totalYearlyFee - totalPaid;
       if (totalDue < 0) totalDue = 0.0;
 
-      print('Preloaded paidFeeMasterIds: $paidFeeMasterIds');
-      print('Preloaded paidOneTimeFees: $paidOneTimeFees');
-      print(
+      debugPrint('Preloaded paidFeeMasterIds: $paidFeeMasterIds');
+      debugPrint('Preloaded paidOneTimeFees: $paidOneTimeFees');
+      debugPrint(
           'Preloaded feeStructure: ${feeStructure.map((f) => "${f.feeFieldName}: isOneTime=${f.isOneTime}, feeMasterId=${f.feeMasterId}").toList()}');
-      print('Calculated totalYearlyFee: $totalYearlyFee');
+      debugPrint('Calculated totalYearlyFee: $totalYearlyFee');
 
       _initializeFeeControllers();
       isLoading = false;
@@ -175,7 +176,7 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
     feeControllers.clear();
     for (var fee in feeStructure) {
       if (paidFeeMasterIds.contains(fee.feeMasterId.toString())) {
-        print(
+        debugPrint(
             'Skipping paid fee: ${fee.feeFieldName} (ID: ${fee.feeMasterId})');
         continue;
       }
@@ -191,11 +192,11 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
         );
         feeControllers[fee.feeMasterId]!.addListener(_calculateTotals);
 
-        print(
+        debugPrint(
             'Created controller for fee: ${fee.feeFieldName} (ID: ${fee.feeMasterId}), Amount: ${amount.toStringAsFixed(2)}');
       }
     }
-    print('Initialized feeControllers: ${feeControllers.keys}');
+    debugPrint('Initialized feeControllers: ${feeControllers.keys}');
   }
 
   Future<void> _loadToken() async {
@@ -253,13 +254,13 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
   //           feeStructure = (data['data'] as List)
   //               .map((item) => FeeStructureModel.fromJson(item))
   //               .toList();
-  //           print('Loaded feeStructure: $feeStructure');
+  //           debugPrint('Loaded feeStructure: $feeStructure');
   //         });
   //       } else {
-  //         print('Failed to load fee structure: ${data['message']}');
+  //         debugPrint('Failed to load fee structure: ${data['message']}');
   //       }
   //     } else {
-  //       print('Error fetching fee structure: ${response.statusCode}');
+  //       debugPrint('Error fetching fee structure: ${response.statusCode}');
   //     }
 
   //     final paidFeesResponse = await http.get(
@@ -271,14 +272,14 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
   //       final paidFeesData = jsonDecode(paidFeesResponse.body);
   //       setState(() {
   //         paidFeeMasterIds = List<String>.from(paidFeesData);
-  //         print('Loaded paidFeeMasterIds: $paidFeeMasterIds');
+  //         debugPrint('Loaded paidFeeMasterIds: $paidFeeMasterIds');
   //       });
   //     }
 
   //     _initializeFeeControllers();
   //     _calculateTotals();
   //   } catch (e) {
-  //     print('Exception loading fee data: $e');
+  //     debugPrint('Exception loading fee data: $e');
   //   }
   // }
 
@@ -297,13 +298,13 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
             feeStructure = (data['data'] as List)
                 .map((item) => FeeStructureModel.fromJson(item))
                 .toList();
-            print('Loaded feeStructure: $feeStructure');
+            debugPrint('Loaded feeStructure: $feeStructure');
           });
         } else {
-          print('Failed to load fee structure: ${data['message']}');
+          debugPrint('Failed to load fee structure: ${data['message']}');
         }
       } else {
-        print('Error fetching fee structure: ${response.statusCode}');
+        debugPrint('Error fetching fee structure: ${response.statusCode}');
       }
 
       final paidFeesResponse = await http.get(
@@ -315,14 +316,14 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
         final paidFeesData = jsonDecode(paidFeesResponse.body);
         setState(() {
           paidFeeMasterIds = List<String>.from(paidFeesData);
-          print('Loaded paidFeeMasterIds: $paidFeeMasterIds');
+          debugPrint('Loaded paidFeeMasterIds: $paidFeeMasterIds');
         });
       }
 
       _initializeFeeControllers();
       _calculateTotals();
     } catch (e) {
-      print('Exception loading fee data: $e');
+      debugPrint('Exception loading fee data: $e');
     }
   }
 
@@ -394,7 +395,7 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
         }
       }
     } catch (error) {
-      print('Error loading payment status: $error');
+      debugPrint('Error loading payment status: $error');
     }
   }
 
@@ -421,13 +422,13 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
             totalPaid = (data['total_paid']?.toDouble() ?? 0.0);
             totalDue = totalYearlyFee - totalPaid;
             if (totalDue < 0) totalDue = 0.0;
-            print(
+            debugPrint(
                 'Yearly Summary: totalYearlyFee=$totalYearlyFee, totalPaid=$totalPaid, totalDue=$totalDue');
           });
         }
       }
     } catch (error) {
-      print('Error loading yearly summary: $error');
+      debugPrint('Error loading yearly summary: $error');
     }
   }
 
@@ -456,7 +457,7 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
           amount *= selectedMonths.length;
         }
         total += amount;
-        print(
+        debugPrint(
             'Adding fee: ${fee.feeFieldName} (ID: $feeMasterId), Amount: $amount');
       }
     });
@@ -468,7 +469,7 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
     setState(() {
       totalDepositController.text = total.toStringAsFixed(2);
       dueBalanceController.text = dueBalance.toStringAsFixed(2);
-      print(
+      debugPrint(
           'Calculated totals: total=$total, deposit=$deposit, dueBalance=$dueBalance');
     });
   }
@@ -1542,7 +1543,7 @@ class FeeStructureModel {
           : json['amount'].trim();
     }
 
-    print(
+    debugPrint(
         'Parsing fee: ${json['fee_field_name']}, is_one_time=${json['is_one_time']}, fee_master_id=${json['fee_master_id']}');
 
     return FeeStructureModel(

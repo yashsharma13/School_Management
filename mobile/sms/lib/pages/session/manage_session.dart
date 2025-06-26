@@ -66,20 +66,38 @@ class _ManageSessionsPageState extends State<ManageSessionsPage> {
     }
   }
 
+  // Future<void> deleteSession(int sessionId) async {
+  //   // You can implement deleteSession inside SessionService if needed
+  //   final result = await SessionService.deleteSession(sessionId.toString());
+
+  //   if (result == true) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Session deleted successfully')),
+  //     );
+  //     setState(() {
+  //       futureSessions = loadSessions(); // Refresh list
+  //     });
+  //   } else {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Failed to delete')),
+  //     );
+  //   }
+  // }
+
   Future<void> deleteSession(int sessionId) async {
-    // You can implement deleteSession inside SessionService if needed
     final result = await SessionService.deleteSession(sessionId.toString());
 
-    if (result == true) {
+    if (result['success'] == true) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Session deleted successfully')),
       );
       setState(() {
-        futureSessions = loadSessions(); // Refresh list
+        futureSessions = loadSessions();
       });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to delete')),
+        SnackBar(
+            content: Text(result['message'] ?? 'Failed to delete session')),
       );
     }
   }

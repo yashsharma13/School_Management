@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:sms/pages/services/api_service.dart';
+import 'package:sms/pages/services/student_service.dart';
 import 'package:file_picker/file_picker.dart';
 
 class StudentRegistrationController {
@@ -171,7 +171,7 @@ class StudentRegistrationController {
 
       // Call the API service with the correctly formatted date
       // Call the API service with the correctly formatted date
-      var response = await ApiService.registerStudent(
+      var response = await StudentService.registerStudent(
         studentName: studentName,
         registrationNumber: registrationNumber,
         dob: formattedDate,

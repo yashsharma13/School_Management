@@ -147,10 +147,52 @@ class SessionService {
     }
   }
 
-  static Future<bool> deleteSession(String sessionId) async {
-    try {
-      // print('[DEBUG] Starting deleteClass with ID: $classId'); // Add this
+//   static Future<bool> deleteSession(String sessionId) async {
+//     try {
+//       // debugPrint('[DEBUG] Starting deleteClass with ID: $classId'); // Add this
 
+//       final prefs = await SharedPreferences.getInstance();
+//       final token = prefs.getString('token');
+
+//       if (token == null) {
+//         throw Exception('Token is not available.');
+//       }
+
+//       if (sessionId.isEmpty) {
+//         throw Exception('Session ID cannot be empty');
+//       }
+
+//       // const String baseUrl = 'http://localhost:1000/api';
+//       final url = '$baseUrl/api/session/$sessionId';
+
+//       // debugPrint('[DEBUG] Full delete URL: $url'); // Add this
+
+//       final response = await http.delete(
+//         Uri.parse(url),
+//         headers: {
+//           'Accept': 'application/json',
+//           'Content-Type': 'application/json',
+//           'Authorization': token,
+//         },
+//       );
+
+//       // debugPrint('[DEBUG] Delete response: ${response.statusCode}'); // Add this
+//       // debugPrint('[DEBUG] Response body: ${response.body}'); // Add this
+
+//       if (response.statusCode == 200) {
+//         return true;
+//       } else {
+//         throw Exception('Delete failed with status: ${response.statusCode}');
+//       }
+//     } catch (error) {
+//       // debugPrint('[ERROR] in deleteSession: $error');
+//       rethrow;
+//     }
+//   }
+// }
+
+  static Future<Map<String, dynamic>> deleteSession(String sessionId) async {
+    try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
 
@@ -162,10 +204,7 @@ class SessionService {
         throw Exception('Session ID cannot be empty');
       }
 
-      // const String baseUrl = 'http://localhost:1000/api';
       final url = '$baseUrl/api/session/$sessionId';
-
-      // print('[DEBUG] Full delete URL: $url'); // Add this
 
       final response = await http.delete(
         Uri.parse(url),
@@ -176,17 +215,21 @@ class SessionService {
         },
       );
 
-      // print('[DEBUG] Delete response: ${response.statusCode}'); // Add this
-      // print('[DEBUG] Response body: ${response.body}'); // Add this
+      // Parse response JSON regardless of status code
+      final Map<String, dynamic> responseData = json.decode(response.body);
 
       if (response.statusCode == 200) {
-        return true;
+        return responseData; // e.g. { success: true, message: "Session deleted" }
       } else {
-        throw Exception('Delete failed with status: ${response.statusCode}');
+        // Return error details from backend
+        return responseData; // e.g. { success: false, message: "Please delete teachers first" }
       }
     } catch (error) {
-      // print('[ERROR] in deleteSession: $error');
-      rethrow;
+      // Return generic error in similar format to keep consistent API
+      return {
+        'success': false,
+        'message': error.toString(),
+      };
     }
   }
 }
