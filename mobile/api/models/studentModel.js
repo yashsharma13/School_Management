@@ -346,3 +346,42 @@ export const getStudentsBySessionId = async (sessionId) => {
   const result = await pool.query(query, [sessionId]);
   return result.rows;
 };
+// export const getStudentsByParentId = async (parentSignupId) => {
+//   console.log('📥 Querying students for parentSignupId:', parentSignupId); // ADD THIS
+
+//   const query = `
+//     SELECT s.*
+//     FROM students s
+//     JOIN parent_student_link psl ON s.id = psl.student_id
+//     WHERE psl.parent_signup_id = $1
+//   `;
+//   const { rows } = await pool.query(query, [parentSignupId]);
+
+//   console.log('📤 Students returned from DB:', rows); // ADD THIS
+//   return rows;
+// };
+export const getStudentsByParentId = async (parentSignupId) => {
+  console.log('📥 Querying students with class teacher for parentSignupId:', parentSignupId);
+
+  const query = `
+    SELECT 
+      s.id AS student_id,
+      s.student_name,
+      s.assigned_class,
+      s.assigned_section,
+      s.student_photo,
+      s.birth_certificate,
+      t.teacher_name
+    FROM parent_student_link psl
+    JOIN students s ON psl.student_id = s.id
+    JOIN classes c ON 
+      LOWER(TRIM(c.class_name)) = LOWER(TRIM(s.assigned_class)) AND 
+      LOWER(TRIM(c.section)) = LOWER(TRIM(s.assigned_section))
+    JOIN teacher t ON c.teacher_id = t.id
+    WHERE psl.parent_signup_id = $1
+  `;
+
+  const { rows } = await pool.query(query, [parentSignupId]);
+  console.log('📤 Students + Teacher returned from DB:', rows);
+  return rows;
+};

@@ -1,5 +1,5 @@
 import pool from '../config/db.js';
-import { createSubject, deleteSubjectById, getSubjectsByUser } from '../models/subjectModel.js';
+import { createSubject, deleteSubjectById,deleteSubjectsByClassId, getSubjectsByUser } from '../models/subjectModel.js';
 import { getActiveSessionFromDB } from '../models/sessionModel.js';
 
 // Helper function to get active session
@@ -252,6 +252,40 @@ export const deleteSubject = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Database error while deleting subject',
+    });
+  }
+};
+// ✅ Delete all subjects for a given class_id and signup_id
+export const deleteSubjectsByClass = async (req, res) => {
+  try {
+    const { class_id } = req.params;
+    const signup_id = req.signup_id;
+
+    if (!class_id || !signup_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Class ID and user info are required',
+      });
+    }
+
+    const result = await deleteSubjectsByClassId(class_id, signup_id);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No subjects found for this class and user',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'All subjects deleted successfully',
+    });
+  } catch (err) {
+    console.error('Error deleting subjects by class:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while deleting subjects',
     });
   }
 };

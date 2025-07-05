@@ -20,7 +20,9 @@ import feeMasterRoutes from './routes/feeMasterRoutes.js';
 import feeStructureRoutes from './routes/feeStructureRoutes.js';
 import teacherAssignRoutes from './routes/teacherAssignRoutes.js';
 import homeworkRoutes from './routes/homeworkRoutes.js';
-// Setup for file path management
+import messageRoutes from './routes/messageRoutes.js';
+import parentmessageRoutes from './routes/parentmessageRoutes.js';
+import eventimageRoutes from './routes/eventimageRoutes.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -106,6 +108,9 @@ app.use('/api',feeMasterRoutes);
 app.use('/api',feeStructureRoutes);
 app.use('/api',teacherAssignRoutes);
 app.use('/api',homeworkRoutes);
+app.use('/api',messageRoutes);
+app.use('/api',parentmessageRoutes);
+app.use('/api',eventimageRoutes);
 // If no route matches, return 404
 app.use((req, res) => {
   // console.log('404 for route:', req.url);

@@ -4,14 +4,14 @@ import { createClass, getClassesBySchoolId, updateClass, deleteClass , getClassB
 // Register class
 export const registerClass = async (req, res) => {
   try {
-    const { class_name, section, tuition_fees, teacher_id } = req.body;
+    const { class_name, section, teacher_id } = req.body;
     const signup_id = req.signup_id; // ✅ Extract from token/session
 
-    if (!class_name || !section || !tuition_fees || !teacher_id || !signup_id) {
+    if (!class_name || !section  || !teacher_id || !signup_id) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
-    const result = await createClass({ class_name, section, tuition_fees, teacher_id, signup_id });
+    const result = await createClass({ class_name, section, teacher_id, signup_id });
 
     res.status(201).json({
       success: true,
@@ -44,13 +44,13 @@ export const getAllClasses = async (req, res) => {
 export const updateClassDetails = async (req, res) => {
   try {
     const classId = req.params.id;
-    const { class_name, tuition_fees, teacher_id } = req.body;
+    const { class_name, teacher_id } = req.body;
 
-    if (!classId || !class_name || !tuition_fees || !teacher_id) {
+    if (!classId || !class_name  || !teacher_id) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
-    const results = await updateClass(classId, { class_name, tuition_fees, teacher_id });
+    const results = await updateClass(classId, { class_name, teacher_id });
     
     if (results.rowCount === 0) {
       return res.status(404).json({ message: 'Class not found' });

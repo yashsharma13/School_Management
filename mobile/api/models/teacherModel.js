@@ -75,20 +75,23 @@ export const getTeacherById = async (teacherId) => {
 };
 export const getTeachersBySchoolId = async (signup_id) => {
   const query = `
-    SELECT t.*
+    SELECT 
+      t.*,
+      s.email AS username,
+      s.password
     FROM teacher t
     JOIN signup s ON t.signup_id = s.id
     WHERE s.school_id = (SELECT school_id FROM signup WHERE id = $1)
   `;
   try {
     const result = await pool.query(query, [signup_id]);
-    // console.log('getTeachersBySchoolId result:', result.rows);
     return result.rows;
   } catch (err) {
     console.error('Error fetching teachers by school_id:', err);
     throw err;
   }
 };
+
 export const getTeacherBySignupId = async (signup_id) => {
   const query = `
     WITH SubjectAggregates AS (

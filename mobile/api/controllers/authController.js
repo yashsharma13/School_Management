@@ -69,10 +69,16 @@ export const register = async (req, res) => {
   }
 
   try {
-    const existingUser = await findUserByEmailPG(email);
-    if (existingUser) {
-      return res.status(400).json({ success: false, message: 'Email already exists' });
-    }
+    const existingUsers = await findUsersByEmailPG(email);
+
+const alreadyRegisteredInSameSchool = existingUsers.some(
+  user => user.school_id === school_id
+);
+
+if (alreadyRegisteredInSameSchool) {
+  return res.status(400).json({ success: false, message: 'User already registered in this school' });
+}
+
 
     const user = await createUserPG({ email, phone, password, role, school_id });
 

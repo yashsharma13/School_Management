@@ -13,6 +13,7 @@ import {
   ggetLastRegistrationNumber,
   getStudentDashboardDetails,
   ggetStudentsByTeacherClass,
+  getStudentsForParent,
 } from '../controllers/studentController.js';
 
 const router = express.Router();
@@ -29,6 +30,7 @@ router.get('/last-registration-number', verifyToken, ggetLastRegistrationNumber)
 // Add this to your studentRoutes.js
 router.get('/students/dashboard/:id', verifyToken, getStudentDashboardDetails);
 router.get('/getstudents/teacher-class', verifyToken, ggetStudentsByTeacherClass);
+router.get('/dashboard/students', verifyToken, getStudentsForParent);
 
 
 export default router;

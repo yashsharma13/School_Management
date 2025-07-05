@@ -124,7 +124,7 @@ export const deleteSessions = async (req, res) => {
     if (teachers.length > 0) {
       return res.status(400).json({
         success: false,
-        message: 'Please delete all teachers related to this session first.',
+        message: 'Please delete all records related to this session first.',
       });
     }
 
@@ -133,7 +133,7 @@ export const deleteSessions = async (req, res) => {
     if (students.length > 0) {
       return res.status(400).json({
         success: false,
-        message: 'Please delete all students related to this session first.',
+        message: 'Please delete all records related to this session first.',
       });
     }
 

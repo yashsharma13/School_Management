@@ -13,6 +13,7 @@ import {
   findSignupByEmail, 
   linkParentStudent,
   getStudentsByTeacherClass,
+  getStudentsByParentId,
 } from '../models/studentModel.js';
 import { createUserPG } from "../models/userModel.js";
 import { deleteAttendanceByStudentId } from '../models/attendanceModel.js';
@@ -22,14 +23,117 @@ import pool from '../config/db.js';
 
 
 
+// const generateStudentEmail = (studentName, registrationNumber) => {
+//   const usernamePart = studentName.toLowerCase().replace(/\s+/g, '').substring(0, 5);
+//   const email = `${usernamePart}${registrationNumber.slice(-4)}@school.edu`;
+//   const password = Math.random().toString(36).slice(-8);
+//   return { email, password };
+// };
+
+// const generatePassword = () => Math.random().toString(36).slice(-8);
+
+// export const registerStudent = async (req, res) => {
+//   try {
+//     const {
+//       student_name,
+//       registration_number,
+//       date_of_birth,
+//       gender,
+//       address,
+//       father_name,
+//       mother_name,
+//       assigned_class,
+//       assigned_section,
+//       email: parent_email,
+//     } = req.body;
+
+//     const school_id = req.school_id;
+//     const signup_id = req.signup_id;
+
+//     // ✅ Get active session
+//     const activeSession = await getActiveSessionFromDB(signup_id);
+//     if (!activeSession) {
+//       return res.status(400).json({ message: 'No active session found for this school' });
+//     }
+//     const session_id = activeSession.id;
+
+//     // 1. Parent signup check or create
+//     let parentSignup = await findSignupByEmail(parent_email);
+
+//     if (!parentSignup) {
+//       const parentPassword = generatePassword();
+//       parentSignup = await createUserPG({
+//         email: parent_email,
+//         password: parentPassword,
+//         role: 'parents',
+//         school_id
+//       });
+//     }
+
+//     // 2. Generate student credentials
+//     const { email: studentEmail, password: studentPassword } = generateStudentEmail(student_name, registration_number);
+
+//     // 3. Create student signup
+//     const studentSignup = await createUserPG({
+//       email: studentEmail,
+//       password: studentPassword,
+//       role: 'student',
+//       school_id
+//     });
+
+//     // 4. Insert student record
+//     const studentRecord = await createStudent({
+//       student_name,
+//       registration_number,
+//       date_of_birth,
+//       gender,
+//       address,
+//       father_name,
+//       mother_name,
+//       assigned_class,
+//       assigned_section,
+//       birthCertificatePath: req.files?.['birth_certificate']?.[0]?.filename || null,
+//       studentPhotoPath: req.files?.['student_photo']?.[0]?.filename || null,
+//       username: studentEmail,
+//       signup_id: studentSignup.id,
+//       session_id   // ✅ include this in student table
+//     });
+
+//     // 5. Link student to parent
+//     await linkParentStudent(parentSignup.id, studentRecord.id);
+
+//     // 6. Respond
+//     res.status(201).json({
+//       success: true,
+//       message: 'Student and Parent registered successfully',
+//       data: {
+//         student: {
+//           email: studentEmail,
+//           password: studentPassword,
+//           id: studentRecord.id,
+//         },
+//         parent: {
+//           email: parent_email,
+//           id: parentSignup.id,
+//         }
+//       }
+//     });
+//   } catch (error) {
+//     console.error('Error in registerStudent:', error);
+//     res.status(500).json({ success: false, message: 'Registration failed', error: error.message });
+//   }
+// };
+
 const generateStudentEmail = (studentName, registrationNumber) => {
   const usernamePart = studentName.toLowerCase().replace(/\s+/g, '').substring(0, 5);
   const email = `${usernamePart}${registrationNumber.slice(-4)}@school.edu`;
-  const password = Math.random().toString(36).slice(-8);
+  // Generate password using first name (before first space) + last 4 digits of registration number
+  const firstName = studentName.split(' ')[0].toLowerCase();
+  const password = `${firstName}${registrationNumber.slice(-4)}`;
   return { email, password };
 };
 
-const generatePassword = () => Math.random().toString(36).slice(-8);
+// Removed generatePassword function as it's no longer needed
 
 export const registerStudent = async (req, res) => {
   try {
@@ -58,29 +162,27 @@ export const registerStudent = async (req, res) => {
 
     // 1. Parent signup check or create
     let parentSignup = await findSignupByEmail(parent_email);
+    // Get student credentials to use same password for parent
+    const { email: studentEmail, password: sharedPassword } = generateStudentEmail(student_name, registration_number);
 
     if (!parentSignup) {
-      const parentPassword = generatePassword();
       parentSignup = await createUserPG({
         email: parent_email,
-        password: parentPassword,
+        password: sharedPassword, // Use same password as student
         role: 'parents',
         school_id
       });
     }
 
-    // 2. Generate student credentials
-    const { email: studentEmail, password: studentPassword } = generateStudentEmail(student_name, registration_number);
-
-    // 3. Create student signup
+    // 2. Create student signup
     const studentSignup = await createUserPG({
       email: studentEmail,
-      password: studentPassword,
+      password: sharedPassword, // Use same password as parent
       role: 'student',
       school_id
     });
 
-    // 4. Insert student record
+    // 3. Insert student record
     const studentRecord = await createStudent({
       student_name,
       registration_number,
@@ -98,17 +200,17 @@ export const registerStudent = async (req, res) => {
       session_id   // ✅ include this in student table
     });
 
-    // 5. Link student to parent
+    // 4. Link student to parent
     await linkParentStudent(parentSignup.id, studentRecord.id);
 
-    // 6. Respond
+    // 5. Respond
     res.status(201).json({
       success: true,
       message: 'Student and Parent registered successfully',
       data: {
         student: {
           email: studentEmail,
-          password: studentPassword,
+          password: sharedPassword,
           id: studentRecord.id,
         },
         parent: {
@@ -122,7 +224,6 @@ export const registerStudent = async (req, res) => {
     res.status(500).json({ success: false, message: 'Registration failed', error: error.message });
   }
 };
-
 export const getAllStudents = async (req, res) => {
   try {
     const signup_id = req.signup_id;
@@ -382,6 +483,45 @@ export const ggetStudentsByTeacherClass = async (req, res) => {
       success: false,
       message: 'Database error',
       data: []
+    });
+  }
+};
+
+export const getStudentsForParent = async (req, res) => {
+  try {
+    const parentSignupId = req.signup_id; // From auth middleware
+    console.log('👨‍👩‍👧 Parent Signup ID from token:', parentSignupId);
+
+    const students = await getStudentsByParentId(parentSignupId);
+    console.log('🎓 Students fetched from DB:', students);
+
+    if (!students || students.length === 0) {
+      console.log('⚠️ No students linked with this parentSignupId:', parentSignupId);
+    }
+
+    const normalizedStudents = students.map(student => ({
+      ...student,
+      student_photo: student.student_photo
+        ? path.basename(student.student_photo.replace(/\\/g, '/'))
+        : null,
+      birth_certificate: student.birth_certificate
+        ? path.basename(student.birth_certificate.replace(/\\/g, '/'))
+        : null,
+        teacher_name: student.teacher_name
+    }));
+
+    console.log('🧼 Normalized student data:', normalizedStudents);
+
+    res.status(200).json({
+      success: true,
+      data: normalizedStudents
+    });
+  } catch (error) {
+    console.error('❌ Error fetching student data for parent:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch student data',
+      error: error.message
     });
   }
 };

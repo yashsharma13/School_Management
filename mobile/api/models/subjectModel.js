@@ -89,3 +89,19 @@ export const deleteSubjectById = async (id, signup_id) => {
     throw err;
   }
 };
+// ✅ Delete all subjects for a class_id and signup_id
+export const deleteSubjectsByClassId = async (class_id, signup_id) => {
+  const query = `
+    DELETE FROM subjects
+    WHERE class_id = $1 AND signup_id = $2
+    RETURNING *
+  `;
+
+  try {
+    const result = await pool.query(query, [class_id, signup_id]);
+    return result;
+  } catch (err) {
+    console.error('PostgreSQL Error in deleteSubjectsByClassId:', err);
+    throw err;
+  }
+};
