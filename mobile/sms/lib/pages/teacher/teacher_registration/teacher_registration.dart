@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sms/pages/teacher/teacher_registration/teacher_registration_form.dart';
+import 'package:sms/widgets/custom_appbar.dart';
 import 'teacher_registration_controller.dart';
 
 class TeacherRegistrationPage extends StatefulWidget {
@@ -18,22 +19,7 @@ class _TeacherRegistrationPageState extends State<TeacherRegistrationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text("New Teacher Registration"),
-        centerTitle: true,
-        backgroundColor: Colors.blue.shade900,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-        titleTextStyle: const TextStyle(
-          color: Colors.white,
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
+      appBar: const CustomAppBar(title: 'New Teacher Registration'),
       body: Container(
         color: Colors.grey.shade100,
         child: TeacherRegistrationForm(

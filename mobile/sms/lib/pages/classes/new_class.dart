@@ -5,8 +5,12 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sms/pages/services/class_service.dart';
 import 'package:sms/widgets/button.dart';
+import 'package:sms/widgets/custom_appbar.dart';
+import 'package:sms/widgets/custom_snackbar.dart';
 
 class AddClassPage extends StatefulWidget {
+  const AddClassPage({super.key});
+
   @override
   _AddClassPageState createState() => _AddClassPageState();
 }
@@ -15,7 +19,7 @@ class _AddClassPageState extends State<AddClassPage> {
   final _formKey = GlobalKey<FormState>();
   String _className = '';
   String? _selectedSection;
-  String _tuitionFees = '';
+  // String _tuitionFees = '';
   // String? _selectedTeacherName;
   String? _selectedTeacherId;
   String? token;
@@ -135,46 +139,15 @@ class _AddClassPageState extends State<AddClassPage> {
         final success = await ClassService.registerClass(
           className: _className,
           section: _selectedSection!,
-          tuitionFees: _tuitionFees,
+          // tuitionFees: _tuitionFees,
           teacherId: _selectedTeacherId!,
         );
 
         if (success) {
-          showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: Text('Class Added Successfully',
-                    style: TextStyle(color: Colors.blue[900])),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Class: $_className - $_selectedSection',
-                        style: TextStyle(fontSize: 16)),
-                    SizedBox(height: 8),
-                    Text('Fees: $_tuitionFees', style: TextStyle(fontSize: 16)),
-                    SizedBox(height: 8),
-                    Text('Teacher: $_selectedTeacherId',
-                        style: TextStyle(fontSize: 16)),
-                  ],
-                ),
-                actions: <Widget>[
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      Navigator.pop(context);
-                    },
-                    child:
-                        Text('OK', style: TextStyle(color: Colors.blue[900])),
-                  ),
-                ],
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              );
-            },
-          );
+          showCustomSnackBar(context, 'Class created successfully',
+              backgroundColor: Colors.green);
+          await Future.delayed(Duration(seconds: 3));
+          Navigator.pop(context);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -209,13 +182,8 @@ class _AddClassPageState extends State<AddClassPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title:
-            const Text('Add New Class', style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.blue.shade900,
-        elevation: 0,
-        centerTitle: true,
-        iconTheme: IconThemeData(color: Colors.white),
+      appBar: const CustomAppBar(
+        title: 'Add New Class',
       ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -230,19 +198,13 @@ class _AddClassPageState extends State<AddClassPage> {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.blue[900],
+                    color: Colors.deepPurple[900],
                   ),
                 ),
                 SizedBox(height: 16),
                 _buildClassDropdown(),
                 SizedBox(height: 16),
                 _buildSectionDropdown(),
-                SizedBox(height: 16),
-                _buildInputField(
-                  'Monthly Tuition Fees',
-                  (value) => _tuitionFees = value,
-                  keyboardType: TextInputType.number,
-                ),
                 SizedBox(height: 24),
                 if (token == null)
                   _buildWarningCard(
@@ -269,11 +231,11 @@ class _AddClassPageState extends State<AddClassPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Select Class',
-            style: TextStyle(color: Colors.blue[900], fontSize: 16)),
+            style: TextStyle(color: Colors.deepPurple[900], fontSize: 16)),
         SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.blue[900]!.withOpacity(0.3)),
+            border: Border.all(color: Colors.deepPurple[900]!.withOpacity(0.3)),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Padding(
@@ -298,8 +260,8 @@ class _AddClassPageState extends State<AddClassPage> {
               validator: (value) => value == null || value.isEmpty
                   ? 'Please select a class'
                   : null,
-              style: TextStyle(color: Colors.blue[900]),
-              icon: Icon(Icons.arrow_drop_down, color: Colors.blue[900]),
+              style: TextStyle(color: Colors.deepPurple[900]),
+              icon: Icon(Icons.arrow_drop_down, color: Colors.deepPurple[900]),
               dropdownColor: Colors.white,
               borderRadius: BorderRadius.circular(8),
             ),
@@ -314,11 +276,11 @@ class _AddClassPageState extends State<AddClassPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Select Section',
-            style: TextStyle(color: Colors.blue[900], fontSize: 16)),
+            style: TextStyle(color: Colors.deepPurple[900], fontSize: 16)),
         SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.blue[900]!.withOpacity(0.3)),
+            border: Border.all(color: Colors.deepPurple[900]!.withOpacity(0.3)),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Padding(
@@ -342,8 +304,8 @@ class _AddClassPageState extends State<AddClassPage> {
               }).toList(),
               validator: (value) =>
                   value == null ? 'Please select a section' : null,
-              style: TextStyle(color: Colors.blue[900]),
-              icon: Icon(Icons.arrow_drop_down, color: Colors.blue[900]),
+              style: TextStyle(color: Colors.deepPurple[900]),
+              icon: Icon(Icons.arrow_drop_down, color: Colors.deepPurple[900]),
               dropdownColor: Colors.white,
               borderRadius: BorderRadius.circular(8),
             ),
@@ -353,46 +315,16 @@ class _AddClassPageState extends State<AddClassPage> {
     );
   }
 
-  Widget _buildInputField(String label, Function(String) onSaved,
-      {TextInputType keyboardType = TextInputType.text}) {
-    return TextFormField(
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(color: Colors.blue[900]),
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.blue[900]!.withOpacity(0.3)),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.blue[900]!),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      ),
-      keyboardType: keyboardType,
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please enter $label';
-        }
-        if (label == 'Monthly Tuition Fees' && double.tryParse(value) == null) {
-          return 'Please enter a valid number';
-        }
-        return null;
-      },
-      onSaved: (value) => onSaved(value!),
-    );
-  }
-
   Widget _buildTeacherDropdown() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Class Teacher',
-            style: TextStyle(color: Colors.blue[900], fontSize: 16)),
+            style: TextStyle(color: Colors.deepPurple[900], fontSize: 16)),
         SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.blue[900]!.withOpacity(0.3)),
+            border: Border.all(color: Colors.deepPurple[900]!.withOpacity(0.3)),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Padding(
@@ -416,8 +348,8 @@ class _AddClassPageState extends State<AddClassPage> {
               }).toList(),
               validator: (value) =>
                   value == null ? 'Please select a teacher' : null,
-              style: TextStyle(color: Colors.blue[900]),
-              icon: Icon(Icons.arrow_drop_down, color: Colors.blue[900]),
+              style: TextStyle(color: Colors.deepPurple[900]),
+              icon: Icon(Icons.arrow_drop_down, color: Colors.deepPurple[900]),
               dropdownColor: Colors.white,
               borderRadius: BorderRadius.circular(8),
             ),
@@ -453,9 +385,9 @@ class _AddClassPageState extends State<AddClassPage> {
     return Center(
       child: Column(
         children: [
-          CircularProgressIndicator(color: Colors.blue[900]),
+          CircularProgressIndicator(color: Colors.deepPurple[900]),
           SizedBox(height: 16),
-          Text(message, style: TextStyle(color: Colors.blue[900])),
+          Text(message, style: TextStyle(color: Colors.deepPurple[900])),
         ],
       ),
     );

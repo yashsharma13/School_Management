@@ -1,9 +1,12 @@
-// import 'package:flutter/material.dart';
-// import 'package:flutter_dotenv/flutter_dotenv.dart';
-// import 'package:http/http.dart' as http;
 // import 'dart:convert';
+// import 'package:flutter/material.dart';
+// import 'package:http/http.dart' as http;
 // import 'package:intl/intl.dart';
 // import 'package:shared_preferences/shared_preferences.dart';
+// import 'package:sms/widgets/custom_appbar.dart';
+// import 'package:sms/widgets/report_components.dart';
+// import 'package:sms/pages/services/report_service.dart';
+// import 'package:sms/widgets/date_picker.dart';
 
 // class StudentReportPage extends StatefulWidget {
 //   const StudentReportPage({super.key});
@@ -12,107 +15,59 @@
 //   _StudentReportPageState createState() => _StudentReportPageState();
 // }
 
-// class Class {
-//   final String id;
-//   final String className;
-//   final List<String> sections;
-
-//   Class({
-//     required this.id,
-//     required this.className,
-//     required this.sections,
-//   });
-
-//   factory Class.fromJson(Map<String, dynamic> json) {
-//     return Class(
-//       id: (json['_id'] ?? json['id'] ?? '').toString().trim(),
-//       className: (json['class_name'] ?? json['className'] ?? 'Unknown Class')
-//           .toString()
-//           .trim(),
-//       sections: (json['sections'] ?? [])
-//           .map<String>((s) => s.toString().trim())
-//           .where((s) => s.isNotEmpty)
-//           .toList(),
-//     );
-//   }
-// }
-
-// class Student {
-//   final String id;
-//   final String name;
-//   final String assignedClass;
-//   final String assignedSection;
-
-//   Student(this.id, this.name, this.assignedClass, this.assignedSection);
-
-//   factory Student.fromJson(Map<String, dynamic> json) {
-//     return Student(
-//       (json['_id'] ?? json['id'] ?? '').toString().trim(),
-//       (json['student_name'] ?? 'Unknown Student').toString().trim(),
-//       (json['assigned_class'] ?? '').toString().trim(),
-//       (json['assigned_section'] ?? '').toString().trim(),
-//     );
-//   }
-// }
-
 // class StudentAttendance {
 //   final String studentId;
 //   final String studentName;
+//   final String? className;
+//   final String? section;
 //   final bool isPresent;
 
 //   StudentAttendance({
 //     required this.studentId,
 //     required this.studentName,
+//     this.className,
+//     this.section,
 //     required this.isPresent,
 //   });
 
 //   factory StudentAttendance.fromJson(Map<String, dynamic> json) {
-//     String studentId = '';
-//     if (json['student_id'] != null) {
-//       studentId = json['student_id'].toString().trim();
-//     }
-
-//     String studentName =
-//         (json['student_name'] ?? 'Unknown Student').toString().trim();
-
-//     bool isPresent = false;
-//     if (json['is_present'] != null) {
-//       if (json['is_present'] is bool) {
-//         isPresent = json['is_present'];
-//       } else if (json['is_present'] is int) {
-//         isPresent = json['is_present'] == 1;
-//       } else if (json['is_present'] is String) {
-//         isPresent = json['is_present'].toLowerCase() == 'true' ||
-//             json['is_present'] == '1';
-//       }
-//     }
-
 //     return StudentAttendance(
-//       studentId: studentId,
-//       studentName: studentName,
-//       isPresent: isPresent,
+//       studentId: (json['student_id'] ?? '').toString().trim(),
+//       studentName:
+//           (json['student_name'] ?? 'Unknown Student').toString().trim(),
+//       className: json['class_name']?.toString().trim(),
+//       section: json['section']?.toString().trim(),
+//       isPresent: _parseAttendanceStatus(json['is_present']),
 //     );
+//   }
+
+//   static bool _parseAttendanceStatus(dynamic status) {
+//     if (status == null) return false;
+//     if (status is bool) return status;
+//     if (status is int) return status == 1;
+//     if (status is String) {
+//       return status.toLowerCase() == 'true' || status == '1';
+//     }
+//     return false;
 //   }
 // }
 
 // class _StudentReportPageState extends State<StudentReportPage> {
 //   DateTime selectedDate = DateTime.now();
-//   List<Student> allStudents = [];
-//   List<Student> filteredStudents = [];
-//   List<StudentAttendance> studentAttendanceRecords = [];
+//   List<StudentAttendance> attendanceRecords = [];
 //   String? token;
 //   bool isLoading = false;
 //   bool isError = false;
 //   String errorMessage = '';
-//   bool attendanceExists = false; // New flag to track if attendance exists
-//   final String baseeUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
+//   bool attendanceExists = false;
+//   bool _isInitialLoading = true;
 
-//   // For dynamic class and section
-//   List<Class> classes = [];
+//   // Class selection
+//   List<Map<String, dynamic>> classes = [];
 //   String? selectedClass;
+//   String? selectedClassId;
 //   String? selectedSection;
 //   List<String> availableSections = [];
-//   bool _isInitialLoading = true;
 
 //   @override
 //   void initState() {
@@ -122,103 +77,14 @@
 
 //   Future<void> _loadToken() async {
 //     final prefs = await SharedPreferences.getInstance();
-//     setState(() {
-//       token = prefs.getString('token');
-//     });
+//     setState(() => token = prefs.getString('token'));
 //     if (token != null) {
 //       await _loadClasses();
-//       await _fetchAllStudents();
 //     }
-//     setState(() {
-//       _isInitialLoading = false;
-//     });
+//     setState(() => _isInitialLoading = false);
 //   }
 
 //   Future<void> _loadClasses() async {
-//     try {
-//       setState(() {
-//         isLoading = true;
-//         isError = false;
-//       });
-
-//       final response = await http.get(
-//         Uri.parse('$baseeUrl/api/classes'),
-//         headers: {
-//           'Accept': 'application/json',
-//           'Content-Type': 'application/json',
-//           'Authorization': token!,
-//         },
-//       );
-
-//       if (response.statusCode == 200) {
-//         final dynamic responseBody = json.decode(response.body);
-
-//         List<dynamic> classData = [];
-//         if (responseBody is List) {
-//           classData = responseBody;
-//         } else if (responseBody is Map && responseBody['data'] is List) {
-//           classData = responseBody['data'];
-//         } else {
-//           throw Exception('Unexpected response format for classes');
-//         }
-
-//         final Map<String, Set<String>> classSectionMap = {};
-//         final List<Class> tempClasses = [];
-
-//         for (final data in classData) {
-//           if (data is! Map<String, dynamic>) continue;
-
-//           final className =
-//               (data['class_name'] ?? data['className'] ?? '').toString().trim();
-//           final section = (data['section'] ?? '').toString().trim();
-
-//           if (className.isEmpty) continue;
-
-//           if (!classSectionMap.containsKey(className)) {
-//             classSectionMap[className] = <String>{};
-//           }
-
-//           if (section.isNotEmpty) {
-//             classSectionMap[className]!.add(section);
-//           }
-//         }
-
-//         classSectionMap.forEach((className, sections) {
-//           tempClasses.add(Class(
-//             id: className,
-//             className: className,
-//             sections: sections.toList()..sort(),
-//           ));
-//         });
-
-//         setState(() {
-//           classes = tempClasses;
-//         });
-//       } else if (response.statusCode == 401) {
-//         _handleUnauthorized();
-//       } else {
-//         throw Exception(
-//             'Failed to load classes: ${response.statusCode} ${response.reasonPhrase}');
-//       }
-//     } catch (error) {
-//       setState(() {
-//         isError = true;
-//         errorMessage = 'Error fetching classes: $error';
-//       });
-//       _showErrorSnackBar('Error fetching classes: $error');
-//     } finally {
-//       setState(() {
-//         isLoading = false;
-//       });
-//     }
-//   }
-
-//   Future<void> _fetchAllStudents() async {
-//     if (token == null) {
-//       _showErrorSnackBar('Please login to continue');
-//       return;
-//     }
-
 //     setState(() {
 //       isLoading = true;
 //       isError = false;
@@ -226,663 +92,407 @@
 
 //     try {
 //       final response = await http.get(
-//         Uri.parse('$baseeUrl/api/students'),
-//         headers: {
-//           'Accept': 'application/json',
-//           'Content-Type': 'application/json',
-//           'Authorization': token!,
-//         },
+//         Uri.parse('${ReportService.baseUrl}/api/classes'),
+//         headers: _buildHeaders(),
 //       );
 
 //       if (response.statusCode == 200) {
-//         final dynamic responseBody = json.decode(response.body);
+//         final dynamic data = json.decode(response.body);
+//         final List<dynamic> classData =
+//             data is List ? data : data['data'] ?? [];
 
-//         List<dynamic> studentData = [];
-//         if (responseBody is List) {
-//           studentData = responseBody;
-//         } else if (responseBody is Map && responseBody['data'] is List) {
-//           studentData = responseBody['data'];
-//         } else {
-//           throw Exception('Unexpected response format for students');
+//         // Process class data
+//         final Map<String, Map<String, dynamic>> classMap = {};
+//         for (final item in classData) {
+//           final className = (item['class_name'] ?? '').toString().trim();
+//           final classId =
+//               (item['class_id'] ?? item['id'] ?? '').toString().trim();
+//           final section = (item['section'] ?? '').toString().trim();
+
+//           if (className.isEmpty || classId.isEmpty) continue;
+
+//           if (!classMap.containsKey(className)) {
+//             classMap[className] = {
+//               'id': classId,
+//               'sections': <String>{},
+//             };
+//           }
+
+//           if (section.isNotEmpty) {
+//             classMap[className]!['sections'].add(section);
+//           }
 //         }
 
 //         setState(() {
-//           allStudents = studentData
-//               .where((data) => data is Map<String, dynamic>)
-//               .map((data) => Student.fromJson(data as Map<String, dynamic>))
+//           classes = classMap.entries
+//               .map((e) => {
+//                     'name': e.key,
+//                     'id': e.value['id'],
+//                     'sections': (e.value['sections'] as Set<String>).toList()
+//                       ..sort(),
+//                   })
 //               .toList();
-//           _filterStudents();
 //         });
-//       } else if (response.statusCode == 401) {
-//         _handleUnauthorized();
 //       } else {
-//         throw Exception(
-//             'Failed to load students: ${response.statusCode} ${response.reasonPhrase}');
+//         _handleResponseError(response);
 //       }
 //     } catch (error) {
-//       setState(() {
-//         isError = true;
-//         errorMessage = 'Error connecting to server: $error';
-//       });
-//       _showErrorSnackBar('Error connecting to server: $error');
+//       _handleError('Error fetching classes: $error');
 //     } finally {
-//       setState(() {
-//         isLoading = false;
-//       });
+//       setState(() => isLoading = false);
 //     }
+//   }
+
+//   Future<void> fetchAttendance() async {
+//     if (selectedClassId == null || selectedSection == null) {
+//       _handleError('Please select both class and section');
+//       return;
+//     }
+
+//     setState(() {
+//       isLoading = true;
+//       isError = false;
+//       attendanceExists = false;
+//     });
+
+//     final result = await ReportService.fetchReport(
+//       token: token!,
+//       endpoint: 'attendance',
+//       date: selectedDate,
+//       classId: selectedClassId,
+//       section: selectedSection!,
+//     );
+
+//     if (!mounted) return;
+
+//     setState(() {
+//       isLoading = false;
+
+//       if (result['success'] == true) {
+//         if (result['unauthorized'] == true) {
+//           _handleUnauthorized();
+//           return;
+//         }
+
+//         attendanceExists = result['exists'] ?? false;
+
+//         if (attendanceExists) {
+//           attendanceRecords = (result['data']['students'] ?? [])
+//               .map<StudentAttendance>(
+//                 (item) => StudentAttendance.fromJson(item),
+//               )
+//               .toList();
+//         }
+//       } else {
+//         _handleError(result['message']);
+//       }
+//     });
 //   }
 
 //   void _updateAvailableSections(String? className) {
 //     setState(() {
 //       if (className != null) {
-//         final selectedClassObj = classes.firstWhere(
-//           (c) => c.className == className,
-//           orElse: () => Class(id: '', className: '', sections: []),
+//         final classInfo = classes.firstWhere(
+//           (c) => c['name'] == className,
+//           orElse: () => {'sections': []},
 //         );
-//         availableSections = selectedClassObj.sections;
+//         availableSections =
+//             (classInfo['sections'] as List<dynamic>).cast<String>();
+//         selectedClassId = classInfo['id'];
 //       } else {
 //         availableSections = [];
+//         selectedClassId = null;
 //       }
 //       selectedSection = null;
-//       _filterStudents();
 //     });
 //   }
 
-//   void _filterStudents() {
-//     setState(() {
-//       filteredStudents = allStudents.where((student) {
-//         final classMatch =
-//             selectedClass == null || student.assignedClass == selectedClass;
-//         final sectionMatch = selectedSection == null ||
-//             student.assignedSection == selectedSection;
-//         return classMatch && sectionMatch;
-//       }).toList();
-//     });
+//   Map<String, String> _buildHeaders() {
+//     return {
+//       'Accept': 'application/json',
+//       'Content-Type': 'application/json',
+//       'Authorization': token!,
+//     };
+//   }
 
-//     if (selectedClass != null && selectedSection != null) {
-//       fetchAttendance();
+//   void _handleResponseError(http.Response response) {
+//     if (response.statusCode == 401) {
+//       _handleUnauthorized();
+//     } else {
+//       _handleError(
+//           'Failed to load data: ${response.statusCode} ${response.reasonPhrase}');
 //     }
 //   }
 
 //   void _handleUnauthorized() async {
-//     final prefs = await SharedPreferences.getInstance();
-//     await prefs.remove('token');
-//     setState(() {
-//       token = null;
-//     });
+//     await ReportService.handleUnauthorized();
+//     setState(() => token = null);
 //     _showErrorSnackBar('Session expired. Please login again.');
 //   }
 
-//   void _showErrorSnackBar(String message) {
-//     if (!mounted) return;
-//     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-//       content: Text(message),
-//       backgroundColor: Colors.red[800],
-//       behavior: SnackBarBehavior.floating,
-//       shape: RoundedRectangleBorder(
-//         borderRadius: BorderRadius.circular(8),
-//       ),
-//     ));
-//   }
-
-//   Future<void> fetchAttendance() async {
-//     if (selectedClass == null) {
-//       setState(() {
-//         errorMessage = 'Please select a class';
-//         isError = true;
-//       });
-//       return;
-//     }
-
-//     if (selectedSection == null) {
-//       setState(() {
-//         errorMessage = 'Please select a section';
-//         isError = true;
-//       });
-//       return;
-//     }
-
-//     if (token == null) {
-//       setState(() {
-//         errorMessage = 'No token found. Please log in.';
-//         isError = true;
-//       });
-//       _showErrorSnackBar('Please login to continue');
-//       return;
-//     }
-
+//   void _handleError(String message) {
 //     setState(() {
-//       isLoading = true;
-//       isError = false;
-//       studentAttendanceRecords = [];
-//       attendanceExists = false; // Reset attendance exists flag
+//       isError = true;
+//       errorMessage = message;
+//       isLoading = false;
 //     });
-
-//     final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
-//     final encodedClass = Uri.encodeComponent(selectedClass!);
-//     final encodedSection = Uri.encodeComponent(selectedSection!);
-
-//     final uri = Uri.parse(
-//       '$baseeUrl/api/attendance/$encodedClass/$encodedSection/$formattedDate',
-//     );
-
-//     try {
-//       // print('Fetching attendance from: $uri');
-
-//       final response = await http.get(
-//         uri,
-//         headers: {
-//           'Accept': 'application/json',
-//           'Content-Type': 'application/json',
-//           'Authorization': token!,
-//         },
-//       );
-
-//       // print('Response status: ${response.statusCode}');
-//       // print('Response body: ${response.body}');
-
-//       if (response.statusCode == 200) {
-//         final Map<String, dynamic> data = json.decode(response.body);
-//         final List<dynamic> studentsData = data['students'] ?? [];
-
-//         // Check if attendance was taken for this date
-//         if (studentsData.isEmpty) {
-//           // No attendance records found
-//           setState(() {
-//             attendanceExists = false;
-//             isLoading = false;
-//             isError = false;
-//           });
-//           return;
-//         }
-
-//         // Attendance exists - process the records
-//         List<StudentAttendance> attendanceRecords = [];
-//         for (var item in studentsData) {
-//           if (item is Map<String, dynamic>) {
-//             try {
-//               attendanceRecords.add(StudentAttendance.fromJson(item));
-//             } catch (e) {
-//               print('Error parsing attendance record: $e');
-//             }
-//           }
-//         }
-
-//         setState(() {
-//           studentAttendanceRecords = attendanceRecords;
-//           attendanceExists = true; // Mark that attendance exists
-//           isLoading = false;
-//           isError = false;
-//         });
-//       } else if (response.statusCode == 401 || response.statusCode == 403) {
-//         _handleUnauthorized();
-//       } else if (response.statusCode == 404) {
-//         // No attendance records found for this date
-//         setState(() {
-//           attendanceExists = false;
-//           isLoading = false;
-//           isError = false;
-//         });
-//       } else {
-//         setState(() {
-//           isLoading = false;
-//           isError = true;
-//           errorMessage =
-//               'Failed to load attendance data: ${response.statusCode} ${response.reasonPhrase}';
-//         });
-//       }
-//     } catch (error) {
-//       print('Error fetching attendance: $error');
-//       setState(() {
-//         isLoading = false;
-//         isError = true;
-//         errorMessage = 'Error connecting to server: $error';
-//       });
-//     }
+//     _showErrorSnackBar(message);
 //   }
 
-//   Future<void> _selectDate(BuildContext context) async {
-//     final DateTime? picked = await showDatePicker(
-//       context: context,
-//       initialDate: selectedDate,
-//       firstDate: DateTime(2000),
-//       lastDate: DateTime.now().add(Duration(days: 365)),
-//       builder: (context, child) {
-//         return Theme(
-//           data: ThemeData.light().copyWith(
-//             colorScheme: ColorScheme.light(
-//               primary: Colors.blue,
-//               onPrimary: Colors.white,
-//               surface: Colors.white,
-//               onSurface: Colors.black,
-//             ),
-//             dialogBackgroundColor: Colors.white,
-//           ),
-//           child: child!,
-//         );
-//       },
+//   void _showErrorSnackBar(String message) {
+//     ScaffoldMessenger.of(context).showSnackBar(
+//       SnackBar(
+//         content: Text(message),
+//         backgroundColor: Colors.red[800],
+//         behavior: SnackBarBehavior.floating,
+//       ),
 //     );
-
-//     if (picked != null && picked != selectedDate) {
-//       setState(() {
-//         selectedDate = picked;
-//       });
-//       if (selectedClass != null && selectedSection != null) {
-//         fetchAttendance();
-//       }
-//     }
 //   }
 
 //   @override
 //   Widget build(BuildContext context) {
 //     return Scaffold(
-//       appBar: AppBar(
-//         title: Text('Student Attendance Report',
-//             style: TextStyle(color: Colors.white)),
-//         centerTitle: true,
-//         backgroundColor: Colors.blue[900],
-//         elevation: 0,
-//         iconTheme: IconThemeData(color: Colors.white),
-//         actions: [
-//           IconButton(
-//             icon: Icon(Icons.refresh, color: Colors.white),
-//             onPressed: (selectedClass != null && selectedSection != null)
-//                 ? fetchAttendance
-//                 : null,
+//       appBar: CustomAppBar(
+//         title: 'Student Attendance Report',
+//       ),
+//       body:
+//           _isInitialLoading ? _buildLoadingIndicator() : _buildReportContent(),
+//     );
+//   }
+
+//   Widget _buildLoadingIndicator() {
+//     return Center(child: CircularProgressIndicator());
+//   }
+
+//   Widget _buildReportContent() {
+//     return Padding(
+//       padding: const EdgeInsets.all(16.0),
+//       child: Column(
+//         children: [
+//           _buildFilterCard(),
+//           SizedBox(height: 16),
+//           if (token == null) _buildLoginPrompt(),
+//           if (token != null) _buildReportBody(),
+//         ],
+//       ),
+//     );
+//   }
+
+//   Widget _buildFilterCard() {
+//     return ReportFilterCard(
+//       title: 'Select Class, Section and Date',
+//       children: [
+//         _buildClassDropdown(),
+//         SizedBox(height: 12),
+//         _buildSectionDropdown(),
+//         SizedBox(height: 12),
+//         CustomDatePicker(
+//           selectedDate: selectedDate,
+//           onDateSelected: (DateTime newDate) {
+//             setState(() => selectedDate = newDate);
+//             if (selectedClassId != null && selectedSection != null) {
+//               fetchAttendance();
+//             }
+//           },
+//           isExpanded: true,
+//           backgroundColor: Colors.deepPurple[50],
+//           foregroundColor: Colors.deepPurple,
+//         ),
+//       ],
+//     );
+//   }
+
+//   Widget _buildClassDropdown() {
+//     return DropdownButtonFormField<String>(
+//       value: selectedClass,
+//       decoration: _buildDropdownDecoration('Class'),
+//       hint: Text('Select Class', style: TextStyle(color: Colors.grey[600])),
+//       items: classes.map<DropdownMenuItem<String>>((classInfo) {
+//         return DropdownMenuItem<String>(
+//           value: classInfo['name'],
+//           child: Text(
+//             classInfo['name'],
+//             style: TextStyle(color: Colors.deepPurple[900]),
+//           ),
+//         );
+//       }).toList(),
+//       onChanged: (String? value) {
+//         setState(() {
+//           selectedClass = value;
+//           _updateAvailableSections(value);
+//         });
+//       },
+//     );
+//   }
+
+//   Widget _buildSectionDropdown() {
+//     return DropdownButtonFormField<String>(
+//       value: selectedSection,
+//       decoration: _buildDropdownDecoration('Section'),
+//       items: [
+//         DropdownMenuItem(
+//           value: null,
+//           child: Text(
+//             availableSections.isEmpty ? 'Select class first' : 'Select Section',
+//             style: TextStyle(color: Colors.grey[600]),
+//           ),
+//         ),
+//         ...availableSections.map(
+//           (section) => DropdownMenuItem(
+//             value: section,
+//             child: Text(section, style: TextStyle(color: Colors.deepPurple[900])),
+//           ),
+//         ),
+//       ],
+//       onChanged: availableSections.isEmpty
+//           ? null
+//           : (String? value) {
+//               setState(() => selectedSection = value);
+//               if (value != null) fetchAttendance();
+//             },
+//     );
+//   }
+
+//   InputDecoration _buildDropdownDecoration(String label) {
+//     return InputDecoration(
+//       labelText: label,
+//       labelStyle: TextStyle(color: Colors.deepPurple[800]),
+//       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+//       filled: true,
+//       fillColor: Colors.deepPurple[50],
+//       contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+//     );
+//   }
+
+//   Widget _buildLoginPrompt() {
+//     return Expanded(
+//       child: Center(
+//         child: Card(
+//           child: Padding(
+//             padding: const EdgeInsets.all(16.0),
+//             child: Column(
+//               mainAxisAlignment: MainAxisAlignment.center,
+//               children: [
+//                 Icon(Icons.warning, size: 48, color: Colors.orange),
+//                 SizedBox(height: 16),
+//                 Text(
+//                   'You are not logged in. Please login to continue.',
+//                   textAlign: TextAlign.center,
+//                   style: TextStyle(fontSize: 16),
+//                 ),
+//                 SizedBox(height: 16),
+//                 ElevatedButton(
+//                   onPressed: () {/* Navigate to login */},
+//                   child: Text('Go to Login'),
+//                 ),
+//               ],
+//             ),
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+
+//   Widget _buildReportBody() {
+//     if (isLoading) return Expanded(child: _buildLoadingIndicator());
+//     if (isError) return _buildErrorState();
+//     if (selectedClass == null || selectedSection == null) {
+//       return _buildSelectionPrompt();
+//     }
+//     if (!attendanceExists) return _buildNoRecordsFound();
+//     return _buildAttendanceList();
+//   }
+
+//   Widget _buildErrorState() {
+//     return Expanded(
+//       child: Center(
+//         child: Column(
+//           mainAxisAlignment: MainAxisAlignment.center,
+//           children: [
+//             Icon(Icons.error_outline, size: 48, color: Colors.red),
+//             SizedBox(height: 16),
+//             Text(errorMessage, textAlign: TextAlign.center),
+//             SizedBox(height: 16),
+//             ElevatedButton(
+//               onPressed: fetchAttendance,
+//               child: Text('Try Again'),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+
+//   Widget _buildSelectionPrompt() {
+//     return Expanded(
+//       child: Center(
+//         child: Text(
+//           'Please select both class and section to view attendance',
+//           textAlign: TextAlign.center,
+//           style: TextStyle(fontSize: 16),
+//         ),
+//       ),
+//     );
+//   }
+
+//   Widget _buildNoRecordsFound() {
+//     return Expanded(
+//       child: Center(
+//         child: Text(
+//           'No attendance records found for $selectedClass - $selectedSection '
+//           'on ${DateFormat.yMd().format(selectedDate)}.\n\n'
+//           'Attendance may not have been taken for this date.',
+//           textAlign: TextAlign.center,
+//           style: TextStyle(fontSize: 16),
+//         ),
+//       ),
+//     );
+//   }
+
+//   Widget _buildAttendanceList() {
+//     return Expanded(
+//       child: Column(
+//         children: [
+//           AttendanceListHeader(
+//             title: 'Attendance for $selectedClass - $selectedSection',
+//             date: selectedDate,
+//           ),
+//           AttendanceListHeaderRow(
+//             leftText: 'Student Name',
+//             rightText: 'Status',
+//           ),
+//           Expanded(
+//             child: ListView.separated(
+//               itemCount: attendanceRecords.length,
+//               separatorBuilder: (_, __) =>
+//                   Divider(height: 1, color: Colors.deepPurple[100]),
+//               itemBuilder: (_, index) => AttendanceListItem(
+//                 name: attendanceRecords[index].studentName,
+//                 isPresent: attendanceRecords[index].isPresent,
+//               ),
+//             ),
+//           ),
+//           AttendanceSummary(
+//             presentCount: attendanceRecords.where((a) => a.isPresent).length,
+//             absentCount: attendanceRecords.where((a) => !a.isPresent).length,
+//             totalCount: attendanceRecords.length,
 //           ),
 //         ],
 //       ),
-//       body: _isInitialLoading
-//           ? Center(child: CircularProgressIndicator())
-//           : Padding(
-//               padding: const EdgeInsets.all(16.0),
-//               child: Column(
-//                 crossAxisAlignment: CrossAxisAlignment.start,
-//                 children: [
-//                   Card(
-//                     elevation: 3,
-//                     shape: RoundedRectangleBorder(
-//                       borderRadius: BorderRadius.circular(12),
-//                     ),
-//                     child: Padding(
-//                       padding: const EdgeInsets.all(16.0),
-//                       child: Column(
-//                         crossAxisAlignment: CrossAxisAlignment.start,
-//                         children: [
-//                           Text(
-//                             'Select Class, Section and Date',
-//                             style: TextStyle(
-//                               fontSize: 16,
-//                               fontWeight: FontWeight.bold,
-//                               color: Colors.blue[800],
-//                             ),
-//                           ),
-//                           SizedBox(height: 12),
-//                           Column(
-//                             children: [
-//                               DropdownButtonFormField<String>(
-//                                 value: selectedClass,
-//                                 decoration: InputDecoration(
-//                                   labelText: 'Class',
-//                                   labelStyle:
-//                                       TextStyle(color: Colors.blue[800]),
-//                                   border: OutlineInputBorder(
-//                                     borderRadius: BorderRadius.circular(8),
-//                                   ),
-//                                   filled: true,
-//                                   fillColor: Colors.blue[50],
-//                                   contentPadding: EdgeInsets.symmetric(
-//                                       horizontal: 12, vertical: 12),
-//                                 ),
-//                                 isExpanded: true,
-//                                 onChanged: (String? newValue) {
-//                                   setState(() {
-//                                     selectedClass = newValue;
-//                                     _updateAvailableSections(newValue);
-//                                   });
-//                                 },
-//                                 items: [
-//                                   DropdownMenuItem(
-//                                     value: null,
-//                                     child: Text('Select Class',
-//                                         style:
-//                                             TextStyle(color: Colors.grey[600])),
-//                                   ),
-//                                   ...classes.map((classItem) {
-//                                     return DropdownMenuItem<String>(
-//                                       value: classItem.className,
-//                                       child: Text(classItem.className,
-//                                           style: TextStyle(
-//                                               color: Colors.blue[900])),
-//                                     );
-//                                   }).toList(),
-//                                 ],
-//                               ),
-//                               SizedBox(height: 12),
-//                               DropdownButtonFormField<String>(
-//                                 value: selectedSection,
-//                                 decoration: InputDecoration(
-//                                   labelText: 'Section',
-//                                   labelStyle:
-//                                       TextStyle(color: Colors.blue[800]),
-//                                   border: OutlineInputBorder(
-//                                     borderRadius: BorderRadius.circular(8),
-//                                   ),
-//                                   filled: true,
-//                                   fillColor: Colors.blue[50],
-//                                   contentPadding: EdgeInsets.symmetric(
-//                                       horizontal: 12, vertical: 12),
-//                                 ),
-//                                 isExpanded: true,
-//                                 onChanged: availableSections.isEmpty
-//                                     ? null
-//                                     : (String? newValue) {
-//                                         setState(() {
-//                                           selectedSection = newValue;
-//                                         });
-//                                         _filterStudents();
-//                                       },
-//                                 items: [
-//                                   DropdownMenuItem(
-//                                     value: null,
-//                                     child: Text(
-//                                       availableSections.isEmpty
-//                                           ? 'Select class first'
-//                                           : 'Select Section',
-//                                       style: TextStyle(color: Colors.grey[600]),
-//                                     ),
-//                                   ),
-//                                   ...availableSections.map((section) {
-//                                     return DropdownMenuItem<String>(
-//                                       value: section,
-//                                       child: Text(section,
-//                                           style: TextStyle(
-//                                               color: Colors.blue[900])),
-//                                     );
-//                                   }).toList(),
-//                                 ],
-//                               ),
-//                             ],
-//                           ),
-//                           SizedBox(height: 12),
-//                           SizedBox(
-//                             width: double.infinity,
-//                             child: ElevatedButton.icon(
-//                               onPressed: () => _selectDate(context),
-//                               icon: Icon(Icons.calendar_today, size: 18),
-//                               label: Text(DateFormat('dd/MM/yyyy')
-//                                   .format(selectedDate)),
-//                               style: ElevatedButton.styleFrom(
-//                                 backgroundColor: Colors.blue[50],
-//                                 foregroundColor: Colors.blue,
-//                                 padding: EdgeInsets.symmetric(
-//                                     horizontal: 12, vertical: 12),
-//                                 shape: RoundedRectangleBorder(
-//                                   borderRadius: BorderRadius.circular(8),
-//                                 ),
-//                               ),
-//                             ),
-//                           ),
-//                         ],
-//                       ),
-//                     ),
-//                   ),
-//                   SizedBox(height: 16),
-//                   if (token == null)
-//                     Expanded(
-//                       child: Card(
-//                         child: Padding(
-//                           padding: const EdgeInsets.all(16.0),
-//                           child: Column(
-//                             mainAxisAlignment: MainAxisAlignment.center,
-//                             children: [
-//                               Icon(Icons.warning,
-//                                   size: 48, color: Colors.orange),
-//                               SizedBox(height: 16),
-//                               Text(
-//                                 'You are not logged in. Please login to continue.',
-//                                 style: TextStyle(fontSize: 16),
-//                                 textAlign: TextAlign.center,
-//                               ),
-//                               SizedBox(height: 16),
-//                               ElevatedButton(
-//                                 onPressed: () {
-//                                   // Navigate to login page
-//                                 },
-//                                 style: ElevatedButton.styleFrom(
-//                                   backgroundColor: Colors.blue,
-//                                   foregroundColor: Colors.white,
-//                                   shape: RoundedRectangleBorder(
-//                                     borderRadius: BorderRadius.circular(8),
-//                                   ),
-//                                   padding: EdgeInsets.symmetric(
-//                                       horizontal: 24, vertical: 12),
-//                                 ),
-//                                 child: Text('Go to Login'),
-//                               )
-//                             ],
-//                           ),
-//                         ),
-//                       ),
-//                     )
-//                   else if (isLoading)
-//                     Expanded(
-//                         child: Center(
-//                             child:
-//                                 CircularProgressIndicator(color: Colors.blue)))
-//                   else if (isError)
-//                     Expanded(
-//                       child: Center(
-//                         child: Column(
-//                           mainAxisAlignment: MainAxisAlignment.center,
-//                           children: [
-//                             Icon(Icons.error_outline,
-//                                 size: 48, color: Colors.red),
-//                             SizedBox(height: 16),
-//                             Text(
-//                               errorMessage,
-//                               style: TextStyle(color: Colors.red[800]),
-//                               textAlign: TextAlign.center,
-//                             ),
-//                             SizedBox(height: 16),
-//                             ElevatedButton(
-//                               onPressed: (selectedClass != null &&
-//                                       selectedSection != null)
-//                                   ? fetchAttendance
-//                                   : null,
-//                               style: ElevatedButton.styleFrom(
-//                                 backgroundColor: Colors.blue,
-//                                 foregroundColor: Colors.white,
-//                                 shape: RoundedRectangleBorder(
-//                                   borderRadius: BorderRadius.circular(8),
-//                                 ),
-//                               ),
-//                               child: Text('Try Again'),
-//                             ),
-//                           ],
-//                         ),
-//                       ),
-//                     )
-//                   else if (selectedClass == null || selectedSection == null)
-//                     Expanded(
-//                       child: Center(
-//                         child: Text(
-//                           'Please select both class and section to view attendance',
-//                           style: TextStyle(fontSize: 16),
-//                           textAlign: TextAlign.center,
-//                         ),
-//                       ),
-//                     )
-//                   else if (!attendanceExists)
-//                     Expanded(
-//                       child: Center(
-//                         child: Text(
-//                           'No attendance records found for $selectedClass - $selectedSection on ${DateFormat.yMd().format(selectedDate)}.\n\nAttendance may not have been taken for this date.',
-//                           style: TextStyle(fontSize: 16),
-//                           textAlign: TextAlign.center,
-//                         ),
-//                       ),
-//                     )
-//                   else
-//                     Expanded(
-//                       child: Column(
-//                         crossAxisAlignment: CrossAxisAlignment.start,
-//                         children: [
-//                           Padding(
-//                             padding: const EdgeInsets.symmetric(vertical: 8.0),
-//                             child: Row(
-//                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                               children: [
-//                                 Expanded(
-//                                   child: Text(
-//                                     'Attendance for $selectedClass - $selectedSection',
-//                                     style: TextStyle(
-//                                       fontSize: 18,
-//                                       fontWeight: FontWeight.bold,
-//                                       color: Colors.blue[800],
-//                                     ),
-//                                   ),
-//                                 ),
-//                                 Text(
-//                                   DateFormat.yMMMMd().format(selectedDate),
-//                                   style: TextStyle(
-//                                     fontSize: 16,
-//                                     fontWeight: FontWeight.w500,
-//                                     color: Colors.blue[800],
-//                                   ),
-//                                 ),
-//                               ],
-//                             ),
-//                           ),
-//                           Container(
-//                             padding: EdgeInsets.symmetric(
-//                                 horizontal: 16, vertical: 12),
-//                             decoration: BoxDecoration(
-//                               color: Colors.blue[50],
-//                               borderRadius: BorderRadius.circular(8),
-//                             ),
-//                             child: Row(
-//                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                               children: [
-//                                 Text(
-//                                   'Student Name',
-//                                   style: TextStyle(
-//                                     fontWeight: FontWeight.bold,
-//                                     color: Colors.blue[800],
-//                                   ),
-//                                 ),
-//                                 Text(
-//                                   'Status',
-//                                   style: TextStyle(
-//                                     fontWeight: FontWeight.bold,
-//                                     color: Colors.blue[800],
-//                                   ),
-//                                 ),
-//                               ],
-//                             ),
-//                           ),
-//                           Expanded(
-//                             child: ListView.separated(
-//                               itemCount: studentAttendanceRecords.length,
-//                               separatorBuilder: (context, index) => Divider(
-//                                 height: 1,
-//                                 color: Colors.blue[100],
-//                               ),
-//                               itemBuilder: (context, index) {
-//                                 final attendance =
-//                                     studentAttendanceRecords[index];
-//                                 return ListTile(
-//                                   title: Text(
-//                                     attendance.studentName,
-//                                     style: TextStyle(color: Colors.blue[900]),
-//                                   ),
-//                                   trailing: Row(
-//                                     mainAxisSize: MainAxisSize.min,
-//                                     children: [
-//                                       Icon(
-//                                         attendance.isPresent
-//                                             ? Icons.check_circle
-//                                             : Icons.cancel,
-//                                         color: attendance.isPresent
-//                                             ? Colors.green
-//                                             : Colors.red,
-//                                       ),
-//                                       SizedBox(width: 8),
-//                                       Text(
-//                                         attendance.isPresent
-//                                             ? 'Present'
-//                                             : 'Absent',
-//                                         style: TextStyle(
-//                                           color: attendance.isPresent
-//                                               ? Colors.green
-//                                               : Colors.red,
-//                                           fontWeight: FontWeight.bold,
-//                                         ),
-//                                       ),
-//                                     ],
-//                                   ),
-//                                 );
-//                               },
-//                             ),
-//                           ),
-//                           Container(
-//                             padding: EdgeInsets.symmetric(vertical: 8.0),
-//                             child: Row(
-//                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-//                               children: [
-//                                 Expanded(
-//                                   child: Text(
-//                                     'Present: ${studentAttendanceRecords.where((a) => a.isPresent).length}',
-//                                     style: TextStyle(
-//                                       color: Colors.green,
-//                                       fontWeight: FontWeight.bold,
-//                                       fontSize: 14,
-//                                     ),
-//                                     textAlign: TextAlign.center,
-//                                   ),
-//                                 ),
-//                                 Expanded(
-//                                   child: Text(
-//                                     'Absent: ${studentAttendanceRecords.where((a) => !a.isPresent).length}',
-//                                     style: TextStyle(
-//                                       color: Colors.red,
-//                                       fontWeight: FontWeight.bold,
-//                                       fontSize: 14,
-//                                     ),
-//                                     textAlign: TextAlign.center,
-//                                   ),
-//                                 ),
-//                                 Expanded(
-//                                   child: Text(
-//                                     'Total: ${studentAttendanceRecords.length}',
-//                                     style: TextStyle(
-//                                       fontWeight: FontWeight.bold,
-//                                       color: Colors.blue[800],
-//                                       fontSize: 14,
-//                                     ),
-//                                     textAlign: TextAlign.center,
-//                                   ),
-//                                 ),
-//                               ],
-//                             ),
-//                           ),
-//                         ],
-//                       ),
-//                     ),
-//                 ],
-//               ),
-//             ),
 //     );
 //   }
 // }
 
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+// import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sms/widgets/custom_appbar.dart';
+import 'package:sms/widgets/report_components.dart';
+import 'package:sms/pages/services/report_service.dart';
 import 'package:sms/widgets/date_picker.dart';
+import 'package:sms/widgets/class_section_selector.dart';
+import 'package:sms/widgets/custom_snackbar.dart';
 
 class StudentReportPage extends StatefulWidget {
   const StudentReportPage({super.key});
@@ -891,108 +501,55 @@ class StudentReportPage extends StatefulWidget {
   _StudentReportPageState createState() => _StudentReportPageState();
 }
 
-class Class {
-  final String id;
-  final String className;
-  final List<String> sections;
-
-  Class({
-    required this.id,
-    required this.className,
-    required this.sections,
-  });
-
-  factory Class.fromJson(Map<String, dynamic> json) {
-    return Class(
-      id: (json['_id'] ?? json['id'] ?? '').toString().trim(),
-      className: (json['class_name'] ?? json['className'] ?? 'Unknown Class')
-          .toString()
-          .trim(),
-      sections: (json['sections'] ?? [])
-          .map<String>((s) => s.toString().trim())
-          .where((s) => s.isNotEmpty)
-          .toList(),
-    );
-  }
-}
-
-class Student {
-  final String id;
-  final String name;
-  final String assignedClass;
-  final String assignedSection;
-
-  Student(this.id, this.name, this.assignedClass, this.assignedSection);
-
-  factory Student.fromJson(Map<String, dynamic> json) {
-    return Student(
-      (json['_id'] ?? json['id'] ?? '').toString().trim(),
-      (json['student_name'] ?? 'Unknown Student').toString().trim(),
-      (json['assigned_class'] ?? '').toString().trim(),
-      (json['assigned_section'] ?? '').toString().trim(),
-    );
-  }
-}
-
 class StudentAttendance {
   final String studentId;
   final String studentName;
+  final String? className;
+  final String? section;
   final bool isPresent;
 
   StudentAttendance({
     required this.studentId,
     required this.studentName,
+    this.className,
+    this.section,
     required this.isPresent,
   });
 
   factory StudentAttendance.fromJson(Map<String, dynamic> json) {
-    String studentId = '';
-    if (json['student_id'] != null) {
-      studentId = json['student_id'].toString().trim();
-    }
-
-    String studentName =
-        (json['student_name'] ?? 'Unknown Student').toString().trim();
-
-    bool isPresent = false;
-    if (json['is_present'] != null) {
-      if (json['is_present'] is bool) {
-        isPresent = json['is_present'];
-      } else if (json['is_present'] is int) {
-        isPresent = json['is_present'] == 1;
-      } else if (json['is_present'] is String) {
-        isPresent = json['is_present'].toLowerCase() == 'true' ||
-            json['is_present'] == '1';
-      }
-    }
-
     return StudentAttendance(
-      studentId: studentId,
-      studentName: studentName,
-      isPresent: isPresent,
+      studentId: (json['student_id'] ?? '').toString().trim(),
+      studentName:
+          (json['student_name'] ?? 'Unknown Student').toString().trim(),
+      className: json['class_name']?.toString().trim(),
+      section: json['section']?.toString().trim(),
+      isPresent: _parseAttendanceStatus(json['is_present']),
     );
+  }
+
+  static bool _parseAttendanceStatus(dynamic status) {
+    if (status == null) return false;
+    if (status is bool) return status;
+    if (status is int) return status == 1;
+    if (status is String) {
+      return status.toLowerCase() == 'true' || status == '1';
+    }
+    return false;
   }
 }
 
 class _StudentReportPageState extends State<StudentReportPage> {
   DateTime selectedDate = DateTime.now();
-  List<Student> allStudents = [];
-  List<Student> filteredStudents = [];
-  List<StudentAttendance> studentAttendanceRecords = [];
+  List<StudentAttendance> attendanceRecords = [];
   String? token;
   bool isLoading = false;
   bool isError = false;
   String errorMessage = '';
   bool attendanceExists = false;
-  final String baseeUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
-
-  // For dynamic class and section
-  List<Class> classes = [];
-  String? selectedClass; // This will be the class name
-  String? selectedClassId; // This will be the class ID for API calls
-  String? selectedSection;
-  List<String> availableSections = [];
   bool _isInitialLoading = true;
+
+  ClassModel? selectedClass;
+  String? selectedSection;
 
   @override
   void initState() {
@@ -1002,777 +559,260 @@ class _StudentReportPageState extends State<StudentReportPage> {
 
   Future<void> _loadToken() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      token = prefs.getString('token');
-    });
-    if (token != null) {
-      await _loadClasses();
-      await _fetchAllStudents();
-    }
-    setState(() {
-      _isInitialLoading = false;
-    });
-  }
-
-  Future<void> _loadClasses() async {
-    try {
-      setState(() {
-        isLoading = true;
-        isError = false;
-      });
-
-      final response = await http.get(
-        Uri.parse('$baseeUrl/api/classes'),
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': token!,
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final dynamic responseBody = json.decode(response.body);
-
-        List<dynamic> classData = [];
-        if (responseBody is List) {
-          classData = responseBody;
-        } else if (responseBody is Map && responseBody['data'] is List) {
-          classData = responseBody['data'];
-        } else {
-          throw Exception('Unexpected response format for classes');
-        }
-
-        // Group classes by class_name and collect sections
-        final Map<String, Map<String, dynamic>> classSectionMap = {};
-
-        for (final data in classData) {
-          if (data is! Map<String, dynamic>) continue;
-
-          final className =
-              (data['class_name'] ?? data['className'] ?? '').toString().trim();
-          final section = (data['section'] ?? '').toString().trim();
-          final classId =
-              (data['class_id'] ?? data['id'] ?? '').toString().trim();
-
-          if (className.isEmpty || classId.isEmpty) continue;
-
-          if (!classSectionMap.containsKey(className)) {
-            classSectionMap[className] = {
-              'id': classId,
-              'sections': <String>{},
-            };
-          }
-
-          if (section.isNotEmpty) {
-            classSectionMap[className]!['sections'].add(section);
-          }
-        }
-
-        // Convert to Class objects
-        final List<Class> tempClasses = [];
-        classSectionMap.forEach((className, data) {
-          final sections = (data['sections'] as Set<String>).toList()..sort();
-          tempClasses.add(Class(
-            id: data['id'].toString(),
-            className: className,
-            sections: sections,
-          ));
-        });
-
-        setState(() {
-          classes = tempClasses;
-        });
-      } else if (response.statusCode == 401) {
-        _handleUnauthorized();
-      } else {
-        throw Exception(
-            'Failed to load classes: ${response.statusCode} ${response.reasonPhrase}');
-      }
-    } catch (error) {
-      setState(() {
-        isError = true;
-        errorMessage = 'Error fetching classes: $error';
-      });
-      _showErrorSnackBar('Error fetching classes: $error');
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _fetchAllStudents() async {
+    setState(() => token = prefs.getString('token'));
     if (token == null) {
-      _showErrorSnackBar('Please login to continue');
-      return;
+      showCustomSnackBar(context, 'Please login to continue',
+          backgroundColor: Colors.red);
     }
-
-    setState(() {
-      isLoading = true;
-      isError = false;
-    });
-
-    try {
-      final response = await http.get(
-        Uri.parse('$baseeUrl/api/students'),
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': token!,
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final dynamic responseBody = json.decode(response.body);
-
-        List<dynamic> studentData = [];
-        if (responseBody is List) {
-          studentData = responseBody;
-        } else if (responseBody is Map && responseBody['data'] is List) {
-          studentData = responseBody['data'];
-        } else {
-          throw Exception('Unexpected response format for students');
-        }
-
-        setState(() {
-          allStudents = studentData
-              .where((data) => data is Map<String, dynamic>)
-              .map((data) => Student.fromJson(data as Map<String, dynamic>))
-              .toList();
-          _filterStudents();
-        });
-      } else if (response.statusCode == 401) {
-        _handleUnauthorized();
-      } else {
-        throw Exception(
-            'Failed to load students: ${response.statusCode} ${response.reasonPhrase}');
-      }
-    } catch (error) {
-      setState(() {
-        isError = true;
-        errorMessage = 'Error connecting to server: $error';
-      });
-      _showErrorSnackBar('Error connecting to server: $error');
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
-    }
-  }
-
-  void _updateAvailableSections(String? className) {
-    setState(() {
-      if (className != null) {
-        final selectedClassObj = classes.firstWhere(
-          (c) => c.className == className,
-          orElse: () => Class(id: '', className: '', sections: []),
-        );
-        availableSections = selectedClassObj.sections;
-        selectedClassId = selectedClassObj.id; // Store the class ID
-      } else {
-        availableSections = [];
-        selectedClassId = null;
-      }
-      selectedSection = null;
-      _filterStudents();
-    });
-  }
-
-  void _filterStudents() {
-    setState(() {
-      filteredStudents = allStudents.where((student) {
-        final classMatch =
-            selectedClass == null || student.assignedClass == selectedClass;
-        final sectionMatch = selectedSection == null ||
-            student.assignedSection == selectedSection;
-        return classMatch && sectionMatch;
-      }).toList();
-    });
-
-    if (selectedClassId != null && selectedSection != null) {
-      fetchAttendance();
-    }
-  }
-
-  void _handleUnauthorized() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('token');
-    setState(() {
-      token = null;
-    });
-    _showErrorSnackBar('Session expired. Please login again.');
-  }
-
-  void _showErrorSnackBar(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(message),
-      backgroundColor: Colors.red[800],
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-    ));
+    setState(() => _isInitialLoading = false);
   }
 
   Future<void> fetchAttendance() async {
-    if (selectedClassId == null) {
-      setState(() {
-        errorMessage = 'Please select a class';
-        isError = true;
-      });
-      return;
-    }
-
-    if (selectedSection == null) {
-      setState(() {
-        errorMessage = 'Please select a section';
-        isError = true;
-      });
-      return;
-    }
-
-    if (token == null) {
-      setState(() {
-        errorMessage = 'No token found. Please log in.';
-        isError = true;
-      });
-      _showErrorSnackBar('Please login to continue');
+    if (selectedClass == null || selectedSection == null) {
+      _handleError('Please select both class and section');
       return;
     }
 
     setState(() {
       isLoading = true;
       isError = false;
-      studentAttendanceRecords = [];
       attendanceExists = false;
     });
 
-    final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
-    final encodedSection = Uri.encodeComponent(selectedSection!);
-
-    // Use selectedClassId instead of selectedClass
-    final uri = Uri.parse(
-      '$baseeUrl/api/attendance/$selectedClassId/$encodedSection/$formattedDate',
+    final result = await ReportService.fetchReport(
+      token: token!,
+      endpoint: 'attendance',
+      date: selectedDate,
+      classId: selectedClass!.id.toString(),
+      section: selectedSection!,
     );
 
-    try {
-      print('Fetching attendance from: $uri');
+    if (!mounted) return;
 
-      final response = await http.get(
-        uri,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': token!,
-        },
-      );
+    setState(() {
+      isLoading = false;
 
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
-        final List<dynamic> studentsData = data['students'] ?? [];
-
-        if (studentsData.isEmpty) {
-          setState(() {
-            attendanceExists = false;
-            isLoading = false;
-            isError = false;
-          });
+      if (result['success'] == true) {
+        if (result['unauthorized'] == true) {
+          _handleUnauthorized();
           return;
         }
 
-        List<StudentAttendance> attendanceRecords = [];
-        for (var item in studentsData) {
-          if (item is Map<String, dynamic>) {
-            try {
-              attendanceRecords.add(StudentAttendance.fromJson(item));
-            } catch (e) {
-              print('Error parsing attendance record: $e');
-            }
-          }
-        }
+        attendanceExists = result['exists'] ?? false;
 
-        setState(() {
-          studentAttendanceRecords = attendanceRecords;
-          attendanceExists = true;
-          isLoading = false;
-          isError = false;
-        });
-      } else if (response.statusCode == 401 || response.statusCode == 403) {
-        _handleUnauthorized();
-      } else if (response.statusCode == 404) {
-        setState(() {
-          attendanceExists = false;
-          isLoading = false;
-          isError = false;
-        });
+        if (attendanceExists) {
+          attendanceRecords = (result['data']['students'] ?? [])
+              .map<StudentAttendance>(
+                (item) => StudentAttendance.fromJson(item),
+              )
+              .toList();
+        }
       } else {
-        setState(() {
-          isLoading = false;
-          isError = true;
-          errorMessage =
-              'Failed to load attendance data: ${response.statusCode} ${response.reasonPhrase}';
-        });
+        _handleError(result['message']);
       }
-    } catch (error) {
-      print('Error fetching attendance: $error');
-      setState(() {
-        isLoading = false;
-        isError = true;
-        errorMessage = 'Error connecting to server: $error';
-      });
-    }
+    });
   }
 
-  // Future<void> _selectDate(BuildContext context) async {
-  //   final DateTime? picked = await showDatePicker(
-  //     context: context,
-  //     initialDate: selectedDate,
-  //     firstDate: DateTime(2000),
-  //     lastDate: DateTime.now().add(Duration(days: 365)),
-  //     builder: (context, child) {
-  //       return Theme(
-  //         data: ThemeData.light().copyWith(
-  //           colorScheme: ColorScheme.light(
-  //             primary: Colors.blue,
-  //             onPrimary: Colors.white,
-  //             surface: Colors.white,
-  //             onSurface: Colors.black,
-  //           ),
-  //           dialogBackgroundColor: Colors.white,
-  //         ),
-  //         child: child!,
-  //       );
-  //     },
-  //   );
+  void _handleUnauthorized() async {
+    await ReportService.handleUnauthorized();
+    setState(() => token = null);
+    showCustomSnackBar(context, 'Session expired. Please login again.',
+        backgroundColor: Colors.red);
+  }
 
-  //   if (picked != null && picked != selectedDate) {
-  //     setState(() {
-  //       selectedDate = picked;
-  //     });
-  //     if (selectedClassId != null && selectedSection != null) {
-  //       fetchAttendance();
-  //     }
-  //   }
-  // }
+  void _handleError(String message) {
+    setState(() {
+      isError = true;
+      errorMessage = message;
+      isLoading = false;
+    });
+    showCustomSnackBar(context, message, backgroundColor: Colors.red);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Student Attendance Report',
-            style: TextStyle(color: Colors.white)),
-        centerTitle: true,
-        backgroundColor: Colors.blue[900],
-        elevation: 0,
-        iconTheme: IconThemeData(color: Colors.white),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh, color: Colors.white),
-            onPressed: (selectedClassId != null && selectedSection != null)
-                ? fetchAttendance
-                : null,
+      appBar: const CustomAppBar(
+        title: 'Student Attendance Report',
+      ),
+      body:
+          _isInitialLoading ? _buildLoadingIndicator() : _buildReportContent(),
+    );
+  }
+
+  Widget _buildLoadingIndicator() {
+    return const Center(child: CircularProgressIndicator());
+  }
+
+  Widget _buildReportContent() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        children: [
+          _buildFilterCard(),
+          const SizedBox(height: 16),
+          if (token == null) _buildLoginPrompt(),
+          if (token != null) _buildReportBody(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterCard() {
+    return ReportFilterCard(
+      title: 'Select Class, Section and Date',
+      children: [
+        ClassSectionSelector(
+          onSelectionChanged: (ClassModel? cls, String? sec) {
+            setState(() {
+              selectedClass = cls;
+              selectedSection = sec;
+              if (cls != null && sec != null) {
+                fetchAttendance();
+              } else {
+                attendanceRecords = [];
+                attendanceExists = false;
+              }
+            });
+          },
+          initialClass: selectedClass,
+          initialSection: selectedSection,
+        ),
+        const SizedBox(height: 12),
+        CustomDatePicker(
+          selectedDate: selectedDate,
+          onDateSelected: (DateTime newDate) {
+            setState(() => selectedDate = newDate);
+            if (selectedClass != null && selectedSection != null) {
+              fetchAttendance();
+            }
+          },
+          isExpanded: true,
+          backgroundColor: Colors.deepPurple[50],
+          foregroundColor: Colors.deepPurple,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoginPrompt() {
+    return Expanded(
+      child: Center(
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.warning, size: 48, color: Colors.orange),
+                const SizedBox(height: 16),
+                const Text(
+                  'You are not logged in. Please login to continue.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {/* Navigate to login */},
+                  child: const Text('Go to Login'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReportBody() {
+    if (isLoading) {
+      return const Expanded(child: Center(child: CircularProgressIndicator()));
+    }
+    if (isError) return _buildErrorState();
+    if (selectedClass == null || selectedSection == null) {
+      return _buildSelectionPrompt();
+    }
+    if (!attendanceExists) return _buildNoRecordsFound();
+    return _buildAttendanceList();
+  }
+
+  Widget _buildErrorState() {
+    return Expanded(
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+            const SizedBox(height: 16),
+            Text(errorMessage, textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: fetchAttendance,
+              child: const Text('Try Again'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSelectionPrompt() {
+    return const Expanded(
+      child: Center(
+        child: Text(
+          'Please select both class and section to view attendance',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 16),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoRecordsFound() {
+    return Expanded(
+      child: Center(
+        child: Text(
+          'No attendance records found for ${selectedClass!.className} - $selectedSection '
+          'on ${DateFormat.yMd().format(selectedDate)}.\n\n'
+          'Attendance may not have been taken for this date.',
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 16),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAttendanceList() {
+    return Expanded(
+      child: Column(
+        children: [
+          AttendanceListHeader(
+            title:
+                'Attendance for ${selectedClass!.className} - $selectedSection',
+            date: selectedDate,
+          ),
+          AttendanceListHeaderRow(
+            leftText: 'Student Name',
+            rightText: 'Status',
+          ),
+          Expanded(
+            child: ListView.separated(
+              itemCount: attendanceRecords.length,
+              separatorBuilder: (_, __) =>
+                  Divider(height: 1, color: Colors.deepPurple[100]),
+              itemBuilder: (_, index) => AttendanceListItem(
+                name: attendanceRecords[index].studentName,
+                isPresent: attendanceRecords[index].isPresent,
+              ),
+            ),
+          ),
+          AttendanceSummary(
+            presentCount: attendanceRecords.where((a) => a.isPresent).length,
+            absentCount: attendanceRecords.where((a) => !a.isPresent).length,
+            totalCount: attendanceRecords.length,
           ),
         ],
       ),
-      body: _isInitialLoading
-          ? Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Card(
-                    elevation: 3,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Select Class, Section and Date',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue[800],
-                            ),
-                          ),
-                          SizedBox(height: 12),
-                          Column(
-                            children: [
-                              DropdownButtonFormField<String>(
-                                value: selectedClass,
-                                decoration: InputDecoration(
-                                  labelText: 'Class',
-                                  labelStyle:
-                                      TextStyle(color: Colors.blue[800]),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  filled: true,
-                                  fillColor: Colors.blue[50],
-                                  contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 12),
-                                ),
-                                isExpanded: true,
-                                onChanged: (String? newValue) {
-                                  setState(() {
-                                    selectedClass = newValue;
-                                    _updateAvailableSections(newValue);
-                                  });
-                                },
-                                items: [
-                                  DropdownMenuItem(
-                                    value: null,
-                                    child: Text('Select Class',
-                                        style:
-                                            TextStyle(color: Colors.grey[600])),
-                                  ),
-                                  ...classes.map((classItem) {
-                                    return DropdownMenuItem<String>(
-                                      value: classItem.className,
-                                      child: Text(classItem.className,
-                                          style: TextStyle(
-                                              color: Colors.blue[900])),
-                                    );
-                                  }).toList(),
-                                ],
-                              ),
-                              SizedBox(height: 12),
-                              DropdownButtonFormField<String>(
-                                value: selectedSection,
-                                decoration: InputDecoration(
-                                  labelText: 'Section',
-                                  labelStyle:
-                                      TextStyle(color: Colors.blue[800]),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  filled: true,
-                                  fillColor: Colors.blue[50],
-                                  contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 12),
-                                ),
-                                isExpanded: true,
-                                onChanged: availableSections.isEmpty
-                                    ? null
-                                    : (String? newValue) {
-                                        setState(() {
-                                          selectedSection = newValue;
-                                        });
-                                        _filterStudents();
-                                      },
-                                items: [
-                                  DropdownMenuItem(
-                                    value: null,
-                                    child: Text(
-                                      availableSections.isEmpty
-                                          ? 'Select class first'
-                                          : 'Select Section',
-                                      style: TextStyle(color: Colors.grey[600]),
-                                    ),
-                                  ),
-                                  ...availableSections.map((section) {
-                                    return DropdownMenuItem<String>(
-                                      value: section,
-                                      child: Text(section,
-                                          style: TextStyle(
-                                              color: Colors.blue[900])),
-                                    );
-                                  }).toList(),
-                                ],
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 12),
-                          // SizedBox(
-                          //   width: double.infinity,
-                          //   child: ElevatedButton.icon(
-                          //     onPressed: () => _selectDate(context),
-                          //     icon: Icon(Icons.calendar_today, size: 18),
-                          //     label: Text(DateFormat('dd/MM/yyyy')
-                          //         .format(selectedDate)),
-                          //     style: ElevatedButton.styleFrom(
-                          //       backgroundColor: Colors.blue[50],
-                          //       foregroundColor: Colors.blue,
-                          //       padding: EdgeInsets.symmetric(
-                          //           horizontal: 12, vertical: 12),
-                          //       shape: RoundedRectangleBorder(
-                          //         borderRadius: BorderRadius.circular(8),
-                          //       ),
-                          //     ),
-                          //   ),
-                          // ),
-                          CustomDatePicker(
-                            selectedDate: selectedDate,
-                            onDateSelected: (DateTime newDate) {
-                              setState(() {
-                                selectedDate = newDate;
-                              });
-                              if (selectedClassId != null &&
-                                  selectedSection != null) {
-                                fetchAttendance();
-                              }
-                            },
-                            isExpanded: true,
-                            backgroundColor: Colors.blue[50],
-                            foregroundColor: Colors.blue,
-                          )
-                        ],
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  if (token == null)
-                    Expanded(
-                      child: Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.warning,
-                                  size: 48, color: Colors.orange),
-                              SizedBox(height: 16),
-                              Text(
-                                'You are not logged in. Please login to continue.',
-                                style: TextStyle(fontSize: 16),
-                                textAlign: TextAlign.center,
-                              ),
-                              SizedBox(height: 16),
-                              ElevatedButton(
-                                onPressed: () {
-                                  // Navigate to login page
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  padding: EdgeInsets.symmetric(
-                                      horizontal: 24, vertical: 12),
-                                ),
-                                child: Text('Go to Login'),
-                              )
-                            ],
-                          ),
-                        ),
-                      ),
-                    )
-                  else if (isLoading)
-                    Expanded(
-                        child: Center(
-                            child:
-                                CircularProgressIndicator(color: Colors.blue)))
-                  else if (isError)
-                    Expanded(
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.error_outline,
-                                size: 48, color: Colors.red),
-                            SizedBox(height: 16),
-                            Text(
-                              errorMessage,
-                              style: TextStyle(color: Colors.red[800]),
-                              textAlign: TextAlign.center,
-                            ),
-                            SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: (selectedClassId != null &&
-                                      selectedSection != null)
-                                  ? fetchAttendance
-                                  : null,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: Text('Try Again'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                  else if (selectedClass == null || selectedSection == null)
-                    Expanded(
-                      child: Center(
-                        child: Text(
-                          'Please select both class and section to view attendance',
-                          style: TextStyle(fontSize: 16),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    )
-                  else if (!attendanceExists)
-                    Expanded(
-                      child: Center(
-                        child: Text(
-                          'No attendance records found for $selectedClass - $selectedSection on ${DateFormat.yMd().format(selectedDate)}.\n\nAttendance may not have been taken for this date.',
-                          style: TextStyle(fontSize: 16),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    )
-                  else
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    'Attendance for $selectedClass - $selectedSection',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.blue[800],
-                                    ),
-                                  ),
-                                ),
-                                Text(
-                                  DateFormat.yMMMMd().format(selectedDate),
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.blue[800],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.blue[50],
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Student Name',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue[800],
-                                  ),
-                                ),
-                                Text(
-                                  'Status',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue[800],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Expanded(
-                            child: ListView.separated(
-                              itemCount: studentAttendanceRecords.length,
-                              separatorBuilder: (context, index) => Divider(
-                                height: 1,
-                                color: Colors.blue[100],
-                              ),
-                              itemBuilder: (context, index) {
-                                final attendance =
-                                    studentAttendanceRecords[index];
-                                return ListTile(
-                                  title: Text(
-                                    attendance.studentName,
-                                    style: TextStyle(color: Colors.blue[900]),
-                                  ),
-                                  trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        attendance.isPresent
-                                            ? Icons.check_circle
-                                            : Icons.cancel,
-                                        color: attendance.isPresent
-                                            ? Colors.green
-                                            : Colors.red,
-                                      ),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        attendance.isPresent
-                                            ? 'Present'
-                                            : 'Absent',
-                                        style: TextStyle(
-                                          color: attendance.isPresent
-                                              ? Colors.green
-                                              : Colors.red,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          Container(
-                            padding: EdgeInsets.symmetric(vertical: 8.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    'Present: ${studentAttendanceRecords.where((a) => a.isPresent).length}',
-                                    style: TextStyle(
-                                      color: Colors.green,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    'Absent: ${studentAttendanceRecords.where((a) => !a.isPresent).length}',
-                                    style: TextStyle(
-                                      color: Colors.red,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    'Total: ${studentAttendanceRecords.length}',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.blue[800],
-                                      fontSize: 14,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ),
     );
   }
 }

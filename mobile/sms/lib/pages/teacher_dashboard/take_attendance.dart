@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sms/pages/teacher_dashboard/t_dashboard.dart';
 import 'package:sms/widgets/button.dart';
+import 'package:sms/widgets/custom_appbar.dart';
+import 'package:sms/widgets/date_picker.dart'; // Add this import
 
 class TakeAttendancePage extends StatefulWidget {
   const TakeAttendancePage({super.key});
@@ -231,13 +233,20 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
       );
 
       if (response.statusCode == 200) {
-        _showSuccess('Attendance saved successfully');
+        final responseData = json.decode(response.body);
+        _showSuccess(
+            responseData['message'] ?? 'Attendance saved successfully');
         Future.delayed(Duration(seconds: 2), () {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => TeacherDashboard()),
           );
         });
+      } else if (response.statusCode == 409) {
+        // Conflict - some attendance already exists
+        final responseData = json.decode(response.body);
+        _showError(responseData['message'] ??
+            'Some attendance records already exist.');
       } else if (response.statusCode == 401) {
         _handleUnauthorized();
       } else {
@@ -252,43 +261,13 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
     }
   }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: selectedDate,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData.light().copyWith(
-            colorScheme: ColorScheme.light(
-              primary: Colors.blue,
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black,
-            ),
-            dialogBackgroundColor: Colors.white,
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null && picked != selectedDate) {
-      setState(() {
-        selectedDate = picked;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Take Attendance', style: TextStyle(color: Colors.white)),
-        centerTitle: true,
-        backgroundColor: Colors.blue.shade900,
-        elevation: 0,
-        iconTheme: IconThemeData(color: Colors.white),
+      appBar: const CustomAppBar(
+        title: 'Take Attendance',
+        // centerTitle: true,
+        // elevation: 0,
       ),
       body: isInitialLoading
           ? Center(child: CircularProgressIndicator(color: Colors.blue))
@@ -308,19 +287,25 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
                                 fontSize: 16, color: Colors.red.shade600),
                           ),
                           SizedBox(height: 16),
-                          ElevatedButton(
+                          // ElevatedButton(
+                          //   onPressed: () {
+                          //     Navigator.pushReplacementNamed(context, '/login');
+                          //   },
+                          //   style: ElevatedButton.styleFrom(
+                          //     backgroundColor: Colors.blue.shade600,
+                          //     foregroundColor: Colors.white,
+                          //     shape: RoundedRectangleBorder(
+                          //       borderRadius: BorderRadius.circular(8),
+                          //     ),
+                          //   ),
+                          //   child: Text('Login'),
+                          // ),
+                          CustomButton(
+                            text: 'Login',
                             onPressed: () {
                               Navigator.pushReplacementNamed(context, '/login');
                             },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue.shade600,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: Text('Login'),
-                          ),
+                          )
                         ],
                       ),
                     ),
@@ -343,44 +328,29 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
                               Text('Class: ${selectedClass ?? "Not assigned"}',
                                   style: TextStyle(
                                       fontSize: 16,
-                                      color: Colors.blue.shade900)),
+                                      color: Colors.deepPurple.shade900)),
                               SizedBox(height: 8),
                               Text(
                                   'Section: ${selectedSection ?? "Not assigned"}',
                                   style: TextStyle(
                                       fontSize: 16,
-                                      color: Colors.blue.shade900)),
-                              SizedBox(height: 8),
-                              Text(
-                                  'Date: ${DateFormat('dd/MM/yyyy').format(selectedDate)}',
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.blue.shade900)),
+                                      color: Colors.deepPurple.shade900)),
                               SizedBox(height: 16),
                               Row(
                                 children: [
                                   Expanded(
-                                    child: ElevatedButton(
-                                      onPressed: () => _selectDate(context),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.blue.shade50,
-                                        foregroundColor: Colors.blue.shade700,
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8)),
-                                        padding:
-                                            EdgeInsets.symmetric(vertical: 16),
-                                      ),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Icon(Icons.calendar_today, size: 18),
-                                          SizedBox(width: 8),
-                                          Text(DateFormat('dd/MM/yyyy')
-                                              .format(selectedDate)),
-                                        ],
-                                      ),
+                                    child: CustomDatePicker(
+                                      selectedDate: selectedDate,
+                                      onDateSelected: (DateTime newDate) {
+                                        setState(() {
+                                          selectedDate = newDate;
+                                        });
+                                      },
+                                      isExpanded: true,
+                                      lastDate: DateTime
+                                          .now(), // Only allow dates up to today
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: Colors.deepPurple,
                                     ),
                                   ),
                                   SizedBox(width: 10),
@@ -390,12 +360,12 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
                                       decoration: InputDecoration(
                                         labelText: 'Search Student',
                                         labelStyle: TextStyle(
-                                            color: Colors.blue.shade700),
+                                            color: Colors.deepPurple.shade700),
                                         prefixIcon: Icon(Icons.search,
-                                            color: Colors.blue.shade700),
+                                            color: Colors.deepPurple.shade700),
                                         border: OutlineInputBorder(),
                                         filled: true,
-                                        fillColor: Colors.blue.shade50,
+                                        fillColor: Colors.white,
                                       ),
                                       onChanged: (value) => _filterStudents(),
                                     ),
@@ -464,20 +434,22 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
                                               horizontal: 16, vertical: 8),
                                           leading: CircleAvatar(
                                             backgroundColor:
-                                                Colors.blue.shade100,
+                                                Colors.deepPurple.shade100,
                                             child: Text(
                                               student.name.isNotEmpty
                                                   ? student.name.substring(0, 1)
                                                   : '?',
                                               style: TextStyle(
-                                                  color: Colors.blue.shade800),
+                                                  color: Colors
+                                                      .deepPurple.shade800),
                                             ),
                                           ),
                                           title: Text(
                                             student.name,
                                             style: TextStyle(
                                                 fontWeight: FontWeight.w500,
-                                                color: Colors.blue.shade900),
+                                                color:
+                                                    Colors.deepPurple.shade900),
                                           ),
                                           subtitle: Text(
                                             '${student.assignedClass} - ${student.assignedSection}',
@@ -491,9 +463,9 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
                                               onChanged: (value) =>
                                                   _toggleStudentAttendance(
                                                       index),
-                                              activeColor: Colors.blue,
+                                              activeColor: Colors.deepPurple,
                                               activeTrackColor:
-                                                  Colors.blue.shade200,
+                                                  Colors.deepPurple.shade200,
                                             ),
                                           ),
                                         ),
@@ -503,8 +475,8 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
                       ),
                       SizedBox(height: 16),
                       CustomButton(
-                        text: isLoading ? 'Saving...' : 'Save Attendance',
-                        width: double.infinity,
+                        text: isLoading ? 'Saving...' : 'Save',
+                        width: 120,
                         onPressed: students.isEmpty || isLoading
                             ? null
                             : _saveAttendance,

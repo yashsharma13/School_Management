@@ -3,6 +3,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:sms/pages/notices/add_notice.dart';
+import 'package:sms/widgets/custom_appbar.dart';
+import 'package:sms/widgets/custom_snackbar.dart';
 import 'dart:convert';
 import 'notice_model.dart';
 import 'package:intl/intl.dart';
@@ -90,15 +92,8 @@ class _NoticesPageState extends State<NoticesPage> {
         setState(() {
           notices.removeWhere((notice) => notice.id == id);
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Notice deleted successfully"),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        );
+        showCustomSnackBar(context, "Notice deleted successfully",
+            backgroundColor: Colors.red);
       } else {
         final body = json.decode(response.body);
         setState(() => error = body['message'] ?? 'Delete failed');
@@ -139,12 +134,8 @@ class _NoticesPageState extends State<NoticesPage> {
     final isDarkMode = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Notices', style: TextStyle(color: Colors.white)),
-        centerTitle: true,
-        backgroundColor: Colors.blue.shade900,
-        elevation: 0,
-        iconTheme: IconThemeData(color: Colors.white),
+      appBar: CustomAppBar(
+        title: 'Notices',
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
@@ -390,9 +381,9 @@ class _NoticesPageState extends State<NoticesPage> {
             fetchNotices();
           }
         },
-        child: Icon(Icons.add),
         backgroundColor: theme.primaryColor,
         elevation: 4,
+        child: Icon(Icons.add),
       ),
     );
   }

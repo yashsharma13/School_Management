@@ -4,6 +4,10 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:sms/widgets/button.dart';
+import 'package:sms/widgets/custom_appbar.dart';
+import 'package:sms/widgets/custom_snackbar.dart';
+import 'fee_receipt_page.dart'; // Import the FeeReceiptPage
 
 class FeesCollectionPage extends StatefulWidget {
   final String studentId;
@@ -14,14 +18,14 @@ class FeesCollectionPage extends StatefulWidget {
   final Map<String, dynamic>? preloadedData;
 
   const FeesCollectionPage({
-    Key? key,
+    super.key,
     required this.studentId,
     required this.studentName,
     required this.studentClass,
     required this.studentSection,
     this.isNewAdmission = false,
     this.preloadedData,
-  }) : super(key: key);
+  });
 
   @override
   _FeesCollectionPageState createState() => _FeesCollectionPageState();
@@ -32,7 +36,7 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
   String? token;
   String? classId;
   DateTime selectedDate = DateTime.now();
-  List<String> selectedMonths = []; // Changed to empty list
+  List<String> selectedMonths = [];
   bool isLoading = false;
   bool _isMounted = false;
   bool isYearlyPayment = false;
@@ -240,54 +244,11 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
     }
   }
 
-  // Future<void> _loadFeeData() async {
-  //   try {
-  //     final response = await http.get(
-  //       Uri.parse('$baseUrl/api/structure?classId=$classId'),
-  //       headers: {'Authorization': 'Bearer $token'},
-  //     );
-
-  //     if (response.statusCode == 200) {
-  //       final data = jsonDecode(response.body);
-  //       if (data['success']) {
-  //         setState(() {
-  //           feeStructure = (data['data'] as List)
-  //               .map((item) => FeeStructureModel.fromJson(item))
-  //               .toList();
-  //           debugPrint('Loaded feeStructure: $feeStructure');
-  //         });
-  //       } else {
-  //         debugPrint('Failed to load fee structure: ${data['message']}');
-  //       }
-  //     } else {
-  //       debugPrint('Error fetching fee structure: ${response.statusCode}');
-  //     }
-
-  //     final paidFeesResponse = await http.get(
-  //       Uri.parse('$baseUrl/api/fees/paid?studentId=${widget.studentId}'),
-  //       headers: {'Authorization': 'Bearer $token'},
-  //     );
-
-  //     if (paidFeesResponse.statusCode == 200) {
-  //       final paidFeesData = jsonDecode(paidFeesResponse.body);
-  //       setState(() {
-  //         paidFeeMasterIds = List<String>.from(paidFeesData);
-  //         debugPrint('Loaded paidFeeMasterIds: $paidFeeMasterIds');
-  //       });
-  //     }
-
-  //     _initializeFeeControllers();
-  //     _calculateTotals();
-  //   } catch (e) {
-  //     debugPrint('Exception loading fee data: $e');
-  //   }
-  // }
-
   Future<void> _loadFeeData() async {
     try {
       final response = await http.get(
         Uri.parse(
-            '$baseUrl/api/structure?classId=$classId&studentId=${widget.studentId}'), // Updated endpoint
+            '$baseUrl/api/structure?classId=$classId&studentId=${widget.studentId}'),
         headers: {'Authorization': 'Bearer $token'},
       );
 
@@ -376,10 +337,8 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
               isYearlyPayment = false;
             }
 
-            // Remove paid months from selectedMonths
             selectedMonths.removeWhere((month) => paidMonths[month] == true);
 
-            // If selectedMonths is empty and yearly payment is not made, select the next unpaid month
             if (selectedMonths.isEmpty && !hasPaidYearly) {
               final currentMonthIndex = DateTime.now().month - 1;
               for (int i = 0; i < months.length; i++) {
@@ -506,13 +465,17 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
   void _togglePaymentType(bool value) {
     if (_isMounted) {
       if (value && hasPaidMonthly) {
-        _showErrorSnackBar(
-            'Cannot select yearly payment as monthly fees have been paid');
+        // _showErrorSnackBar(
+        //     'Cannot select yearly payment as monthly fees have been paid');
+        showCustomSnackBar(context,
+            'Cannot select yearly payment as monthly fees have been paid',
+            backgroundColor: Colors.red);
         return;
       }
       if (!value && hasPaidYearly) {
-        _showErrorSnackBar(
-            'Cannot select monthly payment as yearly fee has been paid');
+        showCustomSnackBar(context,
+            'Cannot select monthly payment as yearly fee has been paid',
+            backgroundColor: Colors.red);
         return;
       }
 
@@ -520,7 +483,6 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
         isYearlyPayment = value;
         selectedMonths = isYearlyPayment ? ['Yearly'] : [];
         if (!isYearlyPayment && !hasPaidYearly) {
-          // Select the next unpaid month when switching to monthly
           final currentMonthIndex = DateTime.now().month - 1;
           for (int i = 0; i < months.length; i++) {
             int index = (currentMonthIndex + i) % months.length;
@@ -556,15 +518,21 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
   Future<void> _submitFees() async {
     if (!_formKey.currentState!.validate()) return;
     if (token == null) {
-      _showErrorSnackBar('Authentication required');
+      // _showErrorSnackBar('Authentication required');
+      showCustomSnackBar(context, 'Authentication required',
+          backgroundColor: Colors.red);
       return;
     }
     if (remarkController.text.isEmpty) {
-      _showErrorSnackBar('Please enter a remark');
+      // _showErrorSnackBar('Please enter a remark');
+      showCustomSnackBar(context, 'Please enter a remark',
+          backgroundColor: Colors.red);
       return;
     }
     if (!isYearlyPayment && selectedMonths.isEmpty) {
-      _showErrorSnackBar('Please select at least one month');
+      // _showErrorSnackBar('Please select at least one month');
+      showCustomSnackBar(context, 'Please select at least one month',
+          backgroundColor: Colors.red);
       return;
     }
 
@@ -596,7 +564,9 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
       });
 
       if (feeItems.isEmpty) {
-        _showErrorSnackBar('No valid fee items to submit');
+        // _showErrorSnackBar('No valid fee items to submit');
+        showCustomSnackBar(context, 'No valid fee items to submit',
+            backgroundColor: Colors.red);
         return;
       }
 
@@ -625,51 +595,55 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
 
       final responseBody = jsonDecode(response.body);
       if (response.statusCode == 400) {
-        _showErrorSnackBar(responseBody['message'] ?? 'Invalid data provided');
+        // _showErrorSnackBar(responseBody['message'] ?? 'Invalid data provided');
+        showCustomSnackBar(
+          context,
+          responseBody['message'] ?? 'Invalid data provided',
+          backgroundColor: Colors.red,
+        );
+
         return;
       } else if (response.statusCode != 201) {
         throw Exception(
             'Failed to record fee payment: ${response.statusCode} - ${responseBody['message']}');
       }
 
-      _showSuccessSnackBar('Fee payment recorded successfully');
+      // _showSuccessSnackBar('Fee payment recorded successfully');
+      showCustomSnackBar(context, 'Fee payment recorded successfully',
+          backgroundColor: Colors.green);
+
+      // Navigate to FeeReceiptPage
       if (_isMounted) {
-        Navigator.pop(context, true);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => FeeReceiptPage(
+              studentId: widget.studentId,
+              studentName: widget.studentName,
+              studentClass: widget.studentClass,
+              studentSection: widget.studentSection,
+              feeMonths: isYearlyPayment ? ['Yearly'] : selectedMonths,
+              totalPaid:
+                  totalPaid + (double.tryParse(depositController.text) ?? 0.0),
+              totalDue:
+                  totalDue - (double.tryParse(depositController.text) ?? 0.0),
+              depositAmount: double.tryParse(depositController.text) ?? 0.0,
+              paymentDate: DateFormat('dd/MM/yyyy').format(selectedDate),
+              remark: remarkController.text,
+              isYearlyPayment: isYearlyPayment,
+              feeItems: feeItems,
+            ),
+          ),
+        );
       }
     } catch (error) {
-      _showErrorSnackBar('Error submitting fees: $error');
+      // _showErrorSnackBar('Error submitting fees: $error');
+      showCustomSnackBar(context, 'Error submitting fees: $error',
+          backgroundColor: Colors.red);
     } finally {
       if (_isMounted) {
         setState(() => isLoading = false);
       }
-    }
-  }
-
-  void _showErrorSnackBar(String message) {
-    if (_isMounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.red.shade800,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          duration: Duration(seconds: 3),
-        ),
-      );
-    }
-  }
-
-  void _showSuccessSnackBar(String message) {
-    if (_isMounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.green.shade600,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          duration: Duration(seconds: 2),
-        ),
-      );
     }
   }
 
@@ -680,28 +654,8 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
 
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-      appBar: AppBar(
-        title: Text(
-          'Fees Collection - ${widget.studentName}',
-          style: TextStyle(
-              color: whiteTheme, fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: blueTheme,
-        // iconTheme: IconThemeData(color: whiteTheme),
-        // elevation: 4,
-        // actions: [
-        //   IconButton(
-        //     icon: Icon(Icons.refresh),
-        //     onPressed: isLoading
-        //         ? null
-        //         : () {
-        //             _loadYearlySummary();
-        //             _loadPaymentStatus();
-        //             _loadFeeData();
-        //           },
-        //     tooltip: 'Refresh Data',
-        //   ),
-        // ],
+      appBar: CustomAppBar(
+        title: 'Fee Collection',
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
@@ -1401,27 +1355,16 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                     ),
                     SizedBox(height: 32),
                     SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: ElevatedButton(
-                        onPressed: isLoading ? null : _submitFees,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: blueTheme,
-                          foregroundColor: whiteTheme,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                          elevation: 4,
-                          padding: EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        child: isLoading
-                            ? CircularProgressIndicator(color: whiteTheme)
-                            : Text(
-                                'Submit Fee Payment',
-                                style: TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.bold),
-                              ),
-                      ),
-                    ),
+                        width: double.infinity,
+                        height: 56,
+                        child: CustomButton(
+                          text: 'Submit Fee Payment',
+                          onPressed: isLoading ? null : _submitFees,
+                          icon: Icons.save_alt,
+                          isLoading: isLoading,
+                          height: 50,
+                          width: double.infinity,
+                        )),
                     SizedBox(height: 16),
                   ],
                 ),

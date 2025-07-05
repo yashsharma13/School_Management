@@ -20,18 +20,18 @@ class _TeacherInfoState extends State<TeacherInfo> {
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
-        side: BorderSide(color: Colors.blue.shade100, width: 1),
+        side: BorderSide(color: Colors.deepPurple.shade100, width: 1),
       ),
       child: ExpansionTile(
         initiallyExpanded: true,
-        collapsedBackgroundColor: Colors.blue.shade50,
+        collapsedBackgroundColor: Colors.deepPurple.shade50,
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         title: const Text(
           "TEACHER INFORMATION",
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: Color.fromRGBO(21, 101, 192, 1),
+            color: Colors.deepPurple,
             fontSize: 16,
           ),
         ),
@@ -92,7 +92,7 @@ class _TeacherInfoState extends State<TeacherInfo> {
             labelText: 'Date of Birth',
             isExpanded: true,
             backgroundColor: Colors.white,
-            foregroundColor: Colors.blue.shade700,
+            foregroundColor: Colors.deepPurple.shade700,
             padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             firstDate: DateTime(1900),
             lastDate: DateTime.now(),
@@ -111,7 +111,7 @@ class _TeacherInfoState extends State<TeacherInfo> {
             labelText: 'Date of Joining',
             isExpanded: true,
             backgroundColor: Colors.white,
-            foregroundColor: Colors.blue.shade700,
+            foregroundColor: Colors.deepPurple.shade700,
             padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             firstDate: DateTime(2000),
             lastDate: DateTime.now(),
@@ -122,17 +122,19 @@ class _TeacherInfoState extends State<TeacherInfo> {
             value: widget.controller.gender,
             decoration: InputDecoration(
               labelText: 'Gender*',
-              labelStyle: TextStyle(color: Colors.blue.shade700),
-              prefixIcon: Icon(Icons.transgender, color: Colors.blue.shade600),
+              labelStyle: TextStyle(color: Colors.deepPurple.shade700),
+              prefixIcon:
+                  Icon(Icons.transgender, color: Colors.deepPurple.shade600),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
               enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: Colors.blue.shade300),
+                borderSide: BorderSide(color: Colors.deepPurple.shade300),
                 borderRadius: BorderRadius.circular(8),
               ),
               focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: Colors.blue.shade700, width: 2),
+                borderSide:
+                    BorderSide(color: Colors.deepPurple.shade700, width: 2),
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
@@ -141,14 +143,14 @@ class _TeacherInfoState extends State<TeacherInfo> {
                       value: e,
                       child: Text(
                         e,
-                        style: TextStyle(color: Colors.blue.shade800),
+                        style: TextStyle(color: Colors.deepPurple.shade800),
                       ),
                     ))
                 .toList(),
             onChanged: (value) =>
                 setState(() => widget.controller.gender = value),
             validator: (value) => value == null ? 'Please select gender' : null,
-            style: TextStyle(color: Colors.blue.shade800),
+            style: TextStyle(color: Colors.deepPurple.shade800),
           ),
           const SizedBox(height: 8),
         ],
@@ -169,17 +171,17 @@ class _TeacherInfoState extends State<TeacherInfo> {
       maxLines: maxLines ?? 1,
       decoration: InputDecoration(
         labelText: isRequired ? '$label*' : label,
-        labelStyle: TextStyle(color: Colors.blue.shade700),
-        prefixIcon: Icon(icon, color: Colors.blue.shade600),
+        labelStyle: TextStyle(color: Colors.deepPurple.shade700),
+        prefixIcon: Icon(icon, color: Colors.deepPurple.shade600),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
         ),
         enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.blue.shade300),
+          borderSide: BorderSide(color: Colors.deepPurple.shade300),
           borderRadius: BorderRadius.circular(8),
         ),
         focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.blue.shade700, width: 2),
+          borderSide: BorderSide(color: Colors.deepPurple.shade700, width: 2),
           borderRadius: BorderRadius.circular(8),
         ),
       ),

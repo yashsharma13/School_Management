@@ -7,31 +7,18 @@ class EditClassPage extends StatefulWidget {
   final Class classItem;
   final List<Teacher> teachers;
 
-  EditClassPage({required this.classItem, required this.teachers});
+  const EditClassPage(
+      {super.key, required this.classItem, required this.teachers});
 
   @override
   _EditClassPageState createState() => _EditClassPageState();
 }
 
 class _EditClassPageState extends State<EditClassPage> {
-  late TextEditingController _tuitionFeesController;
   late String? _selectedTeacherId;
-
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   _tuitionFeesController =
-  //       TextEditingController(text: widget.classItem.tuitionFees);
-  //   _selectedTeacherName =
-  //       widget.teachers.any((t) => t.name == widget.classItem.teacherId)
-  //           ? widget.classItem.teacherId
-  //           : null;
-  // }
   @override
   void initState() {
     super.initState();
-    _tuitionFeesController =
-        TextEditingController(text: widget.classItem.tuitionFees);
 
     final matchedTeacher = widget.teachers.firstWhere(
       (teacher) => teacher.id == widget.classItem.teacherId,
@@ -44,7 +31,6 @@ class _EditClassPageState extends State<EditClassPage> {
 
   @override
   void dispose() {
-    _tuitionFeesController.dispose();
     super.dispose();
   }
 
@@ -57,7 +43,7 @@ class _EditClassPageState extends State<EditClassPage> {
     final success = await ClassService.updateClass(
       classId: widget.classItem.id,
       className: widget.classItem.className,
-      tuitionFees: _tuitionFeesController.text,
+      // tuitionFees: _tuitionFeesController.text,
       teacherId: _selectedTeacherId!,
     );
 
@@ -80,7 +66,8 @@ class _EditClassPageState extends State<EditClassPage> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Edit Class', style: TextStyle(color: Colors.blue[900])),
+      title:
+          Text('Edit Class', style: TextStyle(color: Colors.deepPurple[900])),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -88,16 +75,6 @@ class _EditClassPageState extends State<EditClassPage> {
             _buildReadOnlyField('Class Name', widget.classItem.className),
             SizedBox(height: 12),
             _buildReadOnlyField('Section', widget.classItem.section),
-            SizedBox(height: 12),
-            TextField(
-              controller: _tuitionFeesController,
-              decoration: InputDecoration(
-                labelText: 'Tuition Fees',
-                labelStyle: TextStyle(color: Colors.blue[900]),
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
-            ),
             SizedBox(height: 12),
             DropdownButtonFormField<String>(
               value: _selectedTeacherId,
@@ -111,8 +88,8 @@ class _EditClassPageState extends State<EditClassPage> {
                 _selectedTeacherId = value;
               }),
               decoration: InputDecoration(
-                labelText: 'Teacher',
-                labelStyle: TextStyle(color: Colors.blue[900]),
+                labelText: 'Class Teacher',
+                labelStyle: TextStyle(color: Colors.deepPurple[900]),
                 border: OutlineInputBorder(),
               ),
             ),
@@ -122,11 +99,13 @@ class _EditClassPageState extends State<EditClassPage> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text('Cancel', style: TextStyle(color: Colors.blue[900])),
+          child:
+              Text('Cancel', style: TextStyle(color: Colors.deepPurple[900])),
         ),
         CustomButton(
           text: 'Save',
           onPressed: _saveChanges,
+          icon: Icons.save_alt,
         ),
       ],
       shape: RoundedRectangleBorder(
@@ -141,7 +120,7 @@ class _EditClassPageState extends State<EditClassPage> {
       enabled: false,
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: Colors.blue[900]),
+        labelStyle: TextStyle(color: Colors.deepPurple[900]),
         disabledBorder: OutlineInputBorder(
           borderSide: BorderSide(color: Colors.grey),
         ),

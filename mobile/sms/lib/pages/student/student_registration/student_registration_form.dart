@@ -11,8 +11,11 @@ class StudentRegistrationForm extends StatefulWidget {
   final StudentRegistrationController controller;
   final void Function() onRegistered;
 
-  const StudentRegistrationForm(
-      {super.key, required this.controller, required this.onRegistered});
+  const StudentRegistrationForm({
+    super.key,
+    required this.controller,
+    required this.onRegistered,
+  });
 
   @override
   _StudentRegistrationFormState createState() =>
@@ -22,6 +25,8 @@ class StudentRegistrationForm extends StatefulWidget {
 class _StudentRegistrationFormState extends State<StudentRegistrationForm> {
   late StudentRegistrationController _controller;
   final _scrollController = ScrollController();
+
+  bool _isLoading = false; // Loading state for button
 
   @override
   void initState() {
@@ -51,18 +56,19 @@ class _StudentRegistrationFormState extends State<StudentRegistrationForm> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
+                      color: Colors.deepPurple.shade50,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Row(
                       children: [
-                        Icon(Icons.info_outline, color: Colors.blue, size: 18),
+                        Icon(Icons.info_outline,
+                            color: Colors.deepPurple, size: 18),
                         SizedBox(width: 8),
                         Flexible(
                           child: Text(
                             "Fields marked with an asterisk (*) are mandatory",
                             style: TextStyle(
-                              color: Color.fromRGBO(21, 101, 192, 1),
+                              color: Colors.deepPurple,
                               fontSize: 14,
                             ),
                           ),
@@ -72,7 +78,7 @@ class _StudentRegistrationFormState extends State<StudentRegistrationForm> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Section headers with blue accent
+                  // Section headers with deepPurple accent
                   _buildSectionHeader("Student Information"),
                   const SizedBox(height: 16),
                   StudentInfoSection(controller: _controller),
@@ -92,25 +98,36 @@ class _StudentRegistrationFormState extends State<StudentRegistrationForm> {
                   const SizedBox(height: 16),
                   DocumentsSection(controller: _controller),
                   const SizedBox(height: 32),
+
                   CustomButton(
                     text: 'Register Student',
                     icon: Icons.app_registration,
-                    onPressed: () async {
-                      _controller.showConfirmationDialog(context, () async {
-                        if (await _controller.registerStudent(context)) {
-                          widget.onRegistered();
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => AdmissionLetterPage(),
-                            ),
-                          );
-                        }
-                      });
-                    },
-                    isLoading: _controller.isLoading,
-                    // color: Colors.blue.shade700,
+                    isLoading: _isLoading,
+                    onPressed: _isLoading
+                        ? null
+                        : () async {
+                            _controller.showConfirmationDialog(context,
+                                () async {
+                              setState(() => _isLoading = true);
+
+                              bool success =
+                                  await _controller.registerStudent(context);
+
+                              setState(() => _isLoading = false);
+
+                              if (success) {
+                                widget.onRegistered();
+                                if (!mounted) return;
+                                Navigator.pop(context);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => AdmissionLetterPage(),
+                                  ),
+                                );
+                              }
+                            });
+                          },
                   ),
 
                   const SizedBox(height: 16),
@@ -130,7 +147,7 @@ class _StudentRegistrationFormState extends State<StudentRegistrationForm> {
           height: 24,
           width: 4,
           decoration: BoxDecoration(
-            color: Colors.blue.shade700,
+            color: Colors.deepPurple.shade700,
             borderRadius: BorderRadius.circular(2),
           ),
         ),
@@ -140,7 +157,7 @@ class _StudentRegistrationFormState extends State<StudentRegistrationForm> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: Colors.blue.shade800,
+            color: Colors.deepPurple.shade800,
           ),
         ),
       ],

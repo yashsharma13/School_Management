@@ -1,9 +1,13 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sms/widgets/custom_appbar.dart';
+
+import 'package:sms/widgets/report_components.dart';
+import 'package:sms/widgets/date_picker.dart';
 
 class AttendanceReportPage extends StatefulWidget {
   const AttendanceReportPage({super.key});
@@ -18,10 +22,13 @@ class _AttendanceReportPageState extends State<AttendanceReportPage> {
   String? selectedClassId;
   String? selectedSection;
   DateTime selectedDate = DateTime.now();
-  bool isLoading = false;
-  String? errorMessage;
 
   List<Map<String, dynamic>> attendanceRecords = [];
+  bool isLoading = false;
+  bool isError = false;
+  String errorMessage = '';
+  bool attendanceExists = false;
+  bool isInitialLoading = true;
 
   static final String baseUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
 
@@ -41,19 +48,16 @@ class _AttendanceReportPageState extends State<AttendanceReportPage> {
     }
 
     await _loadAssignedClass();
+    setState(() => isInitialLoading = false);
   }
 
   Future<void> _loadAssignedClass() async {
-    try {
-      setState(() {
-        isLoading = true;
-      });
+    setState(() => isLoading = true);
 
+    try {
       final response = await http.get(
         Uri.parse('$baseUrl/api/assigned-class'),
-        headers: {
-          'Authorization': 'Bearer $token',
-        },
+        headers: {'Authorization': 'Bearer $token'},
       );
 
       if (response.statusCode == 200) {
@@ -66,14 +70,12 @@ class _AttendanceReportPageState extends State<AttendanceReportPage> {
       } else if (response.statusCode == 401) {
         _handleUnauthorized();
       } else {
-        _showError('Failed to load assigned class.');
+        _handleError('Failed to load assigned class.');
       }
     } catch (e) {
-      _showError('Error loading class info: $e');
+      _handleError('Error loading class info: $e');
     } finally {
-      setState(() {
-        isLoading = false;
-      });
+      setState(() => isLoading = false);
     }
   }
 
@@ -84,36 +86,34 @@ class _AttendanceReportPageState extends State<AttendanceReportPage> {
 
     setState(() {
       isLoading = true;
-      errorMessage = null;
-      attendanceRecords = [];
+      isError = false;
+      attendanceExists = false;
     });
 
     try {
       final response = await http.get(
         Uri.parse(
             '$baseUrl/api/attendance/$selectedClassId/$selectedSection/${DateFormat('yyyy-MM-dd').format(selectedDate)}'),
-        headers: {
-          'Authorization': 'Bearer $token',
-        },
+        headers: {'Authorization': 'Bearer $token'},
       );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        final List records = data['students'] ?? data['data'] ?? [];
+
         setState(() {
-          attendanceRecords = (data['students'] ?? data['data'] ?? [])
-              .cast<Map<String, dynamic>>();
+          attendanceRecords = records.cast<Map<String, dynamic>>();
+          attendanceExists = attendanceRecords.isNotEmpty;
         });
       } else if (response.statusCode == 401) {
         _handleUnauthorized();
       } else {
-        _showError('Failed to fetch attendance report.');
+        _handleError('Failed to fetch attendance report.');
       }
     } catch (e) {
-      _showError('Error fetching report: $e');
+      _handleError('Error fetching attendance: $e');
     } finally {
-      setState(() {
-        isLoading = false;
-      });
+      setState(() => isLoading = false);
     }
   }
 
@@ -123,125 +123,142 @@ class _AttendanceReportPageState extends State<AttendanceReportPage> {
     Navigator.pushReplacementNamed(context, '/login');
   }
 
-  void _showError(String message) {
+  void _handleError(String message) {
     setState(() {
+      isError = true;
       errorMessage = message;
+      isLoading = false;
     });
-  }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: selectedDate,
-      firstDate: DateTime(2000),
-      lastDate: DateTime.now(),
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red[800],
+        behavior: SnackBarBehavior.floating,
+      ),
     );
-
-    if (picked != null && picked != selectedDate) {
-      setState(() {
-        selectedDate = picked;
-      });
-      await _fetchAttendanceReport();
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Attendance Report', style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.blue.shade900,
-        iconTheme: IconThemeData(color: Colors.white),
-        centerTitle: true,
-      ),
-      body: isLoading
-          ? Center(child: CircularProgressIndicator())
-          : token == null
-              ? Center(child: Text("Not logged in"))
-              : Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      Card(
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10)),
-                        elevation: 3,
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Class: ${selectedClass ?? "N/A"}',
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold)),
-                              SizedBox(height: 4),
-                              Text('Section: ${selectedSection ?? "N/A"}',
-                                  style: TextStyle(fontSize: 16)),
-                              SizedBox(height: 12),
-                              ElevatedButton.icon(
-                                onPressed: () => _selectDate(context),
-                                icon: Icon(Icons.calendar_today),
-                                label: Text(DateFormat('dd MMM yyyy')
-                                    .format(selectedDate)),
-                                style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.blue.shade50,
-                                    foregroundColor: Colors.blue.shade900),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                      if (errorMessage != null)
-                        Container(
-                          padding: EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.red.shade100,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(errorMessage!,
-                              style: TextStyle(color: Colors.red.shade700)),
-                        ),
-                      SizedBox(height: 8),
-                      Expanded(
-                        child: attendanceRecords.isEmpty
-                            ? Center(
-                                child: Text(
-                                  'No attendance data for selected date.',
-                                  style: TextStyle(
-                                      fontSize: 16, color: Colors.grey),
-                                ),
-                              )
-                            : ListView.builder(
-                                itemCount: attendanceRecords.length,
-                                itemBuilder: (context, index) {
-                                  final record = attendanceRecords[index];
-                                  final studentName =
-                                      record['student_name'] ?? 'Unknown';
-                                  final isPresent =
-                                      record['is_present'] ?? false;
+    final presentCount =
+        attendanceRecords.where((s) => s['is_present'] == true).length;
+    final absentCount =
+        attendanceRecords.where((s) => s['is_present'] == false).length;
 
-                                  return Card(
-                                    margin: EdgeInsets.symmetric(vertical: 6),
-                                    child: ListTile(
-                                      title: Text(studentName),
-                                      trailing: Icon(
-                                        isPresent
-                                            ? Icons.check_circle
-                                            : Icons.cancel,
-                                        color: isPresent
-                                            ? Colors.green
-                                            : Colors.red,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
+    return Scaffold(
+      // appBar: AppBar(
+      //   title: Text('Attendance Report', style: TextStyle(color: Colors.white)),
+      //   backgroundColor: Colors.blue.shade900,
+      // ),
+      appBar: CustomAppBar(title: 'Attendance Report'),
+      body: isInitialLoading
+          ? Center(child: CircularProgressIndicator())
+          : Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  ReportFilterCard(
+                    title: 'Class & Date',
+                    children: [
+                      Text('Class: ${selectedClass ?? "N/A"}',
+                          style: TextStyle(fontSize: 16)),
+                      SizedBox(height: 4),
+                      Text('Section: ${selectedSection ?? "N/A"}',
+                          style: TextStyle(fontSize: 16)),
+                      SizedBox(height: 12),
+                      CustomDatePicker(
+                        selectedDate: selectedDate,
+                        onDateSelected: (DateTime newDate) {
+                          setState(() => selectedDate = newDate);
+                          _fetchAttendanceReport();
+                        },
+                        isExpanded: true,
+                        lastDate: DateTime.now(), // 👈 only allow up to today
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.deepPurple,
                       ),
                     ],
                   ),
-                ),
+                  SizedBox(height: 16),
+                  if (isLoading)
+                    Expanded(child: Center(child: CircularProgressIndicator())),
+                  if (isError) _buildErrorState(),
+                  if (!isLoading && !isError)
+                    attendanceExists
+                        ? _buildAttendanceList(presentCount, absentCount)
+                        : _buildNoDataMessage(),
+                ],
+              ),
+            ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Expanded(
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 48, color: Colors.red),
+            SizedBox(height: 16),
+            Text(errorMessage, textAlign: TextAlign.center),
+            SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _fetchAttendanceReport,
+              child: Text('Try Again'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoDataMessage() {
+    return Expanded(
+      child: Center(
+        child: Text(
+          'No attendance records found for ${DateFormat.yMMMd().format(selectedDate)}.\n\nAttendance may not have been taken.',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 16),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAttendanceList(int presentCount, int absentCount) {
+    return Expanded(
+      child: Column(
+        children: [
+          AttendanceListHeader(
+            title: 'Attendance for $selectedClass - $selectedSection',
+            date: selectedDate,
+          ),
+          AttendanceListHeaderRow(
+            leftText: 'Student Name',
+            rightText: 'Status',
+          ),
+          Expanded(
+            child: ListView.separated(
+              itemCount: attendanceRecords.length,
+              separatorBuilder: (_, __) =>
+                  Divider(height: 1, color: Colors.blue[100]),
+              itemBuilder: (_, index) {
+                final student = attendanceRecords[index];
+                return AttendanceListItem(
+                  name: student['student_name'] ?? 'Unknown',
+                  isPresent: student['is_present'] ?? false,
+                );
+              },
+            ),
+          ),
+          AttendanceSummary(
+            presentCount: presentCount,
+            absentCount: absentCount,
+            totalCount: attendanceRecords.length,
+          ),
+        ],
+      ),
     );
   }
 }

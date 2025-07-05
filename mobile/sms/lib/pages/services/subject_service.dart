@@ -5,6 +5,8 @@ import 'api_base.dart';
 class SubjectService {
   static final String apiUrlRegisterSubject =
       '${ApiBase.baseUrl}/api/registersubject';
+  // static final String apiUrlDeleteSubjectsByClass =
+  //     '${ApiBase.baseUrl}/api/delete-by-class';
   static final String apiUrlDeleteSubject =
       '${ApiBase.baseUrl}/api/deletesubject';
   static final String apiUrlUpdateSubject =
@@ -30,6 +32,10 @@ class SubjectService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return true;
+      } else if (response.statusCode == 409) {
+        final errorMsg =
+            jsonDecode(response.body)['message'] ?? 'Conflict error';
+        throw Exception(errorMsg);
       } else {
         final errorData = json.decode(response.body);
         throw Exception(errorData['message'] ?? 'Failed to register subject');
@@ -94,12 +100,12 @@ class SubjectService {
     }
   }
 
-  static Future<bool> deleteSubject(String subjectId) async {
+  static Future<bool> deleteSingleSubject(String subjectId) async {
     try {
       final headers = await ApiBase.getHeaders();
 
       final response = await http.delete(
-        Uri.parse('$apiUrlDeleteSubject/$subjectId'),
+        Uri.parse('$apiUrlDeleteSubject/$subjectId'), // already exists!
         headers: headers,
       );
 
@@ -107,10 +113,30 @@ class SubjectService {
         return true;
       } else {
         final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to delete subjects');
+        throw Exception(errorData['message'] ?? 'Failed to delete subject');
       }
     } catch (e) {
       rethrow;
     }
   }
+
+  // static Future<bool> deleteSubjectsByClass(String classId) async {
+  //   try {
+  //     final headers = await ApiBase.getHeaders(); // assumes token is added here
+
+  //     final response = await http.delete(
+  //       Uri.parse('$apiUrlDeleteSubjectsByClass/$classId'), // <-- New endpoint
+  //       headers: headers,
+  //     );
+
+  //     if (response.statusCode == 200) {
+  //       return true;
+  //     } else {
+  //       final errorData = json.decode(response.body);
+  //       throw Exception(errorData['message'] ?? 'Failed to delete subjects');
+  //     }
+  //   } catch (e) {
+  //     rethrow;
+  //   }
+  // }
 }

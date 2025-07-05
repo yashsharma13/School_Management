@@ -79,18 +79,18 @@ class _ClassSectionInfoState extends State<ClassSectionInfo> {
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
-        side: BorderSide(color: Colors.blue.shade100, width: 1),
+        side: BorderSide(color: Colors.deepPurple.shade100, width: 1),
       ),
       child: ExpansionTile(
         initiallyExpanded: true,
-        collapsedBackgroundColor: Colors.blue.shade50,
+        collapsedBackgroundColor: Colors.deepPurple.shade50,
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         title: const Text(
           "CLASS & SECTION",
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: Color.fromRGBO(21, 101, 192, 1),
+            color: Colors.deepPurple,
             fontSize: 16,
           ),
         ),
@@ -101,7 +101,7 @@ class _ClassSectionInfoState extends State<ClassSectionInfo> {
           isLoading
               ? Center(
                   child: CircularProgressIndicator(
-                    color: Colors.blue.shade700,
+                    color: Colors.deepPurple.shade700,
                   ),
                 )
               : _buildClassDropdown(),
@@ -118,15 +118,16 @@ class _ClassSectionInfoState extends State<ClassSectionInfo> {
       value: selectedClass,
       decoration: InputDecoration(
         labelText: 'Assigned Class*',
-        labelStyle: TextStyle(color: Colors.blue.shade700),
-        prefixIcon: Icon(Icons.class_outlined, color: Colors.blue.shade600),
+        labelStyle: TextStyle(color: Colors.deepPurple.shade700),
+        prefixIcon:
+            Icon(Icons.class_outlined, color: Colors.deepPurple.shade600),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.blue.shade300),
+          borderSide: BorderSide(color: Colors.deepPurple.shade300),
           borderRadius: BorderRadius.circular(8),
         ),
         focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.blue.shade700, width: 2),
+          borderSide: BorderSide(color: Colors.deepPurple.shade700, width: 2),
           borderRadius: BorderRadius.circular(8),
         ),
       ),
@@ -135,7 +136,7 @@ class _ClassSectionInfoState extends State<ClassSectionInfo> {
           value: classItem,
           child: Text(
             classItem.className,
-            style: TextStyle(color: Colors.blue.shade800),
+            style: TextStyle(color: Colors.deepPurple.shade800),
           ),
         );
       }).toList(),
@@ -148,7 +149,7 @@ class _ClassSectionInfoState extends State<ClassSectionInfo> {
         });
       },
       validator: (value) => value == null ? 'Please select a class' : null,
-      style: TextStyle(color: Colors.blue.shade800),
+      style: TextStyle(color: Colors.deepPurple.shade800),
     );
   }
 
@@ -157,15 +158,16 @@ class _ClassSectionInfoState extends State<ClassSectionInfo> {
       value: widget.controller.selectedSection,
       decoration: InputDecoration(
         labelText: 'Assigned Section*',
-        labelStyle: TextStyle(color: Colors.blue.shade700),
-        prefixIcon: Icon(Icons.groups_outlined, color: Colors.blue.shade600),
+        labelStyle: TextStyle(color: Colors.deepPurple.shade700),
+        prefixIcon:
+            Icon(Icons.groups_outlined, color: Colors.deepPurple.shade600),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.blue.shade300),
+          borderSide: BorderSide(color: Colors.deepPurple.shade300),
           borderRadius: BorderRadius.circular(8),
         ),
         focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.blue.shade700, width: 2),
+          borderSide: BorderSide(color: Colors.deepPurple.shade700, width: 2),
           borderRadius: BorderRadius.circular(8),
         ),
       ),
@@ -174,7 +176,7 @@ class _ClassSectionInfoState extends State<ClassSectionInfo> {
           value: section,
           child: Text(
             section,
-            style: TextStyle(color: Colors.blue.shade800),
+            style: TextStyle(color: Colors.deepPurple.shade800),
           ),
         );
       }).toList(),
@@ -184,7 +186,7 @@ class _ClassSectionInfoState extends State<ClassSectionInfo> {
         });
       },
       validator: (value) => value == null ? 'Please select a section' : null,
-      style: TextStyle(color: Colors.blue.shade800),
+      style: TextStyle(color: Colors.deepPurple.shade800),
     );
   }
 }

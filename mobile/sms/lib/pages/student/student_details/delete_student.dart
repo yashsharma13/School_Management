@@ -7,7 +7,7 @@ Future<bool> showDeleteStudentDialog(
         builder: (context) => AlertDialog(
           title: Text('Confirm Delete',
               style: TextStyle(
-                  color: Colors.blue[800], fontWeight: FontWeight.bold)),
+                  color: Colors.deepPurple[800], fontWeight: FontWeight.bold)),
           content: Text('Delete $studentName permanently?'),
           actions: [
             TextButton(

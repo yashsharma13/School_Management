@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:sms/pages/teacher/Job_letter/confirm_letter.dart';
 import 'dart:convert';
+import 'package:intl/intl.dart';
+import 'package:sms/widgets/custom_appbar.dart';
 
 class TeacherAdmissionLetterPage extends StatefulWidget {
   const TeacherAdmissionLetterPage({Key? key}) : super(key: key);
@@ -39,6 +41,15 @@ class _TeacherAdmissionLetterPageState
     }
   }
 
+  String formatDate(String rawDate) {
+    try {
+      final parsedDate = DateTime.parse(rawDate);
+      return DateFormat('yyyy-MM-dd').format(parsedDate); // Or 'dd MMM yyyy'
+    } catch (e) {
+      return rawDate; // fallback if parsing fails
+    }
+  }
+
   Future<void> _fetchTeachers() async {
     try {
       setState(() => isLoading = true);
@@ -59,7 +70,7 @@ class _TeacherAdmissionLetterPageState
               .map((data) => Teacher(
                     id: data['id']?.toString() ?? '',
                     name: data['teacher_name']?.toString() ?? 'Unknown Teacher',
-                    email: data['email']?.toString() ?? 'N/A',
+                    // email: data['email']?.toString() ?? 'N/A',
                     dateOfBirth: data['date_of_birth']?.toString() ?? 'N/A',
                     dateOfJoining: data['date_of_joining']?.toString() ?? 'N/A',
                     gender: data['gender']?.toString() ?? 'N/A',
@@ -98,9 +109,9 @@ class _TeacherAdmissionLetterPageState
           return teacher.name
                   .toLowerCase()
                   .contains(searchQuery!.toLowerCase()) ||
-              teacher.email
-                  .toLowerCase()
-                  .contains(searchQuery!.toLowerCase()) ||
+              // teacher.email
+              //     .toLowerCase()
+              //     .contains(searchQuery!.toLowerCase()) ||
               teacher.qualification
                   .toLowerCase()
                   .contains(searchQuery!.toLowerCase());
@@ -133,8 +144,8 @@ class _TeacherAdmissionLetterPageState
   Widget _buildTeacherPhoto(String photoPath) {
     if (photoPath.isEmpty) {
       return CircleAvatar(
-        backgroundColor: Colors.blue[100],
-        child: Icon(Icons.person, color: Colors.blue[800]),
+        backgroundColor: Colors.deepPurple[100],
+        child: Icon(Icons.person, color: Colors.deepPurple[800]),
       );
     }
     return CircleAvatar(
@@ -151,13 +162,8 @@ class _TeacherAdmissionLetterPageState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Teacher Admission Letters',
-            style: TextStyle(color: Colors.white)),
-        centerTitle: true,
-        backgroundColor: Colors.blue.shade900,
-        elevation: 0,
-        iconTheme: IconThemeData(color: Colors.white),
+      appBar: const CustomAppBar(
+        title: 'Teacher Job Letters',
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -179,20 +185,22 @@ class _TeacherAdmissionLetterPageState
                         style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Colors.blue[800])),
+                            color: Colors.deepPurple[800])),
                     const SizedBox(height: 12),
                     TextField(
                       decoration: InputDecoration(
                         labelText: 'Search by name, email or qualification',
-                        labelStyle: TextStyle(color: Colors.blue[800]),
+                        labelStyle: TextStyle(color: Colors.deepPurple[800]),
                         filled: true,
-                        fillColor: Colors.blue[50],
+                        fillColor: Colors.deepPurple[50],
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        prefixIcon: Icon(Icons.search, color: Colors.blue[800]),
+                        prefixIcon:
+                            Icon(Icons.search, color: Colors.deepPurple[800]),
                         suffixIcon: IconButton(
-                          icon: Icon(Icons.clear, color: Colors.blue[800]),
+                          icon:
+                              Icon(Icons.clear, color: Colors.deepPurple[800]),
                           onPressed: () {
                             setState(() {
                               searchQuery = null;
@@ -217,21 +225,23 @@ class _TeacherAdmissionLetterPageState
             Expanded(
               child: isLoading
                   ? const Center(
-                      child: CircularProgressIndicator(color: Colors.blue))
+                      child:
+                          CircularProgressIndicator(color: Colors.deepPurple))
                   : filteredTeachers.isEmpty
                       ? Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(Icons.people_outline,
-                                  size: 48, color: Colors.blue[800]),
+                                  size: 48, color: Colors.deepPurple[800]),
                               const SizedBox(height: 16),
                               Text(
                                   searchQuery == null || searchQuery!.isEmpty
                                       ? 'No teachers found'
                                       : 'No teachers match your search',
                                   style: TextStyle(
-                                      fontSize: 16, color: Colors.blue[900])),
+                                      fontSize: 16,
+                                      color: Colors.deepPurple[900])),
                             ],
                           ),
                         )
@@ -253,30 +263,34 @@ class _TeacherAdmissionLetterPageState
                                 title: Text(teacher.name,
                                     style: TextStyle(
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.blue[900])),
+                                        color: Colors.deepPurple[900])),
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text('Email: ${teacher.email}',
-                                        style:
-                                            TextStyle(color: Colors.blue[800])),
+                                    // Text('Email: ${teacher.email}',
+                                    //     style:
+                                    //         TextStyle(color: Colors.deepPurple[800])),
                                     Text(
                                         'Qualification: ${teacher.qualification}',
-                                        style:
-                                            TextStyle(color: Colors.blue[800])),
-                                    Text('Joined: ${teacher.dateOfJoining}',
-                                        style:
-                                            TextStyle(color: Colors.blue[800])),
+                                        style: TextStyle(
+                                            color: Colors.deepPurple[800])),
+                                    // Text('Joined: ${teacher.dateOfJoining}',
+                                    //     style:
+                                    //         TextStyle(color: Colors.deepPurple[800])),
+                                    Text(
+                                        'Joined: ${formatDate(teacher.dateOfJoining)}',
+                                        style: TextStyle(
+                                            color: Colors.deepPurple[800])),
                                   ],
                                 ),
                                 trailing: Container(
                                   padding: const EdgeInsets.all(6),
                                   decoration: BoxDecoration(
-                                    color: Colors.blue[50],
+                                    color: Colors.deepPurple[50],
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(Icons.arrow_forward,
-                                      color: Colors.blue[800], size: 20),
+                                      color: Colors.deepPurple[800], size: 20),
                                 ),
                                 onTap: () =>
                                     _viewAdmissionConfirmation(teacher),
@@ -295,7 +309,7 @@ class _TeacherAdmissionLetterPageState
 class Teacher {
   final String id;
   final String name;
-  final String email;
+  // final String email;
   final String dateOfBirth;
   final String dateOfJoining;
   final String gender;
@@ -312,7 +326,7 @@ class Teacher {
   const Teacher({
     required this.id,
     required this.name,
-    required this.email,
+    // required this.email,
     required this.dateOfBirth,
     required this.dateOfJoining,
     required this.gender,

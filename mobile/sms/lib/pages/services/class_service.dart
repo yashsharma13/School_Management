@@ -8,7 +8,7 @@ class ClassService {
   static Future<bool> registerClass({
     required String className,
     required String section,
-    required String tuitionFees,
+    // required String tuitionFees,
     required String teacherId,
   }) async {
     try {
@@ -20,7 +20,7 @@ class ClassService {
         body: json.encode({
           'class_name': className,
           'section': section,
-          'tuition_fees': tuitionFees,
+          // 'tuition_fees': tuitionFees,
           'teacher_id': teacherId,
         }),
       );
@@ -61,7 +61,7 @@ class ClassService {
   static Future<bool> updateClass({
     required String classId,
     required String className,
-    required String tuitionFees,
+    // required String tuitionFees,
     required String teacherId,
   }) async {
     try {
@@ -72,7 +72,7 @@ class ClassService {
         headers: headers,
         body: json.encode({
           'class_name': className,
-          'tuition_fees': tuitionFees,
+          // 'tuition_fees': tuitionFees,
           'teacher_id': teacherId,
         }),
       );

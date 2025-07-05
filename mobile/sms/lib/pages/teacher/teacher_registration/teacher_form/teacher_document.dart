@@ -18,11 +18,11 @@ class _TeacherDocumentState extends State<TeacherDocument> {
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
-        side: BorderSide(color: Colors.blue.shade100, width: 1),
+        side: BorderSide(color: Colors.deepPurple.shade100, width: 1),
       ),
       child: ExpansionTile(
         initiallyExpanded: true,
-        collapsedBackgroundColor: Colors.blue.shade50,
+        collapsedBackgroundColor: Colors.deepPurple.shade50,
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
@@ -31,7 +31,7 @@ class _TeacherDocumentState extends State<TeacherDocument> {
           "DOCUMENTS",
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: Color.fromRGBO(21, 101, 192, 1),
+            color: Colors.deepPurple,
             fontSize: 16,
           ),
         ),
@@ -40,14 +40,20 @@ class _TeacherDocumentState extends State<TeacherDocument> {
         children: [
           _buildDocumentRow(
             label: 'Qualification Document',
-            onPressed: () => widget.controller.pickFile(context, false),
-            fileName: widget.controller.qualificationCertificate?.name,
+            onPressed: () async {
+              await widget.controller.pickFile(context, false);
+              setState(() {}); // Refresh UI after picking the file
+            },
+            fileName: widget.controller.qualificationDocName,
           ),
           const SizedBox(height: 16),
           _buildDocumentRow(
             label: 'Teacher Photo*',
-            onPressed: () => widget.controller.pickFile(context, true),
-            fileName: widget.controller.teacherPhoto?.name,
+            onPressed: () async {
+              await widget.controller.pickFile(context, true);
+              setState(() {});
+            },
+            fileName: widget.controller.teacherPhotoName,
             isRequired: true,
           ),
           const SizedBox(height: 8),
@@ -71,7 +77,7 @@ class _TeacherDocumentState extends State<TeacherDocument> {
               child: Text(
                 isRequired ? '$label*' : label,
                 style: TextStyle(
-                  color: Colors.blue.shade800,
+                  color: Colors.deepPurple.shade800,
                   fontSize: 14,
                 ),
               ),
@@ -79,11 +85,11 @@ class _TeacherDocumentState extends State<TeacherDocument> {
             ElevatedButton(
               onPressed: onPressed,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue.shade50,
-                foregroundColor: Colors.blue.shade800,
+                backgroundColor: Colors.deepPurple.shade50,
+                foregroundColor: Colors.deepPurple.shade800,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(color: Colors.blue.shade300),
+                  side: BorderSide(color: Colors.deepPurple.shade300),
                 ),
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -92,14 +98,14 @@ class _TeacherDocumentState extends State<TeacherDocument> {
             ),
           ],
         ),
-        if (fileName != null)
+        if (fileName != null && fileName.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 4.0, left: 8.0),
             child: Text(
               'Selected: $fileName',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.blue.shade600,
+                color: Colors.deepPurple.shade600,
                 fontStyle: FontStyle.italic,
               ),
             ),

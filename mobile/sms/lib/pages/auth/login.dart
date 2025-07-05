@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sms/pages/admin/admin_dashboard.dart';
+import 'package:sms/pages/parents_dashboard/dashboard.dart';
 import 'package:sms/pages/principle/principle_dashboard.dart';
 import 'package:sms/pages/auth/forgotpassword.dart';
 import 'package:sms/pages/profile_setting/profile_setup.dart';
@@ -11,6 +12,7 @@ import 'package:sms/pages/stud_dashboard/student_dashboard.dart';
 import 'package:sms/widgets/button.dart';
 import 'package:sms/pages/services/profile_service.dart';
 import 'package:sms/pages/teacher_dashboard/t_dashboard.dart';
+import 'package:sms/widgets/custom_snackbar.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -58,14 +60,9 @@ class _LoginPageState extends State<LoginPage> {
           if (response['user_id'] != null)
             prefs.setString('user_id', response['user_id'].toString()),
         ]);
-
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Login Successful'),
-            backgroundColor: primaryColor,
-          ),
-        );
+        showCustomSnackBar(context, 'Login Successful',
+            backgroundColor: Colors.green);
 
         // 🔁 Check if profile is set
         final profile = await ProfileService.getProfile();
@@ -113,10 +110,13 @@ class _LoginPageState extends State<LoginPage> {
       case 'principal':
         dashboard = const PrincipleDashboard(); // Replace with your actual page
         break;
+      case 'parents':
+        dashboard = const ParentDashboard(); // Replace with your actual page
+        break;
       case 'admin':
         dashboard = const AdminDashboard();
       default:
-        dashboard = const LoginPage();
+        dashboard = const PrincipleDashboard();
     }
 
     Navigator.pushReplacement(
@@ -180,7 +180,8 @@ class _LoginPageState extends State<LoginPage> {
                         text: "Log In",
                         onPressed: _login,
                         isLoading: _isLoading,
-                        color: primaryColor,
+                        // color: primaryColor,
+                        icon: Icons.login,
                       ),
                       const SizedBox(height: 20),
                       TextButton(

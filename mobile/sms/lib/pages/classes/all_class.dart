@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:sms/pages/classes/edit_class.dart';
-import 'package:sms/pages/classes/new_class.dart';
 import 'package:sms/pages/services/class_service.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sms/widgets/custom_appbar.dart';
+import 'package:sms/widgets/custom_snackbar.dart'; // <-- Import custom snackbar here
 
 class AllClassesPage extends StatefulWidget {
   @override
@@ -42,24 +43,17 @@ class _AllClassesPageState extends State<AllClassesPage> {
     try {
       setState(() => isLoading = true);
 
-      // Fetch classes first
       final fetchedClasses = await ClassService.fetchClasses();
-      debugPrint('Fetched ${fetchedClasses.length} classes');
-
-      // Then fetch student counts
       final studentCounts = await ClassService.modelgetStudentCountByClass();
-      debugPrint('Fetched ${studentCounts.length} student count records');
 
-      // Create case-insensitive count map
       final Map<String, int> countMap = {};
-
       for (final item in studentCounts) {
         try {
           final className =
               (item['class_name'] ?? '').toString().toLowerCase().trim();
           final section =
               (item['section'] ?? '').toString().toLowerCase().trim();
-          final key = '$className|$section'; // Composite key
+          final key = '$className|$section';
           final count = _parseCount(item['student_count'] ?? 0);
 
           if (className.isNotEmpty && section.isNotEmpty) {
@@ -70,7 +64,6 @@ class _AllClassesPageState extends State<AllClassesPage> {
         }
       }
 
-      // Build final class list with counts
       final classesWithCounts = fetchedClasses
           .map((classData) {
             final className =
@@ -80,9 +73,6 @@ class _AllClassesPageState extends State<AllClassesPage> {
                 '${className.toLowerCase().trim()}|${section.toLowerCase().trim()}';
             final studentCount = countMap[key] ?? 0;
 
-            debugPrint('Class: $className, Students: $studentCount');
-
-            // Handle case where teacher might be deleted
             final teacherId =
                 classData['teacher_id']?.toString() ?? 'No Teacher Assigned';
 
@@ -159,31 +149,8 @@ class _AllClassesPageState extends State<AllClassesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text('All Classes', style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.blue.shade900,
-        elevation: 0,
-        centerTitle: true,
-        iconTheme: IconThemeData(color: Colors.white),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh, color: Colors.white),
-            onPressed: _loadClasses,
-          ),
-          IconButton(
-            icon: Icon(Icons.add, color: Colors.white),
-            onPressed: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => AddClassPage()),
-              );
-
-              if (result == true) {
-                await _loadClasses();
-              }
-            },
-          ),
-        ],
+      appBar: CustomAppBar(
+        title: 'All Classes',
       ),
       body: _buildBody(),
     );
@@ -192,7 +159,7 @@ class _AllClassesPageState extends State<AllClassesPage> {
   Widget _buildBody() {
     if (isLoading) {
       return Center(
-        child: CircularProgressIndicator(color: Colors.blue[900]),
+        child: CircularProgressIndicator(color: Colors.deepPurple[900]),
       );
     }
 
@@ -202,13 +169,13 @@ class _AllClassesPageState extends State<AllClassesPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.class_,
-                size: 48, color: Colors.blue[900]!.withOpacity(0.5)),
+                size: 48, color: Colors.deepPurple[900]!.withOpacity(0.5)),
             SizedBox(height: 16),
             Text(
               'No Classes Available',
               style: TextStyle(
                 fontSize: 18,
-                color: Colors.blue[900],
+                color: Colors.deepPurple[900],
               ),
             ),
             SizedBox(height: 8),
@@ -225,7 +192,7 @@ class _AllClassesPageState extends State<AllClassesPage> {
 
     return RefreshIndicator(
       onRefresh: _loadClasses,
-      color: Colors.blue[900],
+      color: Colors.deepPurple[900],
       child: ListView.separated(
         padding: EdgeInsets.all(16),
         itemCount: classes.length,
@@ -238,49 +205,7 @@ class _AllClassesPageState extends State<AllClassesPage> {
     );
   }
 
-  // Widget _buildClassCard(Class classItem) {
-  //   return Card(
-  //     elevation: 2,
-  //     shape: RoundedRectangleBorder(
-  //       borderRadius: BorderRadius.circular(12),
-  //     ),
-  //     child: InkWell(
-  //       borderRadius: BorderRadius.circular(12),
-  //       onTap: () => _openEditDialog(classItem),
-  //       child: Padding(
-  //         padding: EdgeInsets.all(16),
-  //         child: Column(
-  //           crossAxisAlignment: CrossAxisAlignment.start,
-  //           children: [
-  //             Row(
-  //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //               children: [
-  //                 Text(
-  //                   '${classItem.className} (${classItem.section})',
-  //                   style: TextStyle(
-  //                     fontSize: 18,
-  //                     fontWeight: FontWeight.bold,
-  //                     color: Colors.blue[900],
-  //                   ),
-  //                 ),
-  //                 _buildStudentCountBadge(classItem.studentCount),
-  //               ],
-  //             ),
-  //             SizedBox(height: 12),
-  //             _buildInfoRow(Icons.person, classItem.teacherId),
-  //             SizedBox(height: 8),
-  //             _buildInfoRow(
-  //                 Icons.attach_money, 'Fees: ${classItem.tuitionFees}'),
-  //             SizedBox(height: 12),
-  //             _buildActionButtons(classItem),
-  //           ],
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
   Widget _buildClassCard(Class classItem) {
-    // Find teacher name from teachers list by teacherId
     final teacherName = teachers
         .firstWhere(
           (teacher) => teacher.id == classItem.teacherId,
@@ -309,18 +234,14 @@ class _AllClassesPageState extends State<AllClassesPage> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.blue[900],
+                      color: Colors.deepPurple[900],
                     ),
                   ),
                   _buildStudentCountBadge(classItem.studentCount),
                 ],
               ),
               SizedBox(height: 12),
-              _buildInfoRow(
-                  Icons.person, teacherName), // <-- Show teacherName here
-              SizedBox(height: 8),
-              _buildInfoRow(
-                  Icons.attach_money, 'Fees: ${classItem.tuitionFees}'),
+              _buildInfoRow(Icons.person, teacherName),
               SizedBox(height: 12),
               _buildActionButtons(classItem),
             ],
@@ -334,18 +255,18 @@ class _AllClassesPageState extends State<AllClassesPage> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.blue[50],
+        color: Colors.deepPurple[50],
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.people, size: 16, color: Colors.blue[900]),
+          Icon(Icons.people, size: 16, color: Colors.deepPurple[900]),
           SizedBox(width: 4),
           Text(
             count.toString(),
             style: TextStyle(
-              color: Colors.blue[900],
+              color: Colors.deepPurple[900],
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -357,7 +278,7 @@ class _AllClassesPageState extends State<AllClassesPage> {
   Widget _buildInfoRow(IconData icon, String text) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: Colors.blue[900]!.withOpacity(0.7)),
+        Icon(icon, size: 18, color: Colors.deepPurple[900]!.withOpacity(0.7)),
         SizedBox(width: 8),
         Flexible(
           child: Text(
@@ -377,7 +298,7 @@ class _AllClassesPageState extends State<AllClassesPage> {
       children: [
         _buildIconButton(
           icon: Icons.edit,
-          color: Colors.blue[600]!,
+          color: Colors.deepPurple[600]!,
           onPressed: () => _openEditDialog(classItem),
         ),
         SizedBox(width: 8),
@@ -412,6 +333,7 @@ class _AllClassesPageState extends State<AllClassesPage> {
 
   Future<void> _deleteClass(Class classItem) async {
     if (classItem.id.isEmpty) {
+      if (!mounted) return;
       _showErrorSnackBar('Cannot delete class - invalid ID');
       return;
     }
@@ -420,24 +342,19 @@ class _AllClassesPageState extends State<AllClassesPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Confirm Deletion',
-              style: TextStyle(color: Colors.blue[900])),
+          title: Text('Confirm Deletion'),
           content:
               Text('Are you sure you want to delete "${classItem.className}"?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: Text('Cancel', style: TextStyle(color: Colors.blue[900])),
+              child: Text('Cancel'),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true),
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
               child: Text('Delete'),
             ),
           ],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
         );
       },
     );
@@ -446,21 +363,35 @@ class _AllClassesPageState extends State<AllClassesPage> {
       try {
         final success = await ClassService.deleteClass(classItem.id);
 
+        if (!mounted) return;
+
         if (success) {
           setState(() {
             classes.removeWhere((c) => c.id == classItem.id);
           });
-          _showSuccessSnackBar('Class deleted successfully');
+          showCustomSnackBar(
+            context,
+            'Class deleted successfully',
+            backgroundColor: Colors.red[400]!,
+          );
         } else {
-          _showErrorSnackBar('Failed to delete class');
+          showCustomSnackBar(
+            context,
+            'Failed to delete class',
+            backgroundColor: Colors.red[400]!,
+          );
         }
       } catch (error) {
-        _showErrorSnackBar('Error deleting class: $error');
+        if (!mounted) return;
+        showCustomSnackBar(
+          context,
+          'Error deleting class: $error',
+          backgroundColor: Colors.red[400]!,
+        );
       }
     }
   }
 
-  // Inside your class, replace _openEditDialog with:
   void _openEditDialog(Class classItem) async {
     final updated = await Navigator.push(
       context,
@@ -474,33 +405,19 @@ class _AllClassesPageState extends State<AllClassesPage> {
 
     if (updated == true) {
       await _loadClasses();
-      _showSuccessSnackBar('Class updated successfully');
+      showCustomSnackBar(
+        context,
+        'Class updated successfully',
+        backgroundColor: Colors.green[400]!,
+      );
     }
   }
 
   void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red[400],
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-    );
-  }
-
-  void _showSuccessSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green[400],
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
+    showCustomSnackBar(
+      context,
+      message,
+      backgroundColor: Colors.red[400]!,
     );
   }
 }
@@ -508,7 +425,6 @@ class _AllClassesPageState extends State<AllClassesPage> {
 class Class {
   final String id;
   final String className;
-  final String tuitionFees;
   final String teacherId;
   final int studentCount;
   final String section;
@@ -516,7 +432,6 @@ class Class {
   Class({
     required this.id,
     required this.className,
-    required this.tuitionFees,
     required this.teacherId,
     required this.studentCount,
     required this.section,
@@ -526,7 +441,6 @@ class Class {
     return Class(
       id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
       className: json['class_name']?.toString() ?? 'Unknown Class',
-      tuitionFees: json['tuition_fees']?.toString() ?? '0',
       teacherId: json['teacher_id']?.toString() ?? 'No Teacher Assigned',
       studentCount: json['student_count'] ?? 0,
       section: json['section']?.toString() ?? '',

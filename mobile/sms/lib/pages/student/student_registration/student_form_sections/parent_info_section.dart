@@ -18,18 +18,18 @@ class _ParentInfoSectionState extends State<ParentInfoSection> {
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
-        side: BorderSide(color: Colors.blue.shade100, width: 1),
+        side: BorderSide(color: Colors.deepPurple.shade100, width: 1),
       ),
       child: ExpansionTile(
         initiallyExpanded: true,
-        collapsedBackgroundColor: Colors.blue.shade50,
+        collapsedBackgroundColor: Colors.deepPurple.shade50,
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         title: const Text(
           "PARENT INFORMATION",
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: Color.fromRGBO(21, 101, 192, 1),
+            color: Colors.deepPurple,
             fontSize: 16,
           ),
         ),
@@ -93,17 +93,17 @@ class _ParentInfoSectionState extends State<ParentInfoSection> {
       keyboardType: keyboardType,
       decoration: InputDecoration(
         labelText: '$label*',
-        labelStyle: TextStyle(color: Colors.blue.shade700),
-        prefixIcon: Icon(icon, color: Colors.blue.shade600),
+        labelStyle: TextStyle(color: Colors.deepPurple.shade700),
+        prefixIcon: Icon(icon, color: Colors.deepPurple.shade600),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
         ),
         enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.blue.shade300),
+          borderSide: BorderSide(color: Colors.deepPurple.shade300),
           borderRadius: BorderRadius.circular(8),
         ),
         focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.blue.shade700, width: 2),
+          borderSide: BorderSide(color: Colors.deepPurple.shade700, width: 2),
           borderRadius: BorderRadius.circular(8),
         ),
         contentPadding:

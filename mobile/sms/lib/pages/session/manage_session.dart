@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sms/pages/services/session_service.dart';
-import 'package:sms/pages/session/edit_session.dart'; // ✅ Make sure this path is correct
+import 'package:sms/pages/session/edit_session.dart';
+import 'package:sms/widgets/custom_appbar.dart'; // ✅ Make sure this path is correct
 
 // ----------------- MODEL -----------------
 class Session {
@@ -42,6 +43,8 @@ class Session {
 
 // ----------------- PAGE -----------------
 class ManageSessionsPage extends StatefulWidget {
+  const ManageSessionsPage({super.key});
+
   @override
   _ManageSessionsPageState createState() => _ManageSessionsPageState();
 }
@@ -66,26 +69,9 @@ class _ManageSessionsPageState extends State<ManageSessionsPage> {
     }
   }
 
-  // Future<void> deleteSession(int sessionId) async {
-  //   // You can implement deleteSession inside SessionService if needed
-  //   final result = await SessionService.deleteSession(sessionId.toString());
-
-  //   if (result == true) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Session deleted successfully')),
-  //     );
-  //     setState(() {
-  //       futureSessions = loadSessions(); // Refresh list
-  //     });
-  //   } else {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Failed to delete')),
-  //     );
-  //   }
-  // }
-
   Future<void> deleteSession(int sessionId) async {
     final result = await SessionService.deleteSession(sessionId.toString());
+    if (!mounted) return;
 
     if (result['success'] == true) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -128,22 +114,21 @@ class _ManageSessionsPageState extends State<ManageSessionsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Manage Sessions"),
-        backgroundColor: Colors.blue.shade700,
-      ),
+      appBar: const CustomAppBar(title: 'Manage Session'),
       body: FutureBuilder<List<Session>>(
         future: futureSessions,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting)
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
+          }
 
-          if (snapshot.hasError)
+          if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
+          }
 
-          if (!snapshot.hasData || snapshot.data!.isEmpty)
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return Center(child: Text('No sessions found'));
-
+          }
           final sessions = snapshot.data!;
           return ListView.builder(
             itemCount: sessions.length,
@@ -166,7 +151,7 @@ class _ManageSessionsPageState extends State<ManageSessionsPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         SizedBox(height: 4),
-                        Text('Name: ${session.sessionName}'),
+                        // Text('Name: ${session.sessionName}'),
                         Text('Start: ${session.startDate}'),
                         Text('End: ${session.endDate}'),
                       ],

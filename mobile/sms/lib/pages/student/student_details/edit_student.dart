@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sms/pages/services/student_service.dart';
+import 'package:sms/widgets/button.dart';
+import 'package:sms/widgets/custom_snackbar.dart';
 import 'package:sms/widgets/user_photo_widget.dart';
 import 'package:sms/widgets/date_picker.dart';
 import 'student_model.dart';
@@ -155,8 +156,14 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
       };
 
       final studentService = StudentService(); // ✅ FIXED
-      await studentService.updateStudent(
-          widget.student, updatedStudent); // ✅ FIXED
+      await studentService.updateStudent(widget.student, updatedStudent);
+      if (!mounted) return; // ✅ Prevents context use if widget disposed
+
+      showCustomSnackBar(
+        context,
+        'Student updated successfully',
+        backgroundColor: Colors.green,
+      ); // ✅ FIXED
 
       widget.onStudentUpdated();
       Navigator.of(context).pop();
@@ -185,7 +192,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blue[800],
+                  color: Colors.deepPurple[800],
                 ),
               ),
               SizedBox(height: 20),
@@ -201,7 +208,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                             Text(
                               'Current Photo',
                               style: TextStyle(
-                                color: Colors.blue[800],
+                                color: Colors.deepPurple[800],
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -212,7 +219,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: Colors.blue[100]!,
+                                  color: Colors.deepPurple[100]!,
                                   width: 2,
                                 ),
                               ),
@@ -229,7 +236,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                               Text(
                                 'New Photo',
                                 style: TextStyle(
-                                  color: Colors.blue[800],
+                                  color: Colors.deepPurple[800],
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -257,19 +264,12 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                       ],
                     ),
                     SizedBox(height: 20),
-                    ElevatedButton.icon(
-                      icon: Icon(Icons.camera_alt, size: 20),
-                      label: Text('Update Photo'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue[800],
-                        foregroundColor: Colors.white,
-                        padding:
-                            EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
+                    CustomButton(
+                      text: 'Update Photo',
+                      icon: Icons.camera_alt,
                       onPressed: _updatePhoto,
+                      height: 45,
+                      width: 170,
                     ),
                     SizedBox(height: 20),
                     _buildEditField(_nameController, 'Name', true),
@@ -282,18 +282,19 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                         readOnly: true,
                         decoration: InputDecoration(
                           labelText: 'Registration Number',
-                          labelStyle: TextStyle(color: Colors.blue[800]),
+                          labelStyle: TextStyle(color: Colors.deepPurple[800]),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.blue[300]!),
+                            borderSide:
+                                BorderSide(color: Colors.deepPurple[300]!),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide:
-                                BorderSide(color: Colors.blue[800]!, width: 2),
+                            borderSide: BorderSide(
+                                color: Colors.deepPurple[800]!, width: 2),
                           ),
                           filled: true,
-                          fillColor: Colors.blue[50],
+                          fillColor: Colors.deepPurple[50],
                           suffixIcon: Icon(Icons.lock,
                               color: Colors.grey[600]), // 🔒 lock icon
                         ),
@@ -310,8 +311,8 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                       },
                       labelText: 'Date of Birth',
                       isExpanded: true,
-                      backgroundColor: Colors.blue[50],
-                      foregroundColor: Colors.blue[800],
+                      backgroundColor: Colors.deepPurple[50],
+                      foregroundColor: Colors.deepPurple[800],
                       firstDate: DateTime(1900),
                       lastDate: DateTime.now(),
                     ),
@@ -327,30 +328,32 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                       value: _selectedClass,
                       decoration: InputDecoration(
                         labelText: 'Class',
-                        labelStyle: TextStyle(color: Colors.blue[800]),
+                        labelStyle: TextStyle(color: Colors.deepPurple[800]),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.blue[300]!),
+                          borderSide:
+                              BorderSide(color: Colors.deepPurple[300]!),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide:
-                              BorderSide(color: Colors.blue[800]!, width: 2),
+                          borderSide: BorderSide(
+                              color: Colors.deepPurple[800]!, width: 2),
                         ),
                         filled: true,
-                        fillColor: Colors.blue[50],
+                        fillColor: Colors.deepPurple[50],
                       ),
                       items: [
                         DropdownMenuItem(
                           value: null,
                           child: Text('Select Class',
-                              style: TextStyle(color: Colors.blue[900])),
+                              style: TextStyle(color: Colors.deepPurple[900])),
                         ),
                         ...widget.classes.map((classItem) {
                           return DropdownMenuItem<String>(
                             value: classItem.className,
                             child: Text(classItem.className,
-                                style: TextStyle(color: Colors.blue[900])),
+                                style:
+                                    TextStyle(color: Colors.deepPurple[900])),
                           );
                         }).toList(),
                       ],
@@ -371,30 +374,32 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                       value: _selectedSection,
                       decoration: InputDecoration(
                         labelText: 'Section',
-                        labelStyle: TextStyle(color: Colors.blue[800]),
+                        labelStyle: TextStyle(color: Colors.deepPurple[800]),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.blue[300]!),
+                          borderSide:
+                              BorderSide(color: Colors.deepPurple[300]!),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide:
-                              BorderSide(color: Colors.blue[800]!, width: 2),
+                          borderSide: BorderSide(
+                              color: Colors.deepPurple[800]!, width: 2),
                         ),
                         filled: true,
-                        fillColor: Colors.blue[50],
+                        fillColor: Colors.deepPurple[50],
                       ),
                       items: [
                         DropdownMenuItem(
                           value: null,
                           child: Text('Select Section',
-                              style: TextStyle(color: Colors.blue[900])),
+                              style: TextStyle(color: Colors.deepPurple[900])),
                         ),
                         ..._availableSections.map((value) {
                           return DropdownMenuItem<String>(
                             value: value,
                             child: Text(value,
-                                style: TextStyle(color: Colors.blue[900])),
+                                style:
+                                    TextStyle(color: Colors.deepPurple[900])),
                           );
                         }).toList(),
                       ],
@@ -419,21 +424,14 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                     ),
                   ),
                   SizedBox(width: 10),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue[800],
-                      foregroundColor: Colors.white,
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
+                  CustomButton(
+                    text: 'Save',
+                    icon: Icons.save_alt,
                     onPressed: _isLoading ? null : _saveChanges,
-                    child: _isLoading
-                        ? CircularProgressIndicator(color: Colors.white)
-                        : Text('Save'),
-                  ),
+                    isLoading: _isLoading,
+                    height: 45,
+                    width: 120,
+                  )
                 ],
               ),
             ],
@@ -451,17 +449,17 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
         controller: controller,
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: Colors.blue[800]),
+          labelStyle: TextStyle(color: Colors.deepPurple[800]),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: Colors.blue[300]!),
+            borderSide: BorderSide(color: Colors.deepPurple[300]!),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: Colors.blue[800]!, width: 2),
+            borderSide: BorderSide(color: Colors.deepPurple[800]!, width: 2),
           ),
           filled: true,
-          fillColor: Colors.blue[50],
+          fillColor: Colors.deepPurple[50],
         ),
         validator: required
             ? (value) => value!.isEmpty ? '$label is required' : null

@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
+import 'package:sms/widgets/button.dart';
+import 'package:sms/widgets/custom_appbar.dart';
 
 class AddNoticePage extends StatefulWidget {
   @override
@@ -175,12 +177,8 @@ class _AddNoticePageState extends State<AddNoticePage> {
     final isDarkMode = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Create New Notice', style: TextStyle(color: Colors.white)),
-        centerTitle: true,
-        backgroundColor: Colors.blue.shade900,
-        elevation: 0,
-        iconTheme: IconThemeData(color: Colors.white),
+      appBar: CustomAppBar(
+        title: 'Create New Notice',
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -395,21 +393,12 @@ class _AddNoticePageState extends State<AddNoticePage> {
 
                 SizedBox(height: 30),
 
-                ElevatedButton(
-                  onPressed: isSubmitting ? null : submitNotice,
-                  child: isSubmitting
-                      ? CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        )
-                      : Text('Submit Notice'),
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    backgroundColor: Colors.blue.shade900,
-                  ),
+                CustomButton(
+                  text: 'Submit Notice',
+                  onPressed: submitNotice,
+                  isLoading: isSubmitting,
+                  icon: Icons.send,
+                  height: 50,
                 ),
 
                 SizedBox(height: 30),

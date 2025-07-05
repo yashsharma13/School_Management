@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sms/widgets/custom_appbar.dart';
+import 'package:sms/widgets/report_components.dart';
+import 'package:sms/pages/services/report_service.dart';
 
 class TeacherReportPage extends StatefulWidget {
   const TeacherReportPage({super.key});
@@ -24,44 +24,33 @@ class TeacherAttendance {
   });
 
   factory TeacherAttendance.fromJson(Map<String, dynamic> json) {
-    String teacherId = '';
-    if (json['teacher_id'] != null) {
-      teacherId = json['teacher_id'].toString().trim();
-    }
-
-    String teacherName =
-        (json['teacher_name'] ?? 'Unknown Teacher').toString().trim();
-
-    bool isPresent = false;
-    if (json['is_present'] != null) {
-      if (json['is_present'] is bool) {
-        isPresent = json['is_present'];
-      } else if (json['is_present'] is int) {
-        isPresent = json['is_present'] == 1;
-      } else if (json['is_present'] is String) {
-        isPresent = json['is_present'].toLowerCase() == 'true' ||
-            json['is_present'] == '1';
-      }
-    }
-
     return TeacherAttendance(
-      teacherId: teacherId,
-      teacherName: teacherName,
-      isPresent: isPresent,
+      teacherId: (json['teacher_id'] ?? '').toString().trim(),
+      teacherName:
+          (json['teacher_name'] ?? 'Unknown Teacher').toString().trim(),
+      isPresent: _parseAttendanceStatus(json['is_present']),
     );
   }
 }
 
+bool _parseAttendanceStatus(dynamic status) {
+  if (status == null) return false;
+  if (status is bool) return status;
+  if (status is int) return status == 1;
+  if (status is String) {
+    return status.toLowerCase() == 'true' || status == '1';
+  }
+  return false;
+}
+
 class _TeacherReportPageState extends State<TeacherReportPage> {
   DateTime selectedDate = DateTime.now();
-  List<TeacherAttendance> teacherAttendanceRecords = [];
+  List<TeacherAttendance> attendanceRecords = [];
   String? token;
   bool isLoading = false;
   bool isError = false;
   String errorMessage = '';
   bool attendanceExists = false;
-  bool _isInitialLoading = true;
-  static final String baseeUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
 
   @override
   void initState() {
@@ -71,121 +60,56 @@ class _TeacherReportPageState extends State<TeacherReportPage> {
 
   Future<void> _loadToken() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      token = prefs.getString('token');
-    });
+    token = prefs.getString('token');
     if (token != null) {
       await fetchAttendance();
+    } else {
+      _handleError('Please login to continue');
     }
-    setState(() {
-      _isInitialLoading = false;
-    });
-  }
-
-  void _handleUnauthorized() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('token');
-    setState(() {
-      token = null;
-    });
-    _showErrorSnackBar('Session expired. Please login again.');
-  }
-
-  void _showErrorSnackBar(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(message),
-      backgroundColor: Colors.red[800],
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-    ));
   }
 
   Future<void> fetchAttendance() async {
     if (token == null) {
-      setState(() {
-        errorMessage = 'No token found. Please log in.';
-        isError = true;
-      });
-      _showErrorSnackBar('Please login to continue');
+      _handleError('Please login to continue');
       return;
     }
 
     setState(() {
       isLoading = true;
       isError = false;
-      teacherAttendanceRecords = [];
       attendanceExists = false;
     });
 
-    final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
+    final result = await ReportService.fetchReport(
+      token: token!,
+      endpoint: 'attendance',
+      date: selectedDate,
+    );
 
-    try {
-      final response = await http.get(
-        Uri.parse('$baseeUrl/api/attendance/$formattedDate'),
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': token!,
-        },
-      );
+    if (!mounted) return;
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
-        final List<dynamic> teachersData = data['teachers'] ?? [];
+    setState(() {
+      isLoading = false;
 
-        if (teachersData.isEmpty) {
-          setState(() {
-            attendanceExists = false;
-            isLoading = false;
-            isError = false;
-          });
+      if (result['success'] == true) {
+        if (result['unauthorized'] == true) {
+          _handleUnauthorized();
           return;
         }
 
-        List<TeacherAttendance> attendanceRecords = [];
-        for (var item in teachersData) {
-          if (item is Map<String, dynamic>) {
-            try {
-              attendanceRecords.add(TeacherAttendance.fromJson(item));
-            } catch (e) {
-              print('Error parsing teacher attendance record: $e');
-            }
-          }
-        }
+        attendanceExists = result['exists'] ?? false;
 
-        setState(() {
-          teacherAttendanceRecords = attendanceRecords;
-          attendanceExists = true;
-          isLoading = false;
-          isError = false;
-        });
-      } else if (response.statusCode == 401 || response.statusCode == 403) {
-        _handleUnauthorized();
-      } else if (response.statusCode == 404) {
-        setState(() {
-          attendanceExists = false;
-          isLoading = false;
-          isError = false;
-        });
+        if (attendanceExists) {
+          attendanceRecords = (result['data']['teachers'] ?? [])
+              .map<TeacherAttendance>(
+                (item) => TeacherAttendance.fromJson(item),
+              )
+              .toList();
+        }
       } else {
-        setState(() {
-          isLoading = false;
-          isError = true;
-          errorMessage =
-              'Failed to load attendance data: ${response.statusCode} ${response.reasonPhrase}';
-        });
+        _handleError(result['message']);
       }
-    } catch (error) {
-      print('Error fetching teacher attendance: $error');
-      setState(() {
-        isLoading = false;
-        isError = true;
-        errorMessage = 'Error connecting to server: $error';
-      });
-    }
+    });
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -193,328 +117,184 @@ class _TeacherReportPageState extends State<TeacherReportPage> {
       context: context,
       initialDate: selectedDate,
       firstDate: DateTime(2000),
-      lastDate: DateTime.now().add(Duration(days: 365)),
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData.light().copyWith(
-            colorScheme: ColorScheme.light(
-              primary: Colors.blue,
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black,
-            ),
-            dialogBackgroundColor: Colors.white,
-          ),
-          child: child!,
-        );
-      },
+      lastDate: DateTime.now().add(const Duration(days: 365)),
     );
 
     if (picked != null && picked != selectedDate) {
-      setState(() {
-        selectedDate = picked;
-      });
-      fetchAttendance();
+      setState(() => selectedDate = picked);
+      await fetchAttendance();
     }
+  }
+
+  void _handleUnauthorized() async {
+    await ReportService.handleUnauthorized();
+    setState(() => token = null);
+    _showErrorSnackBar('Session expired. Please login again.');
+  }
+
+  void _handleError(String message) {
+    setState(() {
+      isError = true;
+      errorMessage = message;
+      isLoading = false;
+    });
+    _showErrorSnackBar(message);
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red[800],
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Teacher Attendance Report',
-            style: TextStyle(color: Colors.white)),
-        centerTitle: true,
-        backgroundColor: Colors.blue[900],
-        elevation: 0,
-        iconTheme: IconThemeData(color: Colors.white),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh, color: Colors.white),
-            onPressed: fetchAttendance,
+      appBar: const CustomAppBar(
+        title: 'Teacher Attendance Report',
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            _buildFilterCard(),
+            const SizedBox(height: 16),
+            if (token == null)
+              _buildLoginPrompt()
+            else if (isLoading)
+              const Expanded(child: Center(child: CircularProgressIndicator()))
+            else if (isError)
+              _buildErrorState()
+            else if (!attendanceExists)
+              _buildNoRecordsFound()
+            else
+              _buildAttendanceList(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterCard() {
+    return ReportFilterCard(
+      title: 'Select Date',
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () => _selectDate(context),
+            icon: const Icon(Icons.calendar_today, size: 18),
+            label: Text(DateFormat('dd/MM/yyyy').format(selectedDate)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.deepPurple[50],
+              foregroundColor: Colors.deepPurple,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoginPrompt() {
+    return Expanded(
+      child: Center(
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.warning, size: 48, color: Colors.orange),
+                const SizedBox(height: 16),
+                const Text(
+                  'You are not logged in. Please login to continue.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {/* Navigate to login */},
+                  child: const Text('Go to Login'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Expanded(
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+            const SizedBox(height: 16),
+            Text(errorMessage, textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: fetchAttendance,
+              child: const Text('Try Again'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoRecordsFound() {
+    return Expanded(
+      child: Center(
+        child: Text(
+          'No attendance records found for teachers on ${DateFormat.yMd().format(selectedDate)}.\n\n'
+          'Attendance may not have been taken for this date.',
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 16),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAttendanceList() {
+    return Expanded(
+      child: Column(
+        children: [
+          AttendanceListHeader(
+            title: 'Attendance for Teachers',
+            date: selectedDate,
+          ),
+          const AttendanceListHeaderRow(
+            leftText: 'Teacher Name',
+            rightText: 'Status',
+          ),
+          Expanded(
+            child: ListView.separated(
+              itemCount: attendanceRecords.length,
+              separatorBuilder: (_, __) =>
+                  Divider(height: 1, color: Colors.deepPurple[100]),
+              itemBuilder: (_, index) => AttendanceListItem(
+                name: attendanceRecords[index].teacherName,
+                isPresent: attendanceRecords[index].isPresent,
+              ),
+            ),
+          ),
+          AttendanceSummary(
+            presentCount: attendanceRecords.where((a) => a.isPresent).length,
+            absentCount: attendanceRecords.where((a) => !a.isPresent).length,
+            totalCount: attendanceRecords.length,
           ),
         ],
       ),
-      body: _isInitialLoading
-          ? Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Card(
-                    elevation: 3,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Select Date',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue[800],
-                            ),
-                          ),
-                          SizedBox(height: 12),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              onPressed: () => _selectDate(context),
-                              icon: Icon(Icons.calendar_today, size: 18),
-                              label: Text(DateFormat('dd/MM/yyyy')
-                                  .format(selectedDate)),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue[50],
-                                foregroundColor: Colors.blue,
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  if (token == null)
-                    Expanded(
-                      child: Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.warning,
-                                  size: 48, color: Colors.orange),
-                              SizedBox(height: 16),
-                              Text(
-                                'You are not logged in. Please login to continue.',
-                                style: TextStyle(fontSize: 16),
-                                textAlign: TextAlign.center,
-                              ),
-                              SizedBox(height: 16),
-                              ElevatedButton(
-                                onPressed: () {
-                                  // Navigate to login page
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  padding: EdgeInsets.symmetric(
-                                      horizontal: 24, vertical: 12),
-                                ),
-                                child: Text('Go to Login'),
-                              )
-                            ],
-                          ),
-                        ),
-                      ),
-                    )
-                  else if (isLoading)
-                    Expanded(
-                        child: Center(
-                            child:
-                                CircularProgressIndicator(color: Colors.blue)))
-                  else if (isError)
-                    Expanded(
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.error_outline,
-                                size: 48, color: Colors.red),
-                            SizedBox(height: 16),
-                            Text(
-                              errorMessage,
-                              style: TextStyle(color: Colors.red[800]),
-                              textAlign: TextAlign.center,
-                            ),
-                            SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: fetchAttendance,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: Text('Try Again'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                  else if (!attendanceExists)
-                    Expanded(
-                      child: Center(
-                        child: Text(
-                          'No attendance records found for teachers on ${DateFormat.yMd().format(selectedDate)}.\n\nAttendance may not have been taken for this date.',
-                          style: TextStyle(fontSize: 16),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    )
-                  else
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    'Attendance for Teachers',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.blue[800],
-                                    ),
-                                  ),
-                                ),
-                                Text(
-                                  DateFormat.yMMMMd().format(selectedDate),
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.blue[800],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.blue[50],
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Teacher Name',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue[800],
-                                  ),
-                                ),
-                                Text(
-                                  'Status',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue[800],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Expanded(
-                            child: ListView.separated(
-                              itemCount: teacherAttendanceRecords.length,
-                              separatorBuilder: (context, index) => Divider(
-                                height: 1,
-                                color: Colors.blue[100],
-                              ),
-                              itemBuilder: (context, index) {
-                                final attendance =
-                                    teacherAttendanceRecords[index];
-                                return ListTile(
-                                  title: Text(
-                                    attendance.teacherName,
-                                    style: TextStyle(color: Colors.blue[900]),
-                                  ),
-                                  trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        attendance.isPresent
-                                            ? Icons.check_circle
-                                            : Icons.cancel,
-                                        color: attendance.isPresent
-                                            ? Colors.green
-                                            : Colors.red,
-                                      ),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        attendance.isPresent
-                                            ? 'Present'
-                                            : 'Absent',
-                                        style: TextStyle(
-                                          color: attendance.isPresent
-                                              ? Colors.green
-                                              : Colors.red,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          Container(
-                            padding: EdgeInsets.symmetric(vertical: 8.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    'Present: ${teacherAttendanceRecords.where((a) => a.isPresent).length}',
-                                    style: TextStyle(
-                                      color: Colors.green,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    'Absent: ${teacherAttendanceRecords.where((a) => !a.isPresent).length}',
-                                    style: TextStyle(
-                                      color: Colors.red,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    'Total: ${teacherAttendanceRecords.length}',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.blue[800],
-                                      fontSize: 14,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ),
     );
   }
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:sms/pages/services/student_service.dart';
+import 'package:sms/widgets/date_picker.dart'; // Custom date picker
 import '../student_registration_controller.dart';
 
 class StudentInfoSection extends StatefulWidget {
@@ -40,18 +42,18 @@ class _StudentInfoSectionState extends State<StudentInfoSection> {
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
-        side: BorderSide(color: Colors.blue.shade100, width: 1),
+        side: BorderSide(color: Colors.deepPurple.shade100, width: 1),
       ),
       child: ExpansionTile(
         initiallyExpanded: true,
-        collapsedBackgroundColor: Colors.blue.shade50,
+        collapsedBackgroundColor: Colors.deepPurple.shade50,
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         title: const Text(
           "STUDENT INFORMATION",
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: Color.fromRGBO(21, 101, 192, 1),
+            color: Colors.deepPurple,
             fontSize: 16,
           ),
         ),
@@ -82,7 +84,7 @@ class _StudentInfoSectionState extends State<StudentInfoSection> {
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.blue,
+                          color: Colors.deepPurple,
                         ),
                       )
                     : null,
@@ -94,7 +96,7 @@ class _StudentInfoSectionState extends State<StudentInfoSection> {
                     'Last registered number: $_lastRegistrationNumber',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.blue.shade600,
+                      color: Colors.deepPurple.shade600,
                       fontStyle: FontStyle.italic,
                     ),
                   ),
@@ -103,29 +105,24 @@ class _StudentInfoSectionState extends State<StudentInfoSection> {
           ),
           const SizedBox(height: 16),
 
-          // Date of Birth Field
-          TextFormField(
-            controller: widget.controller.dobController,
-            decoration: InputDecoration(
-              labelText: 'Date of Birth*',
-              labelStyle: TextStyle(color: Colors.blue.shade700),
-              prefixIcon:
-                  Icon(Icons.calendar_today, color: Colors.blue.shade600),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: Colors.blue.shade300),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: Colors.blue.shade700, width: 2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            readOnly: true,
-            onTap: () => widget.controller.selectDate(context),
-            validator: (value) => value!.isEmpty ? 'Required field' : null,
+          // ✅ Custom Date Picker for DOB
+          CustomDatePicker(
+            selectedDate: widget.controller.dob ?? DateTime.now(),
+            onDateSelected: (DateTime newDate) {
+              setState(() {
+                widget.controller.dob = newDate;
+                widget.controller.dobController.text =
+                    DateFormat('yyyy-MM-dd').format(newDate);
+              });
+            },
+            labelText: 'Date of Birth',
+            isExpanded: true,
+            backgroundColor: Colors.white,
+            foregroundColor: Colors.deepPurple.shade700,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            firstDate: DateTime(1900),
+            lastDate: DateTime.now(),
+            icon: Icons.calendar_today,
           ),
           const SizedBox(height: 16),
 
@@ -134,17 +131,19 @@ class _StudentInfoSectionState extends State<StudentInfoSection> {
             value: widget.controller.gender,
             decoration: InputDecoration(
               labelText: 'Gender*',
-              labelStyle: TextStyle(color: Colors.blue.shade700),
-              prefixIcon: Icon(Icons.transgender, color: Colors.blue.shade600),
+              labelStyle: TextStyle(color: Colors.deepPurple.shade700),
+              prefixIcon:
+                  Icon(Icons.transgender, color: Colors.deepPurple.shade600),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
               enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: Colors.blue.shade300),
+                borderSide: BorderSide(color: Colors.deepPurple.shade300),
                 borderRadius: BorderRadius.circular(8),
               ),
               focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: Colors.blue.shade700, width: 2),
+                borderSide:
+                    BorderSide(color: Colors.deepPurple.shade700, width: 2),
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
@@ -153,14 +152,14 @@ class _StudentInfoSectionState extends State<StudentInfoSection> {
                       value: e,
                       child: Text(
                         e,
-                        style: TextStyle(color: Colors.blue.shade800),
+                        style: TextStyle(color: Colors.deepPurple.shade800),
                       ),
                     ))
                 .toList(),
             onChanged: (value) =>
                 setState(() => widget.controller.gender = value),
             validator: (value) => value == null ? 'Please select gender' : null,
-            style: TextStyle(color: Colors.blue.shade800),
+            style: TextStyle(color: Colors.deepPurple.shade800),
           ),
           const SizedBox(height: 16),
 
@@ -191,18 +190,18 @@ class _StudentInfoSectionState extends State<StudentInfoSection> {
       maxLines: maxLines ?? 1,
       decoration: InputDecoration(
         labelText: isRequired ? '$label*' : label,
-        labelStyle: TextStyle(color: Colors.blue.shade700),
-        prefixIcon: Icon(icon, color: Colors.blue.shade600),
+        labelStyle: TextStyle(color: Colors.deepPurple.shade700),
+        prefixIcon: Icon(icon, color: Colors.deepPurple.shade600),
         suffixIcon: suffix,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
         ),
         enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.blue.shade300),
+          borderSide: BorderSide(color: Colors.deepPurple.shade300),
           borderRadius: BorderRadius.circular(8),
         ),
         focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.blue.shade700, width: 2),
+          borderSide: BorderSide(color: Colors.deepPurple.shade700, width: 2),
           borderRadius: BorderRadius.circular(8),
         ),
       ),

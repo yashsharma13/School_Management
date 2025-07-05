@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:sms/pages/fees/fee_structure.dart';
 import 'package:sms/pages/services/feemaster_service.dart';
+import 'package:sms/widgets/button.dart';
+import 'package:sms/widgets/custom_appbar.dart';
+import 'package:sms/widgets/custom_snackbar.dart';
 
 class FeeMasterPage extends StatefulWidget {
   @override
@@ -43,37 +47,59 @@ class _FeeMasterPageState extends State<FeeMasterPage> {
 
       final success = await FeeMasterService.submitFeeFields(feeData);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-              success ? "Fees submitted successfully!" : "Submission failed!"),
-          backgroundColor: success ? Colors.green : Colors.red,
-        ),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Text(success
+      //         ? "Fees head define successfully!"
+      //         : "Submission failed!"),
+      //     backgroundColor: success ? Colors.green : Colors.red,
+      //   ),
+      // );
+      showCustomSnackBar(context,
+          success ? "Fees head define successfully!" : "Submission failed!",
+          backgroundColor: success ? Colors.green : Colors.red);
+
+      if (success) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => FeeStructurePage(),
+          ),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Fee Master"),
-        backgroundColor: Colors.blue[900],
-      ),
+      appBar: CustomAppBar(title: 'Fee Master'),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: Column(
             children: [
-              Text(
-                'Define Fee Fields',
-                style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue[900]),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Define Fee Fields',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.deepPurple,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: _addFeeField,
+                    icon: Icon(Icons.add_circle,
+                        color: Colors.deepPurple, size: 28),
+                    tooltip: 'Add Fee Field',
+                  ),
+                ],
               ),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               Expanded(
                 child: ListView.separated(
                   itemCount: feeFields.length,
@@ -94,7 +120,7 @@ class _FeeMasterPageState extends State<FeeMasterPage> {
                                   'Fee ${index + 1}',
                                   style: TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.blue[800]),
+                                      color: Colors.deepPurple),
                                 ),
                                 Spacer(),
                                 if (feeFields.length > 1)
@@ -105,7 +131,7 @@ class _FeeMasterPageState extends State<FeeMasterPage> {
                                   ),
                               ],
                             ),
-                            SizedBox(height: 12),
+                            const SizedBox(height: 12),
                             TextFormField(
                               decoration: InputDecoration(
                                 labelText: 'Fee Name',
@@ -123,7 +149,7 @@ class _FeeMasterPageState extends State<FeeMasterPage> {
                                 feeFields[index].feeName = value;
                               },
                             ),
-                            SizedBox(height: 10),
+                            const SizedBox(height: 10),
                             CheckboxListTile(
                               title: Text("Is One Time?"),
                               value: feeFields[index].isOneTime,
@@ -172,24 +198,15 @@ class _FeeMasterPageState extends State<FeeMasterPage> {
                   },
                 ),
               ),
-              ElevatedButton.icon(
-                icon: Icon(Icons.add),
-                label: Text('Add Fee Field'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue[100],
-                  foregroundColor: Colors.blue[800],
+              Align(
+                alignment: Alignment.centerRight,
+                child: CustomButton(
+                  text: 'Submit',
+                  icon: Icons.save_alt,
+                  onPressed: _submitForm,
+                  width: 130,
+                  height: 45,
                 ),
-                onPressed: _addFeeField,
-              ),
-              SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _submitForm,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue[800],
-                  foregroundColor: Colors.white,
-                  minimumSize: Size(double.infinity, 50),
-                ),
-                child: Text('Submit Fees'),
               ),
             ],
           ),

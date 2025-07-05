@@ -9,6 +9,8 @@ import 'package:sms/pages/services/profile_service.dart';
 import 'dart:io';
 
 import 'package:sms/pages/stud_dashboard/student_dashboard.dart';
+import 'package:sms/widgets/button.dart';
+import 'package:sms/widgets/custom_appbar.dart';
 
 class ProfileSetupPage extends StatefulWidget {
   const ProfileSetupPage({super.key});
@@ -125,48 +127,6 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
     }
   }
 
-  // Future<void> _saveProfile() async {
-  //   if (_instituteNameController.text.isEmpty ||
-  //       _addressController.text.isEmpty ||
-  //       (_logoBytes == null && _logoFile == null && logoUrlFull == null)) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text('All fields including logo are required')),
-  //     );
-  //     return;
-  //   }
-
-  //   setState(() => isLoading = true);
-
-  //   try {
-  //     final result = await ProfileService.saveProfile(
-  //       instituteName: _instituteNameController.text.trim(),
-  //       address: _addressController.text.trim(),
-  //       logo: _logoFile != null
-  //           ? (kIsWeb ? _logoBytes! : File(_logoFile!.path))
-  //           : _logoBytes ??
-  //               Uint8List(
-  //                   0), // fallback empty bytes if no picked file and no bytes (handle accordingly)
-  //     );
-
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(
-  //         content: Text(result['message'] ?? 'Profile saved successfully'),
-  //         backgroundColor:
-  //             result['success'] == true ? Colors.green : Colors.red,
-  //       ),
-  //     );
-
-  //     if (result['success'] == true) {
-  //       await _loadProfileFromApi();
-  //     }
-  //   } catch (e) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Error saving profile: $e')),
-  //     );
-  //   } finally {
-  //     setState(() => isLoading = false);
-  //   }
-  // }
   Future<void> _saveProfile() async {
     if (_instituteNameController.text.isEmpty ||
         _addressController.text.isEmpty ||
@@ -232,10 +192,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Set Up Institute Profile'),
-        backgroundColor: Colors.blue.shade900,
-      ),
+      appBar: const CustomAppBar(title: 'Set Up Institue Profile'),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : error.isNotEmpty
@@ -338,22 +295,9 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                         maxLines: 3,
                       ),
                       const SizedBox(height: 30),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: _saveProfile,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue.shade900,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: const Text(
-                            'SAVE PROFILE',
-                            style: TextStyle(fontSize: 16),
-                          ),
-                        ),
+                      CustomButton(
+                        text: 'Assign Homework',
+                        onPressed: _saveProfile,
                       ),
                     ],
                   ),

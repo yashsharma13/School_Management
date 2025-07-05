@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:sms/pages/services/teacher_service.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as path;
 
 class TeacherRegistrationController {
   final formKey = GlobalKey<FormState>();
@@ -26,21 +27,23 @@ class TeacherRegistrationController {
   String? gender;
   XFile? teacherPhoto;
   XFile? qualificationCertificate;
+
+  /// NEW: To hold actual file names
+  String? teacherPhotoName;
+  String? qualificationDocName;
+
   bool isLoading = false;
 
-  // Method to update date of birth
   void updateDob(DateTime newDate) {
     dob = newDate;
     dobController.text = DateFormat('dd-MM-yyyy').format(newDate);
   }
 
-  // Method to update date of joining
   void updateDoj(DateTime newDate) {
     doj = newDate;
     dojController.text = DateFormat('dd-MM-yyyy').format(newDate);
   }
 
-  // File picking method for teacher photo or qualification certificate
   Future<void> pickFile(BuildContext context, bool isPhoto) async {
     try {
       if (isPhoto) {
@@ -48,40 +51,34 @@ class TeacherRegistrationController {
           final pickedFile =
               await ImagePicker().pickImage(source: ImageSource.gallery);
           if (pickedFile != null) {
-            // Validate image type
-            if (!pickedFile.path.endsWith('.jpg') &&
-                !pickedFile.path.endsWith('.jpeg') &&
-                !pickedFile.path.endsWith('.png')) {
-              throw Exception('Invalid image format');
-            }
-
-            // Validate image size (minimum 100KB)
             final fileSize = await pickedFile.length();
             if (fileSize < 100 * 1024) {
               throw Exception('Image too small (min 100KB)');
             }
 
             teacherPhoto = pickedFile;
+            teacherPhotoName =
+                path.basename(pickedFile.path); // ✅ store filename
           }
         } else {
           FilePickerResult? result =
               await FilePicker.platform.pickFiles(type: FileType.image);
           if (result != null && result.files.single.bytes != null) {
-            // Validate web image size
             if (result.files.single.bytes!.length < 100 * 1024) {
               throw Exception('Image too small (min 100KB)');
             }
             teacherPhoto = XFile.fromData(result.files.single.bytes!);
+            teacherPhotoName = result.files.single.name; // ✅ store filename
           }
         }
       } else {
-        // For qualification certificate (PDF)
         FilePickerResult? result = await FilePicker.platform.pickFiles(
           type: FileType.custom,
           allowedExtensions: ['pdf'],
         );
         if (result != null && result.files.single.path != null) {
           qualificationCertificate = XFile(result.files.single.path!);
+          qualificationDocName = result.files.single.name; // ✅ store filename
         }
       }
     } catch (e) {
@@ -148,7 +145,14 @@ class TeacherRegistrationController {
 
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Teacher registered successfully')),
+          SnackBar(
+            content: Text('Teacher registered successfully'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
         );
         return true;
       } else {

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sms/pages/services/subject_service.dart';
 import 'package:sms/pages/subjects/edit_subjects.dart';
-import 'package:sms/widgets/button.dart';
+import 'package:sms/widgets/custom_appbar.dart';
 
 class ClassWithSubjectsPage extends StatefulWidget {
   @override
@@ -24,10 +24,7 @@ class _ClassWithSubjectsPageState extends State<ClassWithSubjectsPage> {
   Future<void> _loadToken() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      setState(() {
-        token = prefs.getString('token');
-      });
-
+      token = prefs.getString('token');
       if (token != null) {
         await _loadClassesWithSubjects();
       } else {
@@ -63,7 +60,6 @@ class _ClassWithSubjectsPageState extends State<ClassWithSubjectsPage> {
         }
       });
     } catch (error) {
-      debugPrint('Error loading classes with subjects: $error');
       setState(() {
         errorMessage = 'Error fetching data: ${error.toString()}';
       });
@@ -78,82 +74,12 @@ class _ClassWithSubjectsPageState extends State<ClassWithSubjectsPage> {
     await _loadClassesWithSubjects();
   }
 
-  Future<void> _deleteAllSubjects(String classId) async {
-    try {
-      final success = await SubjectService.deleteSubject(classId);
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('All subjects deleted successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        await _refreshData();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to delete subjects'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error deleting subjects: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  void _showDeleteAllConfirmationDialog(String classId, String className) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Confirm Delete All'),
-          content: Text(
-              'Are you sure you want to delete ALL subjects for $className?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Cancel', style: TextStyle(color: Colors.blue[800])),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _deleteAllSubjects(classId);
-              },
-              child: Text('Delete All', style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: Text(
-          'Classes with Subjects',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.blue.shade900,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh, color: Colors.white),
-            onPressed: _refreshData,
-          ),
-        ],
+      appBar: CustomAppBar(
+        title: 'Classes with Subjects',
       ),
       body: _buildBody(),
     );
@@ -163,7 +89,7 @@ class _ClassWithSubjectsPageState extends State<ClassWithSubjectsPage> {
     if (isLoading) {
       return Center(
         child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.blue[800]!),
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.deepPurple[800]!),
         ),
       );
     }
@@ -173,20 +99,13 @@ class _ClassWithSubjectsPageState extends State<ClassWithSubjectsPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              color: Colors.red,
-              size: 48,
-            ),
+            Icon(Icons.error_outline, color: Colors.red, size: 48),
             SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32.0),
               child: Text(
                 errorMessage!,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey[800],
-                ),
+                style: TextStyle(fontSize: 16, color: Colors.grey[800]),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -194,16 +113,13 @@ class _ClassWithSubjectsPageState extends State<ClassWithSubjectsPage> {
             ElevatedButton(
               onPressed: _loadClassesWithSubjects,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue[800],
+                backgroundColor: Colors.deepPurple[800],
                 padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: Text(
-                'Retry',
-                style: TextStyle(color: Colors.white),
-              ),
+              child: Text('Retry', style: TextStyle(color: Colors.white)),
             ),
           ],
         ),
@@ -215,18 +131,11 @@ class _ClassWithSubjectsPageState extends State<ClassWithSubjectsPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.class_,
-              color: Colors.blue[800],
-              size: 48,
-            ),
+            Icon(Icons.class_, color: Colors.deepPurple[800], size: 48),
             SizedBox(height: 16),
             Text(
               'No classes with subjects found',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[800],
-              ),
+              style: TextStyle(fontSize: 16, color: Colors.grey[800]),
             ),
           ],
         ),
@@ -234,7 +143,7 @@ class _ClassWithSubjectsPageState extends State<ClassWithSubjectsPage> {
     }
 
     return RefreshIndicator(
-      color: Colors.blue[800],
+      color: Colors.deepPurple[800],
       onRefresh: _refreshData,
       child: ListView.separated(
         padding: EdgeInsets.all(16),
@@ -251,9 +160,7 @@ class _ClassWithSubjectsPageState extends State<ClassWithSubjectsPage> {
   Widget _buildClassCard(ClassWithSubjects classData) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ExpansionTile(
         tilePadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         title: Column(
@@ -262,48 +169,36 @@ class _ClassWithSubjectsPageState extends State<ClassWithSubjectsPage> {
             Text(
               classData.className,
               style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: Colors.blue[900],
-              ),
-            ),
-            SizedBox(height: 4),
-            Text(
-              'Section: ${classData.section}',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Colors.deepPurple[900]),
             ),
           ],
         ),
         subtitle: Text(
           '${classData.subjects.length} Subjects',
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey[600],
-          ),
+          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
         ),
         leading: CircleAvatar(
-          backgroundColor: Colors.blue[100],
-          child: Icon(
-            Icons.class_,
-            color: Colors.blue[800],
-          ),
+          backgroundColor: Colors.deepPurple[100],
+          child: Icon(Icons.class_, color: Colors.deepPurple[800]),
+        ),
+        trailing: IconButton(
+          icon: Icon(Icons.edit, color: Colors.deepPurple),
+          tooltip: 'Edit Subjects',
+          onPressed: () {
+            _navigateToEditPage(classData);
+          },
         ),
         children: [
           if (classData.subjects.isEmpty)
             Padding(
               padding: EdgeInsets.all(16.0),
-              child: Text(
-                'No subjects assigned yet',
-                style: TextStyle(color: Colors.grey[600]),
-              ),
+              child: Text('No subjects assigned yet',
+                  style: TextStyle(color: Colors.grey[600])),
             )
           else
             ...classData.subjects.map((subject) => _buildSubjectTile(subject)),
-          _buildEditButton(classData),
-          _buildDeleteAllButton(classData),
         ],
       ),
     );
@@ -314,66 +209,31 @@ class _ClassWithSubjectsPageState extends State<ClassWithSubjectsPage> {
       margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
         border: Border(
-          left: BorderSide(
-            color: Colors.blue[300]!,
-            width: 3,
-          ),
+          left: BorderSide(color: Colors.deepPurple[300]!, width: 3),
         ),
       ),
       child: ListTile(
         title: Text(
           subject.subjectName,
-          style: TextStyle(
-            fontWeight: FontWeight.w500,
-            color: Colors.grey[800],
-          ),
+          style:
+              TextStyle(fontWeight: FontWeight.w500, color: Colors.grey[800]),
         ),
         trailing: Container(
           padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: Colors.blue[50],
+            color: Colors.deepPurple[50],
             borderRadius: BorderRadius.circular(16),
           ),
           child: Text(
             '${subject.marks} marks',
             style: TextStyle(
-              color: Colors.blue[800],
+              color: Colors.deepPurple[800],
               fontWeight: FontWeight.bold,
             ),
           ),
         ),
         contentPadding: EdgeInsets.symmetric(horizontal: 16),
         dense: true,
-      ),
-    );
-  }
-
-  Widget _buildEditButton(ClassWithSubjects classData) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: CustomButton(
-        text: 'Edit',
-        icon: Icons.edit,
-        onPressed: () async {
-          _navigateToEditPage(classData);
-        },
-        color: Colors.deepPurple,
-        textColor: Colors.white,
-      ),
-    );
-  }
-
-  Widget _buildDeleteAllButton(ClassWithSubjects classData) {
-    return Padding(
-      padding: EdgeInsets.only(left: 16, right: 16, bottom: 16),
-      child: CustomButton(
-        text: 'Delete',
-        icon: Icons.delete_forever,
-        onPressed: () async {
-          _showDeleteAllConfirmationDialog(classData.id, classData.className);
-        },
-        color: Colors.red[400]!,
-        textColor: Colors.white,
       ),
     );
   }

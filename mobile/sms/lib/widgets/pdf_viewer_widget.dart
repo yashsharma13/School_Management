@@ -1,5 +1,6 @@
 // pdf_viewer_widget.dart
 import 'package:flutter/material.dart';
+import 'package:sms/widgets/custom_appbar.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class PDFViewerScreen extends StatelessWidget {
@@ -19,7 +20,8 @@ class PDFViewerScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      // appBar: AppBar(title: Text(title)),
+      appBar: CustomAppBar(title: title),
       body: _buildPDFViewer(context),
     );
   }

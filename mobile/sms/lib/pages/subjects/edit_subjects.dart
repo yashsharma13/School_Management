@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:sms/pages/services/subject_service.dart';
 import 'package:sms/pages/subjects/class_with_subjects.dart';
 import 'package:sms/widgets/button.dart';
+import 'package:sms/widgets/custom_appbar.dart';
+import 'package:sms/widgets/custom_snackbar.dart';
 
 class EditSubjectsPage extends StatefulWidget {
   final ClassWithSubjects classData;
   final String token;
 
-  EditSubjectsPage({
+  const EditSubjectsPage({
+    super.key,
     required this.classData,
     required this.token,
   });
@@ -55,7 +58,47 @@ class _EditSubjectsPageState extends State<EditSubjectsPage> {
     });
   }
 
-  void _removeSubject(int index) {
+  void _removeSubject(int index) async {
+    final subjectId = subjectIds[index];
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Delete Subject'),
+        content: Text('Are you sure you want to delete this subject?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    if (subjectId.isNotEmpty) {
+      try {
+        final success = await SubjectService.deleteSingleSubject(subjectId);
+        if (!success) {
+          showCustomSnackBar(context, 'Failed to delete subject from server',
+              backgroundColor: Colors.red);
+          return;
+        } else {
+          showCustomSnackBar(context, 'Subject deleted successfully',
+              backgroundColor: Colors.red);
+        }
+      } catch (e) {
+        showCustomSnackBar(context, 'Error deleting subject: ${e.toString()}',
+            backgroundColor: Colors.red);
+        return;
+      }
+    }
+    // remove from UI after backend deletion
     setState(() {
       subjectControllers.removeAt(index);
       marksControllers.removeAt(index);
@@ -67,12 +110,8 @@ class _EditSubjectsPageState extends State<EditSubjectsPage> {
     if (!_formKey.currentState!.validate()) return;
 
     if (widget.classData.id.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: Class ID is missing'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      showCustomSnackBar(context, 'Error: Class ID is missing',
+          backgroundColor: Colors.red);
       return;
     }
 
@@ -98,28 +137,16 @@ class _EditSubjectsPageState extends State<EditSubjectsPage> {
       );
 
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Subjects updated successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        showCustomSnackBar(context, 'Subjects updated successfully!',
+            backgroundColor: Colors.green);
         Navigator.pop(context, true);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update subjects'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        showCustomSnackBar(context, 'Failed to update subjects',
+            backgroundColor: Colors.red);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('An error occurred: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      showCustomSnackBar(context, 'An error occurred: ${e.toString()}',
+          backgroundColor: Colors.red);
     } finally {
       setState(() {
         isSaving = false;
@@ -131,133 +158,114 @@ class _EditSubjectsPageState extends State<EditSubjectsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: Text(
-          'Edit Subjects',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.blue.shade900,
-        elevation: 0,
+      appBar: const CustomAppBar(
+        title: ('Edit Subjects'),
       ),
       body: isSaving
           ? Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue[800]!),
+                valueColor:
+                    AlwaysStoppedAnimation<Color>(Colors.deepPurple[800]!),
               ),
             )
-          : Form(
-              key: _formKey,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
+          : Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Form(
+                key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Class: ${widget.classData.className}',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue[900],
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Section: ${widget.classData.section}',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey[600],
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          ' ${widget.classData.className}',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.deepPurple[900],
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: _addSubject,
+                          icon: Icon(
+                            Icons.add_circle,
+                            color: Colors.deepPurple,
+                            size: 28,
+                          ),
+                          tooltip: 'Add Subject',
+                        ),
+                      ],
                     ),
                     SizedBox(height: 16),
                     Expanded(
-                      child: ListView.builder(
+                      child: ListView.separated(
                         itemCount: subjectControllers.length,
+                        separatorBuilder: (_, __) => SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           return Card(
-                            margin: EdgeInsets.only(bottom: 12),
-                            elevation: 1,
+                            elevation: 2,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(12),
                             ),
                             child: Padding(
-                              padding: EdgeInsets.all(12.0),
-                              child: Row(
+                              padding: EdgeInsets.all(12),
+                              child: Column(
                                 children: [
-                                  Expanded(
-                                    flex: 2,
-                                    child: TextFormField(
-                                      controller: subjectControllers[index],
-                                      decoration: InputDecoration(
-                                        labelText: 'Subject Name',
-                                        labelStyle:
-                                            TextStyle(color: Colors.blue[800]),
-                                        border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          borderSide: BorderSide(
-                                              color: Colors.blue[300]!),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        'Subject ${index + 1}',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.deepPurple[800],
                                         ),
-                                        focusedBorder: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          borderSide: BorderSide(
-                                              color: Colors.blue[800]!),
-                                        ),
-                                        contentPadding: EdgeInsets.symmetric(
-                                            horizontal: 12, vertical: 14),
                                       ),
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Required';
-                                        }
-                                        return null;
-                                      },
-                                    ),
+                                      Spacer(),
+                                      if (subjectControllers.isNotEmpty)
+                                        IconButton(
+                                          icon: Icon(Icons.delete,
+                                              color: Colors.red[400]),
+                                          onPressed: () =>
+                                              _removeSubject(index),
+                                        ),
+                                    ],
                                   ),
-                                  SizedBox(width: 12),
-                                  Expanded(
-                                    flex: 1,
-                                    child: TextFormField(
-                                      controller: marksControllers[index],
-                                      decoration: InputDecoration(
-                                        labelText: 'Marks',
-                                        labelStyle:
-                                            TextStyle(color: Colors.blue[800]),
-                                        border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          borderSide: BorderSide(
-                                              color: Colors.blue[300]!),
-                                        ),
-                                        focusedBorder: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          borderSide: BorderSide(
-                                              color: Colors.blue[800]!),
-                                        ),
-                                        contentPadding: EdgeInsets.symmetric(
-                                            horizontal: 12, vertical: 14),
+                                  SizedBox(height: 10),
+                                  TextFormField(
+                                    controller: subjectControllers[index],
+                                    decoration: InputDecoration(
+                                      labelText: 'Subject Name',
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
-                                      keyboardType: TextInputType.number,
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Required';
-                                        }
-                                        if (int.tryParse(value) == null) {
-                                          return 'Invalid number';
-                                        }
-                                        return null;
-                                      },
                                     ),
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Required';
+                                      }
+                                      return null;
+                                    },
                                   ),
-                                  IconButton(
-                                    icon: Icon(Icons.delete,
-                                        color: Colors.red[400]),
-                                    onPressed: () => _removeSubject(index),
+                                  SizedBox(height: 10),
+                                  TextFormField(
+                                    controller: marksControllers[index],
+                                    keyboardType: TextInputType.number,
+                                    decoration: InputDecoration(
+                                      labelText: 'Marks',
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Required';
+                                      }
+                                      if (int.tryParse(value) == null) {
+                                        return 'Invalid number';
+                                      }
+                                      return null;
+                                    },
                                   ),
                                 ],
                               ),
@@ -266,27 +274,18 @@ class _EditSubjectsPageState extends State<EditSubjectsPage> {
                         },
                       ),
                     ),
-                    SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: CustomButton(
-                            text: 'Add Subject',
-                            icon: Icons.add,
-                            onPressed: _addSubject,
-                            color: Colors.blue[50]!,
-                            textColor: Colors.blue[800]!,
-                          ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 16),
+                        child: CustomButton(
+                          text: 'Save',
+                          icon: Icons.save_alt,
+                          onPressed: isSaving ? null : _saveChanges,
+                          width: 160,
+                          height: 45,
                         ),
-                      ],
-                    ),
-                    SizedBox(height: 8),
-                    CustomButton(
-                      text: 'Save Changes',
-                      icon: Icons.save,
-                      onPressed: _saveChanges,
-                      isLoading: isSaving,
-                      color: Colors.blue[800]!,
+                      ),
                     ),
                   ],
                 ),

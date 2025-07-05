@@ -1,165 +1,11 @@
-// import 'package:flutter/material.dart';
-// import 'package:flutter_dotenv/flutter_dotenv.dart';
-// import 'package:shared_preferences/shared_preferences.dart';
-// import 'package:http/http.dart' as http;
-// import 'dart:convert';
-
-// class ViewTeacherAssignmentsPage extends StatefulWidget {
-//   const ViewTeacherAssignmentsPage({super.key});
-
-//   @override
-//   State<ViewTeacherAssignmentsPage> createState() =>
-//       _ViewTeacherAssignmentsPageState();
-// }
-
-// class _ViewTeacherAssignmentsPageState
-//     extends State<ViewTeacherAssignmentsPage> {
-//   bool isLoading = true;
-//   String? token;
-
-//   List<TeacherAssignment> assignments = [];
-
-//   static final String baseUrl =
-//       dotenv.env['NEXT_PUBLIC_API_BASE_URL']?.trim() ?? '';
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     _loadTokenAndFetchAssignments();
-//   }
-
-//   Future<void> _loadTokenAndFetchAssignments() async {
-//     final prefs = await SharedPreferences.getInstance();
-//     token = prefs.getString('token');
-//     if (token != null) {
-//       await fetchAssignments();
-//     } else {
-//       _showError('No token found. Please login again.');
-//     }
-//   }
-
-//   Future<void> fetchAssignments() async {
-//     setState(() => isLoading = true);
-//     try {
-//       final resp = await http.get(
-//         Uri.parse('$baseUrl/api/teacher-assignments'),
-//         headers: {
-//           'Accept': 'application/json',
-//           'Authorization': 'Bearer $token',
-//         },
-//       );
-
-//       if (resp.statusCode == 200) {
-//         final Map<String, dynamic> decoded = json.decode(resp.body);
-//         final List<dynamic> rawData = decoded['data'] ?? [];
-
-//         // Group by teacher + class + section
-//         Map<String, TeacherAssignment> grouped = {};
-
-//         for (var e in rawData) {
-//           final teacherName = e['teacher_name'] ?? 'Unknown';
-//           final className = e['class_name'] ?? 'Unknown';
-//           final section = e['section'] ?? 'Unknown';
-//           final subjectName = e['subject_name'] ?? '';
-
-//           final key = '$teacherName|$className|$section';
-
-//           if (!grouped.containsKey(key)) {
-//             grouped[key] = TeacherAssignment(
-//               teacherName: teacherName,
-//               className: className,
-//               section: section,
-//               subjects: [],
-//             );
-//           }
-
-//           if (subjectName.isNotEmpty &&
-//               !grouped[key]!.subjects.contains(subjectName)) {
-//             grouped[key]!.subjects.add(subjectName);
-//           }
-//         }
-
-//         setState(() {
-//           assignments = grouped.values.toList();
-//         });
-//       } else if (resp.statusCode == 401) {
-//         _showError('Unauthorized. Please login again.');
-//       } else {
-//         _showError('Failed to load assignments. (${resp.statusCode})');
-//       }
-//     } catch (e) {
-//       _showError('Error: $e');
-//     } finally {
-//       setState(() => isLoading = false);
-//     }
-//   }
-
-//   void _showError(String message) {
-//     ScaffoldMessenger.of(context).showSnackBar(
-//       SnackBar(content: Text(message), backgroundColor: Colors.red),
-//     );
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: const Text('View Assigned Teachers'),
-//         backgroundColor: Colors.blue.shade900,
-//       ),
-//       body: isLoading
-//           ? const Center(child: CircularProgressIndicator())
-//           : assignments.isEmpty
-//               ? const Center(child: Text('No assignments found.'))
-//               : ListView.builder(
-//                   itemCount: assignments.length,
-//                   itemBuilder: (context, index) {
-//                     final assignment = assignments[index];
-//                     return Card(
-//                       margin: const EdgeInsets.symmetric(
-//                           horizontal: 16, vertical: 8),
-//                       elevation: 2,
-//                       child: ListTile(
-//                         title: Text(assignment.teacherName),
-//                         subtitle: Column(
-//                           crossAxisAlignment: CrossAxisAlignment.start,
-//                           children: [
-//                             Text(
-//                                 'Class: ${assignment.className} - ${assignment.section}'),
-//                             const SizedBox(height: 4),
-//                             Text(
-//                               'Subjects: ${assignment.subjects.join(', ')}',
-//                               style: const TextStyle(fontSize: 13),
-//                             ),
-//                           ],
-//                         ),
-//                       ),
-//                     );
-//                   },
-//                 ),
-//     );
-//   }
-// }
-
-// class TeacherAssignment {
-//   final String teacherName;
-//   final String className;
-//   final String section;
-//   final List<String> subjects;
-
-//   TeacherAssignment({
-//     required this.teacherName,
-//     required this.className,
-//     required this.section,
-//     required this.subjects,
-//   });
-// }
-
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+
+import 'package:sms/widgets/custom_appbar.dart';
+import 'package:sms/widgets/custom_snackbar.dart';
 
 class ViewTeacherAssignmentsPage extends StatefulWidget {
   const ViewTeacherAssignmentsPage({super.key});
@@ -341,22 +187,15 @@ class _ViewTeacherAssignmentsPageState
     );
   }
 
-  void _showError(String msg) => _showSnack(msg, Colors.red);
-  void _showSuccess(String msg) => _showSnack(msg, Colors.green);
-
-  void _showSnack(String msg, Color color) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: color),
-    );
-  }
+  void _showError(String msg) =>
+      showCustomSnackBar(context, msg, backgroundColor: Colors.red);
+  void _showSuccess(String msg) =>
+      showCustomSnackBar(context, msg, backgroundColor: Colors.green);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('View Assigned Teachers'),
-        backgroundColor: Colors.blue.shade900,
-      ),
+      appBar: const CustomAppBar(title: 'View Assigned Teachers'),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : assignments.isEmpty

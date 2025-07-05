@@ -37,7 +37,7 @@ class CustomDatePicker extends StatelessWidget {
         return Theme(
           data: ThemeData.light().copyWith(
             colorScheme: ColorScheme.light(
-              primary: Colors.blue,
+              primary: Colors.deepPurple,
               onPrimary: Colors.white,
               surface: Colors.white,
               onSurface: Colors.black,
@@ -65,8 +65,8 @@ class CustomDatePicker extends StatelessWidget {
             : DateFormat('dd/MM/yyyy').format(selectedDate),
       ),
       style: ElevatedButton.styleFrom(
-        backgroundColor: backgroundColor ?? Colors.blue.shade50,
-        foregroundColor: foregroundColor ?? Colors.blue,
+        backgroundColor: backgroundColor ?? Colors.deepPurple.shade50,
+        foregroundColor: foregroundColor ?? Colors.deepPurple,
         padding: padding ?? EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
@@ -107,12 +107,12 @@ class CompactDatePicker extends StatelessWidget {
         return Theme(
           data: ThemeData.light().copyWith(
             colorScheme: ColorScheme.light(
-              primary: Colors.blue,
+              primary: Colors.deepPurple,
               onPrimary: Colors.white,
               surface: Colors.white,
               onSurface: Colors.black,
             ),
-            dialogBackgroundColor: Colors.white,
+            dialogTheme: DialogThemeData(backgroundColor: Colors.white),
           ),
           child: child!,
         );
@@ -132,18 +132,19 @@ class CompactDatePicker extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.blue.shade300),
+          border: Border.all(color: Colors.deepPurple.shade300),
           borderRadius: BorderRadius.circular(8),
-          color: Colors.blue.shade50,
+          color: Colors.deepPurple.shade50,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.calendar_today, size: 16, color: Colors.blue),
+            Icon(Icons.calendar_today, size: 16, color: Colors.deepPurple),
             SizedBox(width: 8),
             Text(
               DateFormat(format!).format(selectedDate),
-              style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                  color: Colors.deepPurple, fontWeight: FontWeight.w500),
             ),
           ],
         ),

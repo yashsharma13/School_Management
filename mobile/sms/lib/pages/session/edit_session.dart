@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sms/pages/services/session_service.dart';
 import 'package:sms/pages/session/manage_session.dart'; // for Session model
 import 'package:intl/intl.dart'; // For date formatting
+import 'package:sms/widgets/button.dart';
 import 'package:sms/widgets/date_picker.dart'; // Import the custom date picker
 
 class EditSessionDialog extends StatefulWidget {
@@ -116,13 +117,13 @@ class _EditSessionDialogState extends State<EditSessionDialog> {
           onPressed: () => Navigator.pop(context),
           child: Text('Cancel', style: TextStyle(color: Colors.blue[900])),
         ),
-        ElevatedButton(
+        CustomButton(
+          text: 'Save',
           onPressed: _updateSession,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue[900],
-            foregroundColor: Colors.white,
-          ),
-          child: Text('Save'),
+          isLoading: false,
+          icon: Icons.save_alt,
+          height: 45,
+          width: 100,
         ),
       ],
       shape: RoundedRectangleBorder(
