@@ -16,7 +16,7 @@ class EditSubjectsPage extends StatefulWidget {
   });
 
   @override
-  _EditSubjectsPageState createState() => _EditSubjectsPageState();
+  State<EditSubjectsPage> createState() => _EditSubjectsPageState();
 }
 
 class _EditSubjectsPageState extends State<EditSubjectsPage> {
@@ -84,6 +84,7 @@ class _EditSubjectsPageState extends State<EditSubjectsPage> {
     if (subjectId.isNotEmpty) {
       try {
         final success = await SubjectService.deleteSingleSubject(subjectId);
+        if (!mounted) return;
         if (!success) {
           showCustomSnackBar(context, 'Failed to delete subject from server',
               backgroundColor: Colors.red);
@@ -93,6 +94,7 @@ class _EditSubjectsPageState extends State<EditSubjectsPage> {
               backgroundColor: Colors.red);
         }
       } catch (e) {
+        if (!mounted) return;
         showCustomSnackBar(context, 'Error deleting subject: ${e.toString()}',
             backgroundColor: Colors.red);
         return;
@@ -135,7 +137,7 @@ class _EditSubjectsPageState extends State<EditSubjectsPage> {
         classId: widget.classData.id,
         subjectsData: subjectsData,
       );
-
+      if (!mounted) return;
       if (success) {
         showCustomSnackBar(context, 'Subjects updated successfully!',
             backgroundColor: Colors.green);

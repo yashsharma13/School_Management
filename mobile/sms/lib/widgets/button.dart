@@ -210,7 +210,7 @@ class CustomButton extends StatelessWidget {
   final List<Color>? splashColors;
 
   const CustomButton({
-    Key? key,
+    super.key,
     required this.text,
     required this.onPressed,
     this.isLoading = false,
@@ -222,7 +222,7 @@ class CustomButton extends StatelessWidget {
     this.borderRadius = 30,
     this.hoverColors,
     this.splashColors,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -244,7 +244,7 @@ class CustomButton extends StatelessWidget {
           boxShadow: [
             if (!isDisabled)
               BoxShadow(
-                color: gradientColors.last.withOpacity(0.4),
+                color: gradientColors.last..withAlpha(102),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),

@@ -9,10 +9,10 @@ class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
 
   @override
-  _SignUpPageState createState() => _SignUpPageState();
+  SignUpPageState createState() => SignUpPageState();
 }
 
-class _SignUpPageState extends State<SignUpPage> {
+class SignUpPageState extends State<SignUpPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _schoolIdController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -29,39 +29,6 @@ class _SignUpPageState extends State<SignUpPage> {
   bool _isSigningUp = false;
 
   final List<String> roles = ['admin', 'principal'];
-
-  // Future<void> _register() async {
-  //   if (!isEmailVerified || !isPhoneVerified) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(
-  //         content: Text(
-  //             'Please verify both email and phone number before registering.'),
-  //       ),
-  //     );
-  //     return;
-  //   }
-
-  //   final success = await ApiService.register(
-  //     _emailController.text.trim(),
-  //     _phoneController.text.trim(),
-  //     _passwordController.text.trim(),
-  //     _confirmPasswordController.text.trim(),
-  //     _selectedRole,
-  //     schoolId: _schoolIdController.text.trim(),
-  //   );
-
-  //   if (success) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text('Registration Successful!')),
-  //     );
-  //     Navigator.pushReplacement(
-  //         context, MaterialPageRoute(builder: (_) => const AdminDashboard()));
-  //   } else {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text('Email Already Exists. Try Again!')),
-  //     );
-  //   }
-  // }
   Future<void> _register() async {
     if (!isEmailVerified || !isPhoneVerified) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -88,7 +55,7 @@ class _SignUpPageState extends State<SignUpPage> {
     setState(() {
       _isSigningUp = false;
     });
-
+    if (!mounted) return;
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Registration Successful!')),
@@ -330,34 +297,6 @@ class _SignUpPageState extends State<SignUpPage> {
       ),
     );
   }
-
-//   Widget _buildSignUpButton() {
-//     return SizedBox(
-//       width: double.infinity,
-//       child: ElevatedButton(
-//         onPressed: () {
-//           if (_formKey.currentState!.validate()) {
-//             _register();
-//             ScaffoldMessenger.of(context).showSnackBar(
-//               const SnackBar(content: Text('Signing Up...')),
-//             );
-//           }
-//         },
-//         style: ElevatedButton.styleFrom(
-//           backgroundColor: Colors.blue.shade900,
-//           padding: const EdgeInsets.symmetric(vertical: 16),
-//           shape: RoundedRectangleBorder(
-//             borderRadius: BorderRadius.circular(12),
-//           ),
-//         ),
-//         child: Text(
-//           "Sign Up",
-//           style: GoogleFonts.poppins(fontSize: 18, color: Colors.white),
-//         ),
-//       ),
-//     );
-//   }
-// }
 
   Widget _buildSignUpButton() {
     return CustomButton(

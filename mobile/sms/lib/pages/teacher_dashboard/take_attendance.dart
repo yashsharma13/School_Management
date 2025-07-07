@@ -13,7 +13,7 @@ class TakeAttendancePage extends StatefulWidget {
   const TakeAttendancePage({super.key});
 
   @override
-  _TakeAttendancePageState createState() => _TakeAttendancePageState();
+  State<TakeAttendancePage> createState() => _TakeAttendancePageState();
 }
 
 class Student {
@@ -100,8 +100,9 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
   }
 
   Future<void> _fetchStudents() async {
-    if (token == null || selectedClass == null || selectedSection == null)
+    if (token == null || selectedClass == null || selectedSection == null) {
       return;
+    }
 
     try {
       final response = await http.get(
@@ -150,6 +151,7 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
       token = null;
     });
     _showError('Session expired. Please login again.');
+    if (!mounted) return;
     Navigator.pushReplacementNamed(context, '/login');
   }
 
@@ -237,6 +239,7 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
         _showSuccess(
             responseData['message'] ?? 'Attendance saved successfully');
         Future.delayed(Duration(seconds: 2), () {
+          if (!mounted) return;
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => TeacherDashboard()),

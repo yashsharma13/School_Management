@@ -8,10 +8,10 @@ import 'package:sms/widgets/date_picker.dart'; // Import the custom date picker
 class EditSessionDialog extends StatefulWidget {
   final Session session;
 
-  EditSessionDialog({required this.session});
+  const EditSessionDialog({super.key, required this.session});
 
   @override
-  _EditSessionDialogState createState() => _EditSessionDialogState();
+  State<EditSessionDialog> createState() => _EditSessionDialogState();
 }
 
 class _EditSessionDialogState extends State<EditSessionDialog> {
@@ -45,8 +45,10 @@ class _EditSessionDialogState extends State<EditSessionDialog> {
     );
 
     if (result['success'] == true) {
+      if (!mounted) return;
       Navigator.pop(context, true); // return true on success
     } else {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result['message'] ?? 'Failed to update session'),

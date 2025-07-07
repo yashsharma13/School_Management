@@ -14,7 +14,7 @@ class CustomDatePicker extends StatelessWidget {
   final IconData? icon;
 
   const CustomDatePicker({
-    Key? key,
+    super.key,
     required this.selectedDate,
     required this.onDateSelected,
     this.labelText,
@@ -25,7 +25,7 @@ class CustomDatePicker extends StatelessWidget {
     this.backgroundColor,
     this.foregroundColor,
     this.icon = Icons.calendar_today,
-  }) : super(key: key);
+  });
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -42,7 +42,7 @@ class CustomDatePicker extends StatelessWidget {
               surface: Colors.white,
               onSurface: Colors.black,
             ),
-            dialogBackgroundColor: Colors.white,
+            // dialogBackgroundColor: Colors.white,
           ),
           child: child!,
         );
@@ -89,13 +89,13 @@ class CompactDatePicker extends StatelessWidget {
   final String? format;
 
   const CompactDatePicker({
-    Key? key,
+    super.key,
     required this.selectedDate,
     required this.onDateSelected,
     this.firstDate,
     this.lastDate,
     this.format = 'dd/MM/yyyy',
-  }) : super(key: key);
+  });
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(

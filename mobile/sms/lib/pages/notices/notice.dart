@@ -10,8 +10,10 @@ import 'notice_model.dart';
 import 'package:intl/intl.dart';
 
 class NoticesPage extends StatefulWidget {
+  const NoticesPage({super.key});
+
   @override
-  _NoticesPageState createState() => _NoticesPageState();
+  State<NoticesPage> createState() => _NoticesPageState();
 }
 
 class _NoticesPageState extends State<NoticesPage> {
@@ -92,8 +94,10 @@ class _NoticesPageState extends State<NoticesPage> {
         setState(() {
           notices.removeWhere((notice) => notice.id == id);
         });
-        showCustomSnackBar(context, "Notice deleted successfully",
-            backgroundColor: Colors.red);
+        if (mounted) {
+          showCustomSnackBar(context, "Notice deleted successfully",
+              backgroundColor: Colors.red);
+        }
       } else {
         final body = json.decode(response.body);
         setState(() => error = body['message'] ?? 'Delete failed');
@@ -224,7 +228,8 @@ class _NoticesPageState extends State<NoticesPage> {
                                           decoration: BoxDecoration(
                                             color: getPriorityColor(
                                                     notice.priority)
-                                                .withOpacity(0.2),
+                                                // .withOpacity(0.2),
+                                                .withAlpha((0.2 * 255).round()),
                                             borderRadius:
                                                 BorderRadius.circular(12),
                                             border: Border.all(

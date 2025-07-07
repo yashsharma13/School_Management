@@ -7,7 +7,7 @@ class TeacherDocument extends StatefulWidget {
   const TeacherDocument({super.key, required this.controller});
 
   @override
-  _TeacherDocumentState createState() => _TeacherDocumentState();
+  State<TeacherDocument> createState() => _TeacherDocumentState();
 }
 
 class _TeacherDocumentState extends State<TeacherDocument> {

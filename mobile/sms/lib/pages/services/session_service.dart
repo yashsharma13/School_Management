@@ -6,7 +6,56 @@ import 'package:shared_preferences/shared_preferences.dart';
 class SessionService {
   static final String baseUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
 
-  /// Create a new session
+  // /// Create a new session
+  // static Future<Map<String, dynamic>> createSession({
+  //   required String sessionName,
+  //   required String startDate,
+  //   required String endDate,
+  // }) async {
+  //   try {
+  //     final prefs = await SharedPreferences.getInstance();
+  //     final token = prefs.getString('token');
+
+  //     if (token == null) {
+  //       throw Exception('No token found. Please log in.');
+  //     }
+
+  //     final url = Uri.parse('$baseUrl/api/create');
+  //     final response = await http.post(
+  //       url,
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         'Authorization': 'Bearer $token',
+  //       },
+  //       body: jsonEncode({
+  //         'session_name': sessionName,
+  //         'start_date': startDate,
+  //         'end_date': endDate,
+  //       }),
+  //     );
+
+  //     final responseData = jsonDecode(response.body);
+
+  //     if (response.statusCode == 200 && responseData['success'] == true) {
+  //       return {
+  //         'success': true,
+  //         'message': responseData['message'] ?? 'Session created successfully',
+  //         'data': responseData['data'],
+  //       };
+  //     } else {
+  //       return {
+  //         'success': false,
+  //         'message': responseData['message'] ?? 'Failed to create session',
+  //       };
+  //     }
+  //   } catch (e) {
+  //     return {
+  //       'success': false,
+  //       'message': e.toString(),
+  //     };
+  //   }
+  // }
+
   static Future<Map<String, dynamic>> createSession({
     required String sessionName,
     required String startDate,
@@ -41,6 +90,14 @@ class SessionService {
           'success': true,
           'message': responseData['message'] ?? 'Session created successfully',
           'data': responseData['data'],
+        };
+      } else if (response.statusCode == 400 &&
+          responseData['activeSessionEndDate'] != null) {
+        // Special case for active session error
+        return {
+          'success': false,
+          'message': responseData['message'],
+          'activeSessionEndDate': responseData['activeSessionEndDate'],
         };
       } else {
         return {
@@ -146,50 +203,6 @@ class SessionService {
       };
     }
   }
-
-//   static Future<bool> deleteSession(String sessionId) async {
-//     try {
-//       // debugPrint('[DEBUG] Starting deleteClass with ID: $classId'); // Add this
-
-//       final prefs = await SharedPreferences.getInstance();
-//       final token = prefs.getString('token');
-
-//       if (token == null) {
-//         throw Exception('Token is not available.');
-//       }
-
-//       if (sessionId.isEmpty) {
-//         throw Exception('Session ID cannot be empty');
-//       }
-
-//       // const String baseUrl = 'http://localhost:1000/api';
-//       final url = '$baseUrl/api/session/$sessionId';
-
-//       // debugPrint('[DEBUG] Full delete URL: $url'); // Add this
-
-//       final response = await http.delete(
-//         Uri.parse(url),
-//         headers: {
-//           'Accept': 'application/json',
-//           'Content-Type': 'application/json',
-//           'Authorization': token,
-//         },
-//       );
-
-//       // debugPrint('[DEBUG] Delete response: ${response.statusCode}'); // Add this
-//       // debugPrint('[DEBUG] Response body: ${response.body}'); // Add this
-
-//       if (response.statusCode == 200) {
-//         return true;
-//       } else {
-//         throw Exception('Delete failed with status: ${response.statusCode}');
-//       }
-//     } catch (error) {
-//       // debugPrint('[ERROR] in deleteSession: $error');
-//       rethrow;
-//     }
-//   }
-// }
 
   static Future<Map<String, dynamic>> deleteSession(String sessionId) async {
     try {

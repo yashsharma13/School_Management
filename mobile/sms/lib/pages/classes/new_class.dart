@@ -12,7 +12,7 @@ class AddClassPage extends StatefulWidget {
   const AddClassPage({super.key});
 
   @override
-  _AddClassPageState createState() => _AddClassPageState();
+  State<AddClassPage> createState() => _AddClassPageState();
 }
 
 class _AddClassPageState extends State<AddClassPage> {
@@ -87,7 +87,7 @@ class _AddClassPageState extends State<AddClassPage> {
           'Authorization': token!,
         },
       );
-
+      if (!mounted) return;
       if (response.statusCode == 200) {
         final List<dynamic> teacherData = json.decode(response.body);
         setState(() {
@@ -104,6 +104,7 @@ class _AddClassPageState extends State<AddClassPage> {
         setState(() {
           token = null;
         });
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Session expired. Please login again.')),
         );
@@ -142,11 +143,12 @@ class _AddClassPageState extends State<AddClassPage> {
           // tuitionFees: _tuitionFees,
           teacherId: _selectedTeacherId!,
         );
-
+        if (!mounted) return;
         if (success) {
           showCustomSnackBar(context, 'Class created successfully',
               backgroundColor: Colors.green);
-          await Future.delayed(Duration(seconds: 3));
+          await Future.delayed(Duration(seconds: 2));
+          if (!mounted) return;
           Navigator.pop(context);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -235,7 +237,9 @@ class _AddClassPageState extends State<AddClassPage> {
         SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.deepPurple[900]!.withOpacity(0.3)),
+            // border: Border.all(color: Colors.deepPurple[900]!.withOpacity(0.3)),
+            border: Border.all(
+                color: Colors.deepPurple[900]!.withAlpha((0.3 * 255).round())),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Padding(
@@ -280,7 +284,10 @@ class _AddClassPageState extends State<AddClassPage> {
         SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.deepPurple[900]!.withOpacity(0.3)),
+            // border: Border.all(color: Colors.deepPurple[900]!.withOpacity(0.3)),
+            border: Border.all(
+                color: Colors.deepPurple[900]!.withAlpha((0.3 * 255).round())),
+
             borderRadius: BorderRadius.circular(8),
           ),
           child: Padding(
@@ -324,7 +331,10 @@ class _AddClassPageState extends State<AddClassPage> {
         SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.deepPurple[900]!.withOpacity(0.3)),
+            // border: Border.all(color: Colors.deepPurple[900]!.withOpacity(0.3)),
+            border: Border.all(
+                color: Colors.deepPurple[900]!.withAlpha((0.3 * 255).round())),
+
             borderRadius: BorderRadius.circular(8),
           ),
           child: Padding(

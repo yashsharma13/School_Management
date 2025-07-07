@@ -18,7 +18,7 @@ class StudentRegistrationForm extends StatefulWidget {
   });
 
   @override
-  _StudentRegistrationFormState createState() =>
+  State<StudentRegistrationForm> createState() =>
       _StudentRegistrationFormState();
 }
 
@@ -117,14 +117,18 @@ class _StudentRegistrationFormState extends State<StudentRegistrationForm> {
 
                               if (success) {
                                 widget.onRegistered();
-                                if (!mounted) return;
-                                Navigator.pop(context);
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => AdmissionLetterPage(),
-                                  ),
-                                );
+                                if (context.mounted) {
+                                  Navigator.pop(context);
+                                }
+                                if (context.mounted) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          AdmissionLetterPage(),
+                                    ),
+                                  );
+                                }
                               }
                             });
                           },

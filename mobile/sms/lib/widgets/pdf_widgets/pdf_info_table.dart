@@ -6,10 +6,10 @@ class InfoTable extends StatelessWidget {
   final BuildContext context;
 
   const InfoTable({
-    Key? key,
+    super.key,
     required this.rows,
     required this.context,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

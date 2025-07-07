@@ -47,9 +47,13 @@ class StudentRegistrationController {
 
           final fileSize = await studentPhoto!.length();
           if (fileSize < 100) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Selected image is too small')),
-            );
+            if (context.mounted) {
+              // ScaffoldMessenger.of(context).showSnackBar(
+              //   SnackBar(content: Text('Selected image is too small')),
+              // );
+              showCustomSnackBar(context, 'Selected image is too small',
+                  backgroundColor: Colors.red);
+            }
             studentPhoto = null;
             studentPhotoName = null;
             return;
@@ -64,9 +68,13 @@ class StudentRegistrationController {
 
           final fileSize = result.files.single.bytes!.length;
           if (fileSize < 100) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Selected image is too small')),
-            );
+            // ScaffoldMessenger.of(context).showSnackBar(
+            //   SnackBar(content: Text('Selected image is too small')),
+            // );
+            if (context.mounted) {
+              showCustomSnackBar(context, 'Selected image is too small',
+                  backgroundColor: Colors.red);
+            }
             studentPhoto = null;
             studentPhotoName = null;
             return;

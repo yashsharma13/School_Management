@@ -6,12 +6,14 @@ class Notice {
   final String endDate; // <-- new field
   final String category;
   final String priority;
+  final String createdAt;
 
   Notice({
     required this.id,
     required this.title,
     required this.content,
     required this.noticeDate,
+    required this.createdAt,
     required this.endDate,
     required this.category,
     required this.priority,
@@ -23,6 +25,7 @@ class Notice {
       title: json['title'],
       content: json['content'],
       noticeDate: json['notice_date'],
+      createdAt: json['created_at'] ?? '',
       endDate:
           json['end_date'] ?? '', // safely get end_date, fallback empty string
       category: json['category'],

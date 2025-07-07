@@ -10,7 +10,7 @@ class StudentInfoSection extends StatefulWidget {
   const StudentInfoSection({super.key, required this.controller});
 
   @override
-  _StudentInfoSectionState createState() => _StudentInfoSectionState();
+  State<StudentInfoSection> createState() => _StudentInfoSectionState();
 }
 
 class _StudentInfoSectionState extends State<StudentInfoSection> {

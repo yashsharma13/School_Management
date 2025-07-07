@@ -6,11 +6,13 @@ import 'package:sms/widgets/custom_appbar.dart';
 import 'package:sms/widgets/custom_snackbar.dart';
 
 class FeeMasterPage extends StatefulWidget {
+  const FeeMasterPage({super.key});
+
   @override
-  _FeeMasterPageState createState() => _FeeMasterPageState();
+  FeeMasterPageState createState() => FeeMasterPageState();
 }
 
-class _FeeMasterPageState extends State<FeeMasterPage> {
+class FeeMasterPageState extends State<FeeMasterPage> {
   final _formKey = GlobalKey<FormState>();
   List<FeeField> feeFields = [];
 
@@ -55,6 +57,7 @@ class _FeeMasterPageState extends State<FeeMasterPage> {
       //     backgroundColor: success ? Colors.green : Colors.red,
       //   ),
       // );
+      if (!mounted) return;
       showCustomSnackBar(context,
           success ? "Fees head define successfully!" : "Submission failed!",
           backgroundColor: success ? Colors.green : Colors.red);

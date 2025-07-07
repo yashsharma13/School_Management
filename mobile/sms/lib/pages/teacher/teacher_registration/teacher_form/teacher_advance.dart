@@ -8,7 +8,7 @@ class TeacherAdvance extends StatefulWidget {
   const TeacherAdvance({super.key, required this.controller});
 
   @override
-  _TeacherAdvanceState createState() => _TeacherAdvanceState();
+  State<TeacherAdvance> createState() => _TeacherAdvanceState();
 }
 
 class _TeacherAdvanceState extends State<TeacherAdvance> {

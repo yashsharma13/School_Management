@@ -2,6 +2,7 @@ class Teacher {
   String id;
   String name;
   String email;
+  String password;
   String dateOfBirth;
   String dateOfJoining;
   String gender;
@@ -19,6 +20,7 @@ class Teacher {
     required this.id,
     required this.name,
     required this.email,
+    required this.password,
     required this.dateOfBirth,
     required this.dateOfJoining,
     required this.gender,
@@ -52,7 +54,8 @@ class Teacher {
     return Teacher(
       id: json['id']?.toString() ?? '',
       name: json['teacher_name']?.toString() ?? 'Unknown',
-      email: json['email']?.toString() ?? '',
+      email: json['username']?.toString() ?? '',
+      password: json['password']?.toString() ?? '',
       dateOfBirth: json['date_of_birth']?.toString() ?? '',
       dateOfJoining: json['date_of_joining']?.toString() ?? '',
       gender: json['gender']?.toString() ?? '',

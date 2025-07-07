@@ -34,6 +34,7 @@ class _ViewMessagesPageState extends State<ViewMessagesPage> {
     final storedToken = prefs.getString("token");
 
     if (storedToken == null) {
+      if (!mounted) return;
       Navigator.pushReplacement(
           context, MaterialPageRoute(builder: (_) => const LoginPage()));
       return;
@@ -221,7 +222,7 @@ class _ViewMessagesPageState extends State<ViewMessagesPage> {
                         Chip(
                           label: Text('${_messages.length}'),
                           backgroundColor:
-                              Theme.of(context).primaryColor.withOpacity(0.1),
+                              Theme.of(context).primaryColor.withAlpha(25),
                         ),
                     ],
                   ),

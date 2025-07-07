@@ -8,8 +8,10 @@ import 'package:sms/widgets/button.dart';
 import 'package:sms/widgets/custom_appbar.dart';
 
 class AddNoticePage extends StatefulWidget {
+  const AddNoticePage({super.key});
+
   @override
-  _AddNoticePageState createState() => _AddNoticePageState();
+  State<AddNoticePage> createState() => _AddNoticePageState();
 }
 
 class _AddNoticePageState extends State<AddNoticePage> {
@@ -95,6 +97,7 @@ class _AddNoticePageState extends State<AddNoticePage> {
       });
 
       Future.delayed(Duration(seconds: 2), () {
+        if (!mounted) return;
         Navigator.pop(context, true); // Return true to indicate success
       });
     } catch (e) {

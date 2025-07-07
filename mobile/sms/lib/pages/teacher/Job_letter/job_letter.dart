@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
 import 'package:sms/pages/teacher/Job_letter/confirm_letter.dart';
-import 'dart:convert';
-import 'package:intl/intl.dart';
 import 'package:sms/widgets/custom_appbar.dart';
+import 'package:sms/widgets/custom_snackbar.dart';
+import 'package:sms/widgets/search_bar.dart';
+import 'package:sms/widgets/user_photo_widget.dart';
+import 'package:sms/pages/services/teacher_service.dart';
+import 'package:sms/models/teacher_model.dart';
+
+final String baseeUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
+final String uploadBaseUrl = '$baseeUrl/uploads';
+TextEditingController searchController = TextEditingController();
 
 class TeacherAdmissionLetterPage extends StatefulWidget {
-  const TeacherAdmissionLetterPage({Key? key}) : super(key: key);
+  const TeacherAdmissionLetterPage({super.key});
 
   @override
   State<TeacherAdmissionLetterPage> createState() =>
@@ -20,81 +25,26 @@ class _TeacherAdmissionLetterPageState
   List<Teacher> teachers = [];
   List<Teacher> filteredTeachers = [];
   bool isLoading = true;
-  String? token;
   String? searchQuery;
-  static final String baseeUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
 
   @override
   void initState() {
     super.initState();
-    _loadToken();
-  }
-
-  Future<void> _loadToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      token = prefs.getString('token');
-    });
-
-    if (token != null) {
-      await _fetchTeachers();
-    }
-  }
-
-  String formatDate(String rawDate) {
-    try {
-      final parsedDate = DateTime.parse(rawDate);
-      return DateFormat('yyyy-MM-dd').format(parsedDate); // Or 'dd MMM yyyy'
-    } catch (e) {
-      return rawDate; // fallback if parsing fails
-    }
+    _fetchTeachers();
   }
 
   Future<void> _fetchTeachers() async {
     try {
       setState(() => isLoading = true);
-
-      final response = await http.get(
-        Uri.parse('$baseeUrl/api/teachers'),
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': token ?? '',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> teacherData = json.decode(response.body);
-        setState(() {
-          teachers = teacherData
-              .map((data) => Teacher(
-                    id: data['id']?.toString() ?? '',
-                    name: data['teacher_name']?.toString() ?? 'Unknown Teacher',
-                    // email: data['email']?.toString() ?? 'N/A',
-                    dateOfBirth: data['date_of_birth']?.toString() ?? 'N/A',
-                    dateOfJoining: data['date_of_joining']?.toString() ?? 'N/A',
-                    gender: data['gender']?.toString() ?? 'N/A',
-                    qualification: data['qualification']?.toString() ?? 'N/A',
-                    experience: data['experience']?.toString() ?? 'N/A',
-                    salary: data['salary']?.toString() ?? 'N/A',
-                    address: data['address']?.toString() ?? 'N/A',
-                    phone: data['phone']?.toString() ?? 'N/A',
-                    teacherPhoto: data['teacher_photo']?.toString() ?? '',
-                    qualificationCertificate:
-                        data['qualification_certificate']?.toString() ?? '',
-                    username: data['username']?.toString() ?? 'N/A',
-                    password: data['password']?.toString() ?? 'N/A',
-                  ))
-              .where((teacher) => teacher.id.isNotEmpty)
-              .toList();
-
-          filteredTeachers = List.from(teachers);
-        });
-      } else {
-        _showErrorSnackBar('Failed to load teachers: ${response.statusCode}');
-      }
+      final fetchedTeachers = await TeacherService.fetchTeachers();
+      setState(() {
+        teachers = fetchedTeachers;
+        filteredTeachers = fetchedTeachers;
+      });
     } catch (error) {
-      _showErrorSnackBar('Error loading teachers: $error');
+      if (!mounted) return;
+      showCustomSnackBar(context, 'Error loading teachers: $error',
+          backgroundColor: Colors.red);
     } finally {
       setState(() => isLoading = false);
     }
@@ -109,26 +59,15 @@ class _TeacherAdmissionLetterPageState
           return teacher.name
                   .toLowerCase()
                   .contains(searchQuery!.toLowerCase()) ||
-              // teacher.email
-              //     .toLowerCase()
-              //     .contains(searchQuery!.toLowerCase()) ||
+              teacher.email
+                  .toLowerCase()
+                  .contains(searchQuery!.toLowerCase()) ||
               teacher.qualification
                   .toLowerCase()
                   .contains(searchQuery!.toLowerCase());
         }).toList();
       }
     });
-  }
-
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(message),
-      backgroundColor: Colors.red[800],
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-    ));
   }
 
   void _viewAdmissionConfirmation(Teacher teacher) {
@@ -138,24 +77,6 @@ class _TeacherAdmissionLetterPageState
         builder: (context) =>
             TeacherAdmissionConfirmationPage(teacher: teacher),
       ),
-    );
-  }
-
-  Widget _buildTeacherPhoto(String photoPath) {
-    if (photoPath.isEmpty) {
-      return CircleAvatar(
-        backgroundColor: Colors.deepPurple[100],
-        child: Icon(Icons.person, color: Colors.deepPurple[800]),
-      );
-    }
-    return CircleAvatar(
-      backgroundImage: NetworkImage(
-        photoPath.startsWith('http')
-            ? photoPath
-            : '$baseeUrl/uploads/$photoPath',
-      ),
-      onBackgroundImageError: (exception, stackTrace) =>
-          Icon(Icons.error, color: Colors.red[800]),
     );
   }
 
@@ -187,33 +108,45 @@ class _TeacherAdmissionLetterPageState
                             fontWeight: FontWeight.bold,
                             color: Colors.deepPurple[800])),
                     const SizedBox(height: 12),
-                    TextField(
-                      decoration: InputDecoration(
-                        labelText: 'Search by name, email or qualification',
-                        labelStyle: TextStyle(color: Colors.deepPurple[800]),
-                        filled: true,
-                        fillColor: Colors.deepPurple[50],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        prefixIcon:
-                            Icon(Icons.search, color: Colors.deepPurple[800]),
-                        suffixIcon: IconButton(
-                          icon:
-                              Icon(Icons.clear, color: Colors.deepPurple[800]),
-                          onPressed: () {
-                            setState(() {
-                              searchQuery = null;
-                              _filterTeachers();
-                            });
-                          },
-                        ),
-                      ),
+                    // TextField(
+                    //   decoration: InputDecoration(
+                    //     labelText: 'Search by name, email or qualification',
+                    //     labelStyle: TextStyle(color: Colors.deepPurple[800]),
+                    //     filled: true,
+                    //     fillColor: Colors.deepPurple[50],
+                    //     border: OutlineInputBorder(
+                    //       borderRadius: BorderRadius.circular(8),
+                    //     ),
+                    //     prefixIcon:
+                    //         Icon(Icons.search, color: Colors.deepPurple[800]),
+                    //     suffixIcon: IconButton(
+                    //       icon:
+                    //           Icon(Icons.clear, color: Colors.deepPurple[800]),
+                    //       onPressed: () {
+                    //         setState(() {
+                    //           searchQuery = null;
+                    //           _filterTeachers();
+                    //         });
+                    //       },
+                    //     ),
+                    //   ),
+                    //   onChanged: (value) {
+                    //     setState(() {
+                    //       searchQuery = value;
+                    //       _filterTeachers();
+                    //     });
+                    //   },
+                    // ),
+                    CustomSearchBar(
+                      hintText: 'Search by name, email or qualification',
+                      controller: searchController,
                       onChanged: (value) {
-                        setState(() {
-                          searchQuery = value;
-                          _filterTeachers();
-                        });
+                        searchQuery = value;
+                        _filterTeachers();
+                      },
+                      onClear: () {
+                        searchQuery = '';
+                        _filterTeachers();
                       },
                     ),
                   ],
@@ -258,8 +191,15 @@ class _TeacherAdmissionLetterPageState
                               child: ListTile(
                                 contentPadding: const EdgeInsets.symmetric(
                                     horizontal: 16, vertical: 12),
-                                leading:
-                                    _buildTeacherPhoto(teacher.teacherPhoto),
+                                leading: CircleAvatar(
+                                  backgroundColor: Colors.deepPurple[100],
+                                  child: buildUserPhoto(
+                                    teacher.teacherPhoto,
+                                    uploadBaseUrl,
+                                    // icon: Icon(Icons.person,
+                                    //     color: Colors.deepPurple[800]),
+                                  ),
+                                ),
                                 title: Text(teacher.name,
                                     style: TextStyle(
                                         fontWeight: FontWeight.bold,
@@ -267,20 +207,17 @@ class _TeacherAdmissionLetterPageState
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    // Text('Email: ${teacher.email}',
-                                    //     style:
-                                    //         TextStyle(color: Colors.deepPurple[800])),
+                                    Text('Email: ${teacher.email}',
+                                        style: TextStyle(
+                                            color: Colors.deepPurple[800])),
                                     Text(
                                         'Qualification: ${teacher.qualification}',
                                         style: TextStyle(
                                             color: Colors.deepPurple[800])),
-                                    // Text('Joined: ${teacher.dateOfJoining}',
-                                    //     style:
-                                    //         TextStyle(color: Colors.deepPurple[800])),
-                                    Text(
-                                        'Joined: ${formatDate(teacher.dateOfJoining)}',
-                                        style: TextStyle(
-                                            color: Colors.deepPurple[800])),
+                                    // Text(
+                                    //     'Joined: ${TeacherService.formatDate(teacher.dateOfJoining)}',
+                                    //     style: TextStyle(
+                                    //         color: Colors.deepPurple[800])),
                                   ],
                                 ),
                                 trailing: Container(
@@ -304,40 +241,4 @@ class _TeacherAdmissionLetterPageState
       ),
     );
   }
-}
-
-class Teacher {
-  final String id;
-  final String name;
-  // final String email;
-  final String dateOfBirth;
-  final String dateOfJoining;
-  final String gender;
-  final String qualification;
-  final String experience;
-  final String salary;
-  final String address;
-  final String phone;
-  final String teacherPhoto;
-  final String qualificationCertificate;
-  final String username;
-  final String password;
-
-  const Teacher({
-    required this.id,
-    required this.name,
-    // required this.email,
-    required this.dateOfBirth,
-    required this.dateOfJoining,
-    required this.gender,
-    required this.qualification,
-    required this.experience,
-    required this.salary,
-    required this.address,
-    required this.phone,
-    required this.teacherPhoto,
-    required this.qualificationCertificate,
-    required this.username,
-    required this.password,
-  });
 }

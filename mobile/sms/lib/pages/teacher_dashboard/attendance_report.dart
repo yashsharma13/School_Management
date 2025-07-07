@@ -120,6 +120,7 @@ class _AttendanceReportPageState extends State<AttendanceReportPage> {
   void _handleUnauthorized() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
+    if (!mounted) return;
     Navigator.pushReplacementNamed(context, '/login');
   }
 

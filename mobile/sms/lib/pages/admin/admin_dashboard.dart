@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sms/pages/auth/Signup.dart';
+import 'package:sms/pages/auth/signup.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sms/pages/auth/login.dart';
 
@@ -7,8 +7,7 @@ class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
-  _AdminDashboardState createState() => _AdminDashboardState();
+  State<AdminDashboard> createState() => _AdminDashboardState();
 }
 
 class _AdminDashboardState extends State<AdminDashboard> {

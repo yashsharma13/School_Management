@@ -1,6 +1,7 @@
 // pdf_viewer_widget.dart
 import 'package:flutter/material.dart';
 import 'package:sms/widgets/custom_appbar.dart';
+import 'package:sms/widgets/custom_snackbar.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class PDFViewerScreen extends StatelessWidget {
@@ -53,21 +54,30 @@ class PDFViewerScreen extends StatelessWidget {
                 final Uri url = Uri.parse(fullUrl);
                 if (!await launchUrl(url,
                     mode: LaunchMode.externalApplication)) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                          'Could not open PDF. Please check if you have a PDF viewer installed.'),
-                      duration: Duration(seconds: 3),
-                    ),
-                  );
+                  // ScaffoldMessenger.of(context).showSnackBar(
+                  //   SnackBar(
+                  //     content: Text(
+                  //         'Could not open PDF. Please check if you have a PDF viewer installed.'),
+                  //     duration: Duration(seconds: 3),
+                  //   ),
+                  // );
+                  if (context.mounted) {
+                    showCustomSnackBar(context,
+                        'Could not open PDF. Please check if you have a PDF viewer installed.',
+                        backgroundColor: Colors.red);
+                  }
                 }
               } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Error opening PDF: $e'),
-                    duration: Duration(seconds: 3),
-                  ),
-                );
+                // ScaffoldMessenger.of(context).showSnackBar(
+                //   SnackBar(
+                //     content: Text('Error opening PDF: $e'),
+                //     duration: Duration(seconds: 3),
+                //   ),
+                // );
+                if (context.mounted) {
+                  showCustomSnackBar(context, 'Error opening PDF: $e',
+                      backgroundColor: Colors.red);
+                }
               }
             },
           ),

@@ -5,8 +5,10 @@ import 'package:sms/pages/subjects/edit_subjects.dart';
 import 'package:sms/widgets/custom_appbar.dart';
 
 class ClassWithSubjectsPage extends StatefulWidget {
+  const ClassWithSubjectsPage({super.key});
+
   @override
-  _ClassWithSubjectsPageState createState() => _ClassWithSubjectsPageState();
+  State<ClassWithSubjectsPage> createState() => _ClassWithSubjectsPageState();
 }
 
 class _ClassWithSubjectsPageState extends State<ClassWithSubjectsPage> {

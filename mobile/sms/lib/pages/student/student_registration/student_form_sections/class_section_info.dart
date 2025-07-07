@@ -8,7 +8,7 @@ class ClassSectionInfo extends StatefulWidget {
   const ClassSectionInfo({super.key, required this.controller});
 
   @override
-  _ClassSectionInfoState createState() => _ClassSectionInfoState();
+  State<ClassSectionInfo> createState() => _ClassSectionInfoState();
 }
 
 class _ClassSectionInfoState extends State<ClassSectionInfo> {

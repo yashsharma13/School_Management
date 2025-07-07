@@ -1,102 +1,11 @@
-// // import 'dart:convert';
-// import 'dart:io';
-// import 'dart:typed_data';
-// import 'package:http/http.dart' as http;
-// // import 'package:shared_preferences/shared_preferences.dart';
-// import 'api_base.dart';
-
-// class TeacherServicee {
-//   static final String apiUrlRegisterTeacher =
-//       '${ApiBase.baseUrl}/api/registerteacher';
-
-//   static Future<bool> registerTeacher({
-//     required String teacherName,
-//     required String email,
-//     required String password,
-//     required String dob,
-//     required String doj,
-//     required String gender,
-//     required String guardianName,
-//     required String qualification,
-//     required String experience,
-//     required String salary,
-//     required String address,
-//     required String phone,
-//     required dynamic teacherPhoto,
-//     required dynamic qualificationCertificate,
-//   }) async {
-//     try {
-//       final token = await ApiBase.getToken();
-//       if (token == null) throw Exception('No token found. Please log in.');
-
-//       var request =
-//           http.MultipartRequest('POST', Uri.parse(apiUrlRegisterTeacher));
-//       request.headers['Authorization'] = token;
-
-//       request.fields['teacher_name'] = teacherName;
-//       request.fields['email'] = email;
-//       request.fields['password'] = password;
-//       request.fields['date_of_birth'] = dob;
-//       request.fields['date_of_joining'] = doj;
-//       request.fields['gender'] = gender;
-//       request.fields['guardian_name'] = guardianName;
-//       request.fields['qualification'] = qualification;
-//       request.fields['experience'] = experience;
-//       request.fields['salary'] = salary;
-//       request.fields['address'] = address;
-//       request.fields['phone'] = phone;
-
-//       if (teacherPhoto is File) {
-//         var photoStream = http.ByteStream(teacherPhoto.openRead());
-//         var photoLength = await teacherPhoto.length();
-//         request.files.add(http.MultipartFile(
-//           'teacher_photo',
-//           photoStream,
-//           photoLength,
-//           filename: teacherPhoto.path.split('/').last,
-//         ));
-//       } else if (teacherPhoto is Uint8List) {
-//         request.files.add(http.MultipartFile.fromBytes(
-//           'teacher_photo',
-//           teacherPhoto,
-//           filename: 'teacher_photo.jpg',
-//         ));
-//       }
-
-//       if (qualificationCertificate is File) {
-//         var certStream = http.ByteStream(qualificationCertificate.openRead());
-//         var certLength = await qualificationCertificate.length();
-//         request.files.add(http.MultipartFile(
-//           'qualification_certificate',
-//           certStream,
-//           certLength,
-//           filename: qualificationCertificate.path.split('/').last,
-//         ));
-//       } else if (qualificationCertificate is Uint8List) {
-//         request.files.add(http.MultipartFile.fromBytes(
-//           'qualification_certificate',
-//           qualificationCertificate,
-//           filename: 'qualification_certificate.pdf',
-//         ));
-//       }
-
-//       var response = await request.send();
-//       return response.statusCode == 200;
-//     } catch (e) {
-//       rethrow;
-//     }
-//   }
-// }
-
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 // import 'teacher_model.dart';
-import 'package:sms/pages/teacher/teacher_details/teacher_model.dart';
+import 'package:sms/models/teacher_model.dart';
 
 final String baseUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
 
@@ -272,26 +181,6 @@ class TeacherService {
     }
   }
 
-  /// ---------------------------
-  /// Delete a teacher
-  /// ---------------------------
-//   static Future<void> deleteTeacher(String teacherId) async {
-//     final token = await _getToken();
-//     if (token == null) throw Exception('No token found. Please log in.');
-
-//     final response = await http.delete(
-//       Uri.parse('$baseUrl/api/teachers/$teacherId'),
-//       headers: {
-//         'Content-Type': 'application/json',
-//         'Authorization': token,
-//       },
-//     );
-
-//     if (response.statusCode != 200) {
-//       throw Exception('Failed to delete teacher: ${response.statusCode}');
-//     }
-//   }
-// }
   static Future<String?> deleteTeacher(String teacherId) async {
     final token = await _getToken();
     if (token == null) return 'No token found. Please log in.';

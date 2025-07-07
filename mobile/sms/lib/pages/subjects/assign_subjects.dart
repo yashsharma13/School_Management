@@ -10,7 +10,7 @@ class AssignSubjectPage extends StatefulWidget {
   const AssignSubjectPage({super.key});
 
   @override
-  _AssignSubjectPageState createState() => _AssignSubjectPageState();
+  State<AssignSubjectPage> createState() => _AssignSubjectPageState();
 }
 
 class _AssignSubjectPageState extends State<AssignSubjectPage> {
@@ -30,6 +30,7 @@ class _AssignSubjectPageState extends State<AssignSubjectPage> {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
     if (token == null) {
+      if (!mounted) return;
       showCustomSnackBar(context, 'No token, please login.',
           backgroundColor: Colors.red);
     }
@@ -67,7 +68,7 @@ class _AssignSubjectPageState extends State<AssignSubjectPage> {
         classId: selectedClass!.id,
         subjectsData: subjectData,
       );
-
+      if (!mounted) return;
       showCustomSnackBar(
         context,
         success

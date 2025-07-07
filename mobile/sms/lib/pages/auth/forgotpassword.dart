@@ -5,7 +5,7 @@ class ForgetPage extends StatefulWidget {
   const ForgetPage({super.key});
 
   @override
-  _ForgetPageState createState() => _ForgetPageState();
+  State<ForgetPage> createState() => _ForgetPageState();
 }
 
 class _ForgetPageState extends State<ForgetPage> {

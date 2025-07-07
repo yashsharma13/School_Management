@@ -28,7 +28,7 @@ class FeesCollectionPage extends StatefulWidget {
   });
 
   @override
-  _FeesCollectionPageState createState() => _FeesCollectionPageState();
+  State<FeesCollectionPage> createState() => _FeesCollectionPageState();
 }
 
 class _FeesCollectionPageState extends State<FeesCollectionPage> {
@@ -235,9 +235,7 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
             break;
           }
         }
-        if (classId == null) {
-          classId = widget.studentClass;
-        }
+        classId ??= widget.studentClass;
       }
     } catch (error) {
       classId = widget.studentClass;
@@ -594,6 +592,7 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
       );
 
       final responseBody = jsonDecode(response.body);
+      if (!mounted) return;
       if (response.statusCode == 400) {
         // _showErrorSnackBar(responseBody['message'] ?? 'Invalid data provided');
         showCustomSnackBar(
@@ -649,7 +648,7 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
 
   @override
   Widget build(BuildContext context) {
-    final blueTheme = Colors.blue.shade900;
+    final deepPurpleTheme = Colors.deepPurple.shade900;
     final whiteTheme = Colors.white;
 
     return Scaffold(
@@ -673,7 +672,10 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                       child: Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [blueTheme, Colors.blue.shade700],
+                            colors: [
+                              deepPurpleTheme,
+                              Colors.deepPurple.shade700
+                            ],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
@@ -728,7 +730,11 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                                 ],
                               ),
                               SizedBox(height: 16),
-                              Divider(color: whiteTheme.withOpacity(0.5)),
+                              Divider(
+                                // color: whiteTheme.withOpacity(0.5)
+                                color:
+                                    whiteTheme.withAlpha((0.7 * 255).round()),
+                              ),
                               SizedBox(height: 16),
                               Row(
                                 children: [
@@ -746,7 +752,10 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(8),
                                       border: Border.all(
-                                          color: whiteTheme.withOpacity(0.5)),
+                                        // color: whiteTheme.withOpacity(0.5)
+                                        color: whiteTheme
+                                            .withAlpha((0.7 * 255).round()),
+                                      ),
                                     ),
                                     child: ToggleButtons(
                                       isSelected: [
@@ -762,6 +771,12 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                                         }
                                         _togglePaymentType(index == 1);
                                       },
+                                      borderColor: Colors.transparent,
+                                      selectedBorderColor: Colors.transparent,
+                                      fillColor: whiteTheme,
+                                      color: whiteTheme,
+                                      selectedColor: deepPurpleTheme,
+                                      borderRadius: BorderRadius.circular(6),
                                       children: [
                                         Padding(
                                           padding: EdgeInsets.symmetric(
@@ -770,11 +785,13 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                                             'Monthly',
                                             style: TextStyle(
                                               color: !isYearlyPayment
-                                                  ? blueTheme
-                                                  : whiteTheme.withOpacity(
-                                                      hasPaidYearly
-                                                          ? 0.5
-                                                          : 1.0),
+                                                  ? deepPurpleTheme
+                                                  : whiteTheme
+                                                ..withAlpha(((hasPaidMonthly
+                                                            ? 0.5
+                                                            : 1.0) *
+                                                        255)
+                                                    .round()),
                                               fontWeight: !isYearlyPayment
                                                   ? FontWeight.bold
                                                   : FontWeight.normal,
@@ -787,12 +804,20 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                                           child: Text(
                                             'Yearly',
                                             style: TextStyle(
+                                              // color: isYearlyPayment
+                                              //     ? deepPurpleTheme
+                                              //     : whiteTheme.withOpacity(
+                                              //         hasPaidMonthly
+                                              //             ? 0.5
+                                              //             : 1.0),
                                               color: isYearlyPayment
-                                                  ? blueTheme
-                                                  : whiteTheme.withOpacity(
-                                                      hasPaidMonthly
-                                                          ? 0.5
-                                                          : 1.0),
+                                                  ? deepPurpleTheme
+                                                  : whiteTheme.withAlpha(
+                                                      ((hasPaidMonthly
+                                                                  ? 0.5
+                                                                  : 1.0) *
+                                                              255)
+                                                          .round()),
                                               fontWeight: isYearlyPayment
                                                   ? FontWeight.bold
                                                   : FontWeight.normal,
@@ -800,12 +825,6 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                                           ),
                                         ),
                                       ],
-                                      borderColor: Colors.transparent,
-                                      selectedBorderColor: Colors.transparent,
-                                      fillColor: whiteTheme,
-                                      color: whiteTheme,
-                                      selectedColor: blueTheme,
-                                      borderRadius: BorderRadius.circular(6),
                                     ),
                                   ),
                                 ],
@@ -838,10 +857,11 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                                       selectedColor: whiteTheme,
                                       backgroundColor: isPaid
                                           ? Colors.grey.shade600
-                                          : Colors.blue.shade700,
+                                          : Colors.deepPurple.shade700,
                                       labelStyle: TextStyle(
-                                        color:
-                                            isSelected ? blueTheme : whiteTheme,
+                                        color: isSelected
+                                            ? deepPurpleTheme
+                                            : whiteTheme,
                                         fontWeight: isSelected
                                             ? FontWeight.bold
                                             : FontWeight.normal,
@@ -850,7 +870,7 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                                         borderRadius: BorderRadius.circular(8),
                                         side: BorderSide(
                                           color: isSelected
-                                              ? blueTheme
+                                              ? deepPurpleTheme
                                               : Colors.transparent,
                                           width: 2,
                                         ),
@@ -865,10 +885,16 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                                 onTap: () => _selectDate(context),
                                 child: Container(
                                   decoration: BoxDecoration(
-                                    color: whiteTheme.withOpacity(0.2),
+                                    // color: whiteTheme.withOpacity(0.2),
+                                    color: whiteTheme
+                                        .withAlpha((0.7 * 255).round()),
+
                                     borderRadius: BorderRadius.circular(8),
                                     border: Border.all(
-                                        color: whiteTheme.withOpacity(0.3)),
+                                      // color: whiteTheme.withOpacity(0.3)
+                                      color: whiteTheme
+                                          .withAlpha((0.7 * 255).round()),
+                                    ),
                                   ),
                                   padding: EdgeInsets.symmetric(
                                       horizontal: 12, vertical: 12),
@@ -883,9 +909,13 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                                             color: whiteTheme, fontSize: 16),
                                       ),
                                       Spacer(),
-                                      Icon(Icons.edit,
-                                          size: 18,
-                                          color: whiteTheme.withOpacity(0.7)),
+                                      Icon(
+                                        Icons.edit,
+                                        size: 18,
+                                        // color: whiteTheme.withOpacity(0.7)),
+                                        color: whiteTheme
+                                            .withAlpha((0.7 * 255).round()),
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -908,7 +938,7 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                             Text(
                               'Yearly Fee Summary',
                               style: TextStyle(
-                                color: blueTheme,
+                                color: deepPurpleTheme,
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -929,7 +959,7 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                                     fontWeight: FontWeight.bold,
                                     color: totalYearlyFee == 0.0
                                         ? Colors.grey.shade600
-                                        : blueTheme,
+                                        : deepPurpleTheme,
                                   ),
                                 ),
                               ],
@@ -1007,7 +1037,7 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                                     ? Text(
                                         '${feeStructure.length} Fee${feeStructure.length > 1 ? 's' : ''} Available',
                                         style: TextStyle(
-                                            color: Colors.blue.shade300,
+                                            color: Colors.deepPurple.shade300,
                                             fontSize: 14),
                                       )
                                     : null,
@@ -1023,7 +1053,7 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                                 isFeeDetailsExpanded = !isFeeDetailsExpanded;
                               });
                             },
-                            tileColor: blueTheme,
+                            tileColor: deepPurpleTheme,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.vertical(
                                 top: Radius.circular(16),
@@ -1146,7 +1176,8 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                                                               12),
                                                       side: BorderSide(
                                                           color: Colors
-                                                              .blue.shade50,
+                                                              .deepPurple
+                                                              .shade50,
                                                           width: 1),
                                                     ),
                                                     color: Colors.white,
@@ -1159,7 +1190,8 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                                                               Icons
                                                                   .currency_rupee,
                                                               size: 18,
-                                                              color: Colors.blue
+                                                              color: Colors
+                                                                  .deepPurple
                                                                   .shade600),
                                                           SizedBox(width: 8),
                                                           Expanded(
@@ -1171,7 +1203,7 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                                                                     FontWeight
                                                                         .w600,
                                                                 color: Colors
-                                                                    .blue
+                                                                    .deepPurple
                                                                     .shade800,
                                                               ),
                                                             ),
@@ -1224,7 +1256,8 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                                                                           .white),
                                                                 ),
                                                                 backgroundColor:
-                                                                    Colors.blue
+                                                                    Colors
+                                                                        .deepPurple
                                                                         .shade600,
                                                                 padding: EdgeInsets
                                                                     .symmetric(
@@ -1297,7 +1330,7 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                                                     ),
                                                   ),
                                                 );
-                                              }).toList(),
+                                              }),
                                           ],
                                         ),
                                       ),
@@ -1312,7 +1345,7 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                     Text(
                       'Payment Summary',
                       style: TextStyle(
-                        color: blueTheme,
+                        color: deepPurpleTheme,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -1386,28 +1419,29 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
       decoration: InputDecoration(
         labelText: label + (isRequired ? '*' : ''),
         labelStyle: TextStyle(
-          color: isEditable ? Colors.blue.shade600 : Colors.grey.shade600,
+          color: isEditable ? Colors.deepPurple.shade600 : Colors.grey.shade600,
           fontSize: 12,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.blue.shade100),
+          borderSide: BorderSide(color: Colors.deepPurple.shade100),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.blue.shade100),
+          borderSide: BorderSide(color: Colors.deepPurple.shade100),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.blue.shade600, width: 2),
+          borderSide: BorderSide(color: Colors.deepPurple.shade600, width: 2),
         ),
         prefixIcon: Icon(
           icon,
-          color: isEditable ? Colors.blue.shade600 : Colors.grey.shade600,
+          color: isEditable ? Colors.deepPurple.shade600 : Colors.grey.shade600,
           size: 20,
         ),
         filled: true,
-        fillColor: isEditable ? Colors.blue.shade50 : Colors.grey.shade100,
+        fillColor:
+            isEditable ? Colors.deepPurple.shade50 : Colors.grey.shade100,
       ),
       style: TextStyle(
         color: isEditable ? Colors.black : Colors.grey.shade700,
@@ -1421,8 +1455,9 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
               double? deposit = double.tryParse(value);
               if (deposit == null) return 'Please enter a valid number';
               double total = double.tryParse(totalDepositController.text) ?? 0;
-              if (deposit > total)
+              if (deposit > total) {
                 return 'Deposit cannot be greater than total amount';
+              }
               return null;
             }
           : null,
@@ -1434,22 +1469,22 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
       controller: remarkController,
       decoration: InputDecoration(
         labelText: 'Remark*',
-        labelStyle: TextStyle(color: Colors.blue.shade600, fontSize: 12),
+        labelStyle: TextStyle(color: Colors.deepPurple.shade600, fontSize: 12),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.blue.shade100),
+          borderSide: BorderSide(color: Colors.deepPurple.shade100),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.blue.shade100),
+          borderSide: BorderSide(color: Colors.deepPurple.shade100),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.blue.shade600, width: 2),
+          borderSide: BorderSide(color: Colors.deepPurple.shade600, width: 2),
         ),
-        prefixIcon: Icon(Icons.note, color: Colors.blue.shade600),
+        prefixIcon: Icon(Icons.note, color: Colors.deepPurple.shade600),
         filled: true,
-        fillColor: Colors.blue.shade50,
+        fillColor: Colors.deepPurple.shade50,
       ),
       style: TextStyle(fontSize: 14, color: Colors.black87),
       maxLines: 2,

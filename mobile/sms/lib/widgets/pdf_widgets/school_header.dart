@@ -6,11 +6,11 @@ class SchoolHeader extends StatelessWidget {
   final double logoSize;
 
   const SchoolHeader({
-    Key? key,
+    super.key,
     required this.instituteName,
     required this.logoUrl,
     this.logoSize = 72,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

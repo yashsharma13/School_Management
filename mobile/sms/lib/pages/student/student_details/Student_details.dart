@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sms/pages/services/student_service.dart';
 import 'package:sms/widgets/custom_appbar.dart';
 import 'package:sms/widgets/custom_snackbar.dart';
+import 'package:sms/widgets/search_bar.dart';
 import 'package:sms/widgets/user_photo_widget.dart';
 import 'package:sms/widgets/pdf_viewer_widget.dart';
 import 'student_model.dart';
@@ -19,7 +20,7 @@ class StudentProfileManagementPage extends StatefulWidget {
   const StudentProfileManagementPage({super.key});
 
   @override
-  _StudentProfileManagementPageState createState() =>
+  State<StudentProfileManagementPage> createState() =>
       _StudentProfileManagementPageState();
 }
 
@@ -222,33 +223,43 @@ class _StudentProfileManagementPageState
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              TextField(
+              // TextField(
+              //   controller: searchController,
+              //   decoration: InputDecoration(
+              //     labelText: 'Search Students',
+              //     labelStyle: TextStyle(color: Colors.deepPurple[800]),
+              //     prefixIcon: Icon(Icons.search, color: Colors.deepPurple[800]),
+              //     border: OutlineInputBorder(
+              //       borderRadius: BorderRadius.circular(8),
+              //       borderSide: BorderSide(color: Colors.deepPurple[300]!),
+              //     ),
+              //     focusedBorder: OutlineInputBorder(
+              //       borderRadius: BorderRadius.circular(8),
+              //       borderSide:
+              //           BorderSide(color: Colors.deepPurple[800]!, width: 2),
+              //     ),
+              //     suffixIcon: IconButton(
+              //       icon: Icon(Icons.clear, color: Colors.deepPurple[800]),
+              //       onPressed: () {
+              //         searchController.clear();
+              //         _filterStudents();
+              //       },
+              //     ),
+              //     filled: true,
+              //     fillColor: Colors.deepPurple[50],
+              //   ),
+              //   onChanged: (value) => _filterStudents(),
+              // ),
+              CustomSearchBar(
+                hintText: 'Search Students',
                 controller: searchController,
-                decoration: InputDecoration(
-                  labelText: 'Search Students',
-                  labelStyle: TextStyle(color: Colors.deepPurple[800]),
-                  prefixIcon: Icon(Icons.search, color: Colors.deepPurple[800]),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.deepPurple[300]!),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide:
-                        BorderSide(color: Colors.deepPurple[800]!, width: 2),
-                  ),
-                  suffixIcon: IconButton(
-                    icon: Icon(Icons.clear, color: Colors.deepPurple[800]),
-                    onPressed: () {
-                      searchController.clear();
-                      _filterStudents();
-                    },
-                  ),
-                  filled: true,
-                  fillColor: Colors.deepPurple[50],
-                ),
+                onClear: () {
+                  searchController.clear();
+                  _filterStudents();
+                },
                 onChanged: (value) => _filterStudents(),
               ),
+
               SizedBox(height: 16),
               Row(
                 children: [
@@ -284,7 +295,7 @@ class _StudentProfileManagementPageState
                                 style:
                                     TextStyle(color: Colors.deepPurple[900])),
                           );
-                        }).toList(),
+                        }),
                       ],
                       onChanged: (String? newValue) {
                         setState(() {
@@ -327,7 +338,7 @@ class _StudentProfileManagementPageState
                                 style:
                                     TextStyle(color: Colors.deepPurple[900])),
                           );
-                        }).toList(),
+                        }),
                       ],
                       onChanged: (String? newValue) {
                         setState(() {

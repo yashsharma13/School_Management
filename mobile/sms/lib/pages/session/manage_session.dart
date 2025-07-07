@@ -46,7 +46,7 @@ class ManageSessionsPage extends StatefulWidget {
   const ManageSessionsPage({super.key});
 
   @override
-  _ManageSessionsPageState createState() => _ManageSessionsPageState();
+  State<ManageSessionsPage> createState() => _ManageSessionsPageState();
 }
 
 class _ManageSessionsPageState extends State<ManageSessionsPage> {

@@ -1,249 +1,3 @@
-// import 'package:flutter/material.dart';
-// import 'package:sms/pages/auth/login.dart';
-// import 'package:shared_preferences/shared_preferences.dart';
-// import 'package:sms/pages/parents_dashboard/event_gallery.dart';
-// import 'package:sms/pages/parents_dashboard/receive_message.dart';
-// import 'package:sms/pages/parents_dashboard/sent_message.dart';
-// import 'package:sms/pages/parents_dashboard/view_attendance.dart';
-// import 'package:sms/pages/teacher_dashboard/ViewHomeworkPage.dart';
-// import 'package:sms/pages/teacher_dashboard/add_homework.dart';
-// import 'package:sms/pages/teacher_dashboard/attendance_report.dart';
-// import 'package:sms/pages/teacher_dashboard/event_image.dart';
-// import 'package:sms/pages/teacher_dashboard/p_receive_mess.dart';
-// import 'package:sms/pages/teacher_dashboard/p_send_message.dart';
-// import 'package:sms/pages/teacher_dashboard/t_view_message.dart';
-// import 'package:sms/pages/teacher_dashboard/take_attendance.dart';
-// import 'package:sms/pages/teacher_dashboard/view_event_img.dart';
-
-// class Sidebar extends StatelessWidget {
-//   final String userType; // 'teacher' or 'parent'
-//   final String? userName;
-//   final String? profileImageUrl;
-//   final double avatarRadius;
-//   final List<Map<String, dynamic>>? menuItems;
-
-//   const Sidebar({
-//     super.key,
-//     required this.userType,
-//     this.userName,
-//     this.profileImageUrl,
-//     this.avatarRadius = 40,
-//     this.menuItems,
-//   });
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final List<Map<String, dynamic>> items =
-//         menuItems ?? _getDefaultMenuItems();
-
-//     return Drawer(
-//       width: MediaQuery.of(context).size.width * 0.7,
-//       shape: const RoundedRectangleBorder(
-//         borderRadius: BorderRadius.only(
-//           topRight: Radius.circular(20),
-//           bottomRight: Radius.circular(20),
-//         ),
-//       ),
-//       child: Column(
-//         children: [
-//           // Fixed drawer header
-//           Container(
-//             width: double.infinity,
-//             padding: const EdgeInsets.symmetric(vertical: 30),
-//             decoration: const BoxDecoration(
-//               gradient: LinearGradient(
-//                 colors: [Colors.deepPurple, Colors.deepPurpleAccent],
-//                 begin: Alignment.topLeft,
-//                 end: Alignment.bottomRight,
-//               ),
-//               borderRadius: BorderRadius.only(
-//                 topRight: Radius.circular(20),
-//               ),
-//             ),
-//             child: Column(
-//               mainAxisAlignment: MainAxisAlignment.center,
-//               children: [
-//                 CircleAvatar(
-//                   radius: avatarRadius,
-//                   backgroundColor: Colors.grey[200],
-//                   backgroundImage: profileImageUrl != null
-//                       ? NetworkImage(profileImageUrl!)
-//                       : const AssetImage('assets/images/student_default.png')
-//                           as ImageProvider,
-//                 ),
-//                 const SizedBox(height: 10),
-//                 Text(
-//                   userName ?? (userType == 'teacher' ? 'Teacher' : 'Parent'),
-//                   style: const TextStyle(
-//                     color: Colors.white,
-//                     fontSize: 18,
-//                     fontWeight: FontWeight.bold,
-//                   ),
-//                 ),
-//               ],
-//             ),
-//           ),
-
-//           // Scrollable menu section
-//           Expanded(
-//             child: ListView(
-//               padding: EdgeInsets.zero,
-//               children: [
-//                 ...items.map((item) => _buildMenuItem(context, item)).toList(),
-//                 const Divider(height: 20, thickness: 1),
-//                 _buildLogoutItem(context),
-//               ],
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-
-//   Widget _buildMenuItem(BuildContext context, Map<String, dynamic> item) {
-//     return ListTile(
-//       leading: Icon(item['icon'], color: Colors.deepPurple),
-//       title: Text(
-//         item['title'],
-//         style: const TextStyle(
-//           color: Colors.black87,
-//           fontWeight: FontWeight.w500,
-//         ),
-//       ),
-//       onTap: () {
-//         Navigator.pop(context);
-//         if (item['route'] != null) {
-//           Navigator.push(
-//             context,
-//             MaterialPageRoute(builder: (context) => item['route']),
-//           );
-//         }
-//       },
-//     );
-//   }
-
-//   Widget _buildLogoutItem(BuildContext context) {
-//     return ListTile(
-//       leading: const Icon(Icons.logout, color: Colors.deepPurple),
-//       title: const Text(
-//         "Logout",
-//         style: TextStyle(
-//           color: Colors.black87,
-//           fontWeight: FontWeight.w500,
-//         ),
-//       ),
-//       onTap: () => _confirmLogout(context),
-//     );
-//   }
-
-//   Future<void> _confirmLogout(BuildContext context) async {
-//     bool? shouldLogout = await showDialog<bool>(
-//       context: context,
-//       builder: (context) => AlertDialog(
-//         title: const Text("Confirm Logout"),
-//         content: const Text("Are you sure you want to logout?"),
-//         actions: [
-//           TextButton(
-//             onPressed: () => Navigator.of(context).pop(false),
-//             child: const Text("No"),
-//           ),
-//           TextButton(
-//             onPressed: () => Navigator.of(context).pop(true),
-//             child: const Text("Yes"),
-//           ),
-//         ],
-//       ),
-//     );
-
-//     if (shouldLogout == true) {
-//       final prefs = await SharedPreferences.getInstance();
-//       await prefs.remove('token');
-//       Navigator.pushReplacement(
-//         context,
-//         MaterialPageRoute(builder: (context) => const LoginPage()),
-//       );
-//     }
-//   }
-
-//   List<Map<String, dynamic>> _getDefaultMenuItems() {
-//     if (userType == 'teacher') {
-//       return [
-//         {'title': 'Dashboard', 'icon': Icons.dashboard, 'route': null},
-//         {
-//           'title': 'Event Images',
-//           'icon': Icons.camera_alt_outlined,
-//           'route': EventImageUploadPage()
-//         },
-//         {
-//           'title': 'View Event Images',
-//           'icon': Icons.photo_library,
-//           'route': TeacherEventImagesPage()
-//         },
-//         {
-//           'title': 'Take Attendance',
-//           'icon': Icons.check_circle_outline,
-//           'route': const TakeAttendancePage()
-//         },
-//         {
-//           'title': 'Attendance Report',
-//           'icon': Icons.assignment_turned_in,
-//           'route': const AttendanceReportPage()
-//         },
-//         {
-//           'title': 'Add Homework',
-//           'icon': Icons.home_work,
-//           'route': AddHomeworkPage()
-//         },
-//         {
-//           'title': 'View Homework',
-//           'icon': Icons.menu_book,
-//           'route': ViewHomeworkPage()
-//         },
-//         {
-//           'title': 'Sent Message',
-//           'icon': Icons.outbox,
-//           'route': SendMessagePage()
-//         },
-//         {
-//           'title': 'View Message',
-//           'icon': Icons.mark_email_read,
-//           'route': ViewSentMessagesPage()
-//         },
-//         {
-//           'title': 'Receive Message',
-//           'icon': Icons.mark_email_unread,
-//           'route': ViewReceivedMessagesPage()
-//         },
-//       ];
-//     } else {
-//       return [
-//         {'title': 'Dashboard', 'icon': Icons.dashboard, 'route': null},
-//         {
-//           'title': 'View Attendance',
-//           'icon': Icons.fact_check,
-//           'route': ViewAttendance()
-//         },
-//         {'title': 'Sent Message', 'icon': Icons.send, 'route': SendTextPage()},
-//         {
-//           'title': 'Receive Message',
-//           'icon': Icons.message,
-//           'route': ViewMessagesPage()
-//         },
-//         {
-//           'title': 'Event Gallery',
-//           'icon': Icons.photo_library,
-//           'route': EventGalleryPage()
-//         },
-//         {
-//           'title': 'View Homework',
-//           'icon': Icons.book,
-//           'route': const ViewHomeworkPage()
-//         },
-//       ];
-//     }
-//   }
-// }
-
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sms/pages/auth/login.dart';
@@ -252,7 +6,7 @@ import 'package:sms/pages/parents_dashboard/receive_message.dart';
 import 'package:sms/pages/parents_dashboard/sent_message.dart';
 import 'package:sms/pages/parents_dashboard/view_attendance.dart';
 import 'package:sms/pages/parents_dashboard/view_homework.dart';
-import 'package:sms/pages/teacher_dashboard/ViewHomeworkPage.dart';
+import 'package:sms/pages/teacher_dashboard/view_homework_page.dart';
 import 'package:sms/pages/teacher_dashboard/add_homework.dart';
 import 'package:sms/pages/teacher_dashboard/attendance_report.dart';
 import 'package:sms/pages/teacher_dashboard/event_image.dart';
@@ -269,9 +23,9 @@ import 'package:sms/pages/student/admission/admission_letter.dart';
 import 'package:sms/pages/classes/all_class.dart';
 import 'package:sms/pages/classes/new_class.dart';
 import 'package:sms/pages/student/student_attendance/student_attendance.dart';
-import 'package:sms/pages/student/student_details/Student_details.dart';
+import 'package:sms/pages/student/student_details/student_details.dart';
 import 'package:sms/pages/student/student_registration/student_registration_page.dart';
-import 'package:sms/pages/student/student_report/Student_reports.dart';
+import 'package:sms/pages/student/student_report/student_reports.dart';
 import 'package:sms/pages/subjects/assign_subjects.dart';
 import 'package:sms/pages/subjects/class_with_subjects.dart';
 import 'package:sms/pages/teacher/Job_letter/job_letter.dart';
@@ -413,7 +167,7 @@ class Sidebar extends StatelessWidget {
                   } else {
                     return _buildMenuItem(context, item);
                   }
-                }).toList(),
+                }),
                 const Divider(height: 20, thickness: 1),
                 _buildLogoutItem(context),
               ],
@@ -508,10 +262,12 @@ class Sidebar extends StatelessWidget {
     if (shouldLogout == true) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('token');
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginPage()),
-      );
+      if (context.mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+        );
+      }
     }
   }
 
@@ -611,7 +367,7 @@ class Sidebar extends StatelessWidget {
             ],
           },
           {
-            'title': 'Teacher Assignment',
+            'title': 'Subjects Assign',
             'icon': Icons.class_,
             'isExpansionTile': true,
             'children': [

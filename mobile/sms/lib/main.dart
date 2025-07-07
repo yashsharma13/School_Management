@@ -1,68 +1,3 @@
-// import 'package:flutter/material.dart';
-// import 'package:sms/firebase_options.dart';
-// import 'package:sms/pages/welcome/welcome.dart';
-// import 'package:firebase_core/firebase_core.dart';
-
-// void main() async {
-//   WidgetsFlutterBinding.ensureInitialized();
-//   try {
-//     await Firebase.initializeApp(
-//       options: DefaultFirebaseOptions.currentPlatform,
-//     );
-//     runApp(const MyApp());
-//   } catch (e) {
-//     // print("Firebase initialization failed: $e");
-//     // Handle the error (maybe show an error message to the user)
-//   }
-// }
-
-// class MyApp extends StatelessWidget {
-//   const MyApp({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return MaterialApp(
-//       debugShowCheckedModeBanner: false,
-//       home: WelcomePage(),
-//     );
-//   }
-// }
-
-// import 'package:flutter/material.dart';
-// import 'package:sms/firebase_options.dart';
-// import 'package:sms/pages/welcome/welcome.dart';
-// import 'package:firebase_core/firebase_core.dart';
-// import 'package:flutter_dotenv/flutter_dotenv.dart'; // ✅ Import this package
-
-// void main() async {
-//   WidgetsFlutterBinding.ensureInitialized();
-
-//   // ✅ Load .env file
-//   await dotenv.load(fileName: 'assets/.env');
-
-//   try {
-//     await Firebase.initializeApp(
-//       options: DefaultFirebaseOptions.currentPlatform,
-//     );
-//     runApp(const MyApp());
-//   } catch (e) {
-//     // print("Firebase initialization failed: $e");
-//     // Handle the error (maybe show an error message to the user)
-//   }
-// }
-
-// class MyApp extends StatelessWidget {
-//   const MyApp({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return MaterialApp(
-//       debugShowCheckedModeBanner: false,
-//       home: WelcomePage(),
-//     );
-//   }
-// }
-
 import 'package:flutter/material.dart';
 import 'package:sms/firebase_options.dart';
 import 'package:sms/pages/auth/login.dart';
@@ -92,11 +27,15 @@ void main() async {
 
   if (token != null && role != null) {
     switch (role.toLowerCase()) {
+      case 'principal':
+        initialPage = const PrincipleDashboard();
+        break;
       case 'student':
         initialPage = const StudentDashboard();
         break;
       case 'teacher':
         initialPage = const TeacherDashboard();
+        break;
       case 'operator':
         initialPage = const PrincipleDashboard();
         break;

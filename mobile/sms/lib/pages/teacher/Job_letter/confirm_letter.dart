@@ -4,7 +4,6 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sms/pages/teacher/Job_letter/job_letter.dart';
 import 'package:sms/widgets/button.dart';
 import 'package:sms/widgets/custom_appbar.dart';
 import 'package:sms/pages/services/profile_service.dart';
@@ -15,6 +14,7 @@ import 'package:sms/widgets/pdf_widgets/pdf_utils.dart';
 import 'package:sms/widgets/pdf_widgets/school_header.dart';
 import 'package:sms/widgets/pdf_widgets/pdf_photo.dart';
 import 'package:sms/widgets/pdf_widgets/pdf_info_table.dart';
+import 'package:sms/models/teacher_model.dart';
 
 class TeacherAdmissionConfirmationPage extends StatefulWidget {
   final Teacher teacher;
@@ -23,7 +23,7 @@ class TeacherAdmissionConfirmationPage extends StatefulWidget {
   const TeacherAdmissionConfirmationPage({super.key, required this.teacher});
 
   @override
-  _TeacherAdmissionConfirmationPageState createState() =>
+  State<TeacherAdmissionConfirmationPage> createState() =>
       _TeacherAdmissionConfirmationPageState();
 }
 
@@ -140,11 +140,17 @@ class _TeacherAdmissionConfirmationPageState
                         'text': 'Date of Joining',
                         'value': widget.teacher.dateOfJoining,
                         'isHeader': false,
+                        // 'copyEnabled': true,
+                      },
+                      {
+                        'text': 'Phone',
+                        'value': widget.teacher.phone,
+                        'isHeader': false,
                         'copyEnabled': true,
                       },
                       {
                         'text': 'Username',
-                        'value': widget.teacher.username,
+                        'value': widget.teacher.email,
                         'isHeader': false,
                         'copyEnabled': true,
                       },
@@ -239,7 +245,8 @@ class _TeacherAdmissionConfirmationPageState
                     PdfTables.buildHeaderRow(['Field', 'Value']),
                     PdfTables.buildRow(['Teacher Name', widget.teacher.name]),
                     PdfTables.buildStatusRow('Account Status', 'Active'),
-                    PdfTables.buildRow(['Username', widget.teacher.username]),
+                    PdfTables.buildRow(['Phone', widget.teacher.phone]),
+                    PdfTables.buildRow(['Username', widget.teacher.email]),
                     PdfTables.buildRow(['Password', '••••••••']),
                   ],
                 ),

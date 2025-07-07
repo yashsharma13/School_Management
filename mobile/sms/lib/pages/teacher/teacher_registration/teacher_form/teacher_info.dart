@@ -9,7 +9,7 @@ class TeacherInfo extends StatefulWidget {
   const TeacherInfo({super.key, required this.controller});
 
   @override
-  _TeacherInfoState createState() => _TeacherInfoState();
+  State<TeacherInfo> createState() => _TeacherInfoState();
 }
 
 class _TeacherInfoState extends State<TeacherInfo> {

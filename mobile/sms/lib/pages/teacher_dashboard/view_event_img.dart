@@ -9,7 +9,7 @@ class TeacherEventImagesPage extends StatefulWidget {
   const TeacherEventImagesPage({super.key});
 
   @override
-  _TeacherEventImagesPageState createState() => _TeacherEventImagesPageState();
+  State<TeacherEventImagesPage> createState() => _TeacherEventImagesPageState();
 }
 
 class _TeacherEventImagesPageState extends State<TeacherEventImagesPage> {
@@ -134,7 +134,7 @@ class _TeacherEventImagesPageState extends State<TeacherEventImagesPage> {
               child: GestureDetector(
                 onTap: () => setState(() => _selectedImage = null),
                 child: Container(
-                  color: Colors.black.withOpacity(0.9),
+                  color: Colors.black.withAlpha(229),
                   alignment: Alignment.center,
                   child: Stack(
                     children: [

@@ -9,8 +9,10 @@ import 'package:sms/widgets/custom_appbar.dart';
 import 'package:sms/widgets/custom_snackbar.dart'; // <-- Import custom snackbar here
 
 class AllClassesPage extends StatefulWidget {
+  const AllClassesPage({super.key});
+
   @override
-  _AllClassesPageState createState() => _AllClassesPageState();
+  State<AllClassesPage> createState() => _AllClassesPageState();
 }
 
 class _AllClassesPageState extends State<AllClassesPage> {
@@ -169,7 +171,8 @@ class _AllClassesPageState extends State<AllClassesPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.class_,
-                size: 48, color: Colors.deepPurple[900]!.withOpacity(0.5)),
+                // size: 48, color: Colors.deepPurple[900]!.withOpacity(0.5)
+                color: Colors.deepPurple[900]!.withAlpha((0.5 * 255).round())),
             SizedBox(height: 16),
             Text(
               'No Classes Available',
@@ -278,7 +281,9 @@ class _AllClassesPageState extends State<AllClassesPage> {
   Widget _buildInfoRow(IconData icon, String text) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: Colors.deepPurple[900]!.withOpacity(0.7)),
+        Icon(icon,
+            size: 18,
+            color: Colors.deepPurple[900]!.withAlpha((0.7 * 255).round())),
         SizedBox(width: 8),
         Flexible(
           child: Text(
@@ -318,7 +323,8 @@ class _AllClassesPageState extends State<AllClassesPage> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        // color: color.withOpacity(0.1),
+        color: color.withAlpha((0.1 * 255).round()),
         shape: BoxShape.circle,
       ),
       child: IconButton(
@@ -405,6 +411,7 @@ class _AllClassesPageState extends State<AllClassesPage> {
 
     if (updated == true) {
       await _loadClasses();
+      if (!mounted) return;
       showCustomSnackBar(
         context,
         'Class updated successfully',

@@ -107,6 +107,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
         final bytes = await pickedFile.readAsBytes();
 
         if (bytes.length < 100) {
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Selected image is too small')),
           );
@@ -121,6 +122,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
         });
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error picking image: $e')),
       );
@@ -146,7 +148,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
           logo: _logoFile != null
               ? (kIsWeb ? _logoBytes! : File(_logoFile!.path))
               : null);
-
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result['message'] ?? 'Profile saved successfully'),
@@ -296,7 +298,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                       ),
                       const SizedBox(height: 30),
                       CustomButton(
-                        text: 'Assign Homework',
+                        text: 'Save Profile',
                         onPressed: _saveProfile,
                       ),
                     ],

@@ -10,7 +10,7 @@ class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
 
   @override
-  _StudentDashboardState createState() => _StudentDashboardState();
+  State<StudentDashboard> createState() => _StudentDashboardState();
 }
 
 class _StudentDashboardState extends State<StudentDashboard> {
@@ -38,6 +38,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       final token = prefs.getString('token');
 
       if (token == null || token.isEmpty) {
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const LoginPage()),
@@ -46,7 +47,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       }
 
       // 2. Get student ID from token
-      final studentId = await _getStudentIdFromToken(token);
+      final studentId = _getStudentIdFromToken(token);
       if (studentId.isEmpty) {
         throw Exception('Invalid token: Student ID not found');
       }
@@ -92,7 +93,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       setState(() {
         isLoading = false;
       });
-
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error: ${e.toString()}'),
@@ -154,6 +155,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       await prefs.remove('token'); // Clear the token from local storage
 
       // Navigate to the login page after delay
+      if (!mounted) return;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(

@@ -6,6 +6,7 @@ import 'package:sms/pages/services/teacher_service.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
+import 'package:sms/widgets/custom_snackbar.dart';
 
 class TeacherRegistrationController {
   final formKey = GlobalKey<FormState>();
@@ -82,9 +83,16 @@ class TeacherRegistrationController {
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(content: Text(e.toString())),
+      // );
+      if (context.mounted) {
+        showCustomSnackBar(
+          context,
+          'Error during registration: ${e.toString()}',
+          backgroundColor: Colors.red,
+        );
+      }
     }
   }
 
@@ -96,24 +104,24 @@ class TeacherRegistrationController {
 
     // Validate dates
     if (dob == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please select date of birth')),
-      );
+      showCustomSnackBar(context, 'Please select date of birth',
+          backgroundColor: Colors.red);
       return false;
     }
 
     if (doj == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please select date of joining')),
-      );
+      showCustomSnackBar(context, 'Please select date of joining',
+          backgroundColor: Colors.red);
       return false;
     }
 
     // Validate documents
     if (teacherPhoto == null || qualificationCertificate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please upload all required documents')),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(content: Text('Please upload all required documents')),
+      // );
+      showCustomSnackBar(context, 'Please upload all required documents',
+          backgroundColor: Colors.red);
       return false;
     }
 
@@ -144,28 +152,28 @@ class TeacherRegistrationController {
       isLoading = false;
 
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Teacher registered successfully'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 3),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        );
+        if (context.mounted) {
+          showCustomSnackBar(context, 'Teacher registered successfully',
+              backgroundColor: Colors.green);
+        }
         return true;
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to register teacher')),
-        );
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(content: Text('Failed to register teacher')),
+        // );
+        if (context.mounted) {
+          showCustomSnackBar(context, 'Failed to register teacher',
+              backgroundColor: Colors.red);
+        }
         return false;
       }
     } catch (e) {
       isLoading = false;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error during registration: ${e.toString()}')),
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error during registration: ${e.toString()}')),
+        );
+      }
       return false;
     }
   }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sms/widgets/custom_appbar.dart';
+import 'package:sms/widgets/custom_snackbar.dart';
+import 'package:sms/widgets/date_picker.dart';
 import 'package:sms/widgets/report_components.dart';
 import 'package:sms/pages/services/report_service.dart';
 
@@ -9,7 +11,7 @@ class TeacherReportPage extends StatefulWidget {
   const TeacherReportPage({super.key});
 
   @override
-  _TeacherReportPageState createState() => _TeacherReportPageState();
+  State<TeacherReportPage> createState() => _TeacherReportPageState();
 }
 
 class TeacherAttendance {
@@ -112,24 +114,12 @@ class _TeacherReportPageState extends State<TeacherReportPage> {
     });
   }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: selectedDate,
-      firstDate: DateTime(2000),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-
-    if (picked != null && picked != selectedDate) {
-      setState(() => selectedDate = picked);
-      await fetchAttendance();
-    }
-  }
-
   void _handleUnauthorized() async {
     await ReportService.handleUnauthorized();
     setState(() => token = null);
-    _showErrorSnackBar('Session expired. Please login again.');
+    if (!mounted) return;
+    showCustomSnackBar(context, 'Session expired. Please login again.',
+        backgroundColor: Colors.red);
   }
 
   void _handleError(String message) {
@@ -138,17 +128,7 @@ class _TeacherReportPageState extends State<TeacherReportPage> {
       errorMessage = message;
       isLoading = false;
     });
-    _showErrorSnackBar(message);
-  }
-
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red[800],
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    showCustomSnackBar(context, message, backgroundColor: Colors.red);
   }
 
   @override
@@ -183,21 +163,14 @@ class _TeacherReportPageState extends State<TeacherReportPage> {
     return ReportFilterCard(
       title: 'Select Date',
       children: [
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: () => _selectDate(context),
-            icon: const Icon(Icons.calendar_today, size: 18),
-            label: Text(DateFormat('dd/MM/yyyy').format(selectedDate)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.deepPurple[50],
-              foregroundColor: Colors.deepPurple,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
+        CustomDatePicker(
+          selectedDate: selectedDate,
+          onDateSelected: (DateTime pickedDate) {
+            setState(() => selectedDate = pickedDate);
+            fetchAttendance();
+          },
+          labelText: 'Select Date',
+          isExpanded: true,
         ),
       ],
     );

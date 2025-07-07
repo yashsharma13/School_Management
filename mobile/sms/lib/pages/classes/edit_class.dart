@@ -11,7 +11,7 @@ class EditClassPage extends StatefulWidget {
       {super.key, required this.classItem, required this.teachers});
 
   @override
-  _EditClassPageState createState() => _EditClassPageState();
+  State<EditClassPage> createState() => _EditClassPageState();
 }
 
 class _EditClassPageState extends State<EditClassPage> {
@@ -46,7 +46,7 @@ class _EditClassPageState extends State<EditClassPage> {
       // tuitionFees: _tuitionFeesController.text,
       teacherId: _selectedTeacherId!,
     );
-
+    if (!mounted) return;
     if (success) {
       Navigator.pop(context, true);
     } else {

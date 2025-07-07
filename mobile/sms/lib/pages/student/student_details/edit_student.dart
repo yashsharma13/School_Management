@@ -21,14 +21,14 @@ class EditStudentDialog extends StatefulWidget {
   final Function() onStudentUpdated;
 
   const EditStudentDialog({
-    Key? key,
+    super.key,
     required this.student,
     required this.classes,
     required this.onStudentUpdated,
-  }) : super(key: key);
+  });
 
   @override
-  _EditStudentDialogState createState() => _EditStudentDialogState();
+  State<EditStudentDialog> createState() => _EditStudentDialogState();
 }
 
 class _EditStudentDialogState extends State<EditStudentDialog> {
@@ -269,7 +269,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                       icon: Icons.camera_alt,
                       onPressed: _updatePhoto,
                       height: 45,
-                      width: 170,
+                      width: 190,
                     ),
                     SizedBox(height: 20),
                     _buildEditField(_nameController, 'Name', true),
@@ -355,7 +355,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                                 style:
                                     TextStyle(color: Colors.deepPurple[900])),
                           );
-                        }).toList(),
+                        }),
                       ],
                       onChanged: (String? newValue) {
                         setState(() {
@@ -401,7 +401,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                                 style:
                                     TextStyle(color: Colors.deepPurple[900])),
                           );
-                        }).toList(),
+                        }),
                       ],
                       onChanged: (String? newValue) {
                         setState(() {

@@ -7,7 +7,7 @@ class DocumentsSection extends StatefulWidget {
   const DocumentsSection({super.key, required this.controller});
 
   @override
-  _DocumentsSectionState createState() => _DocumentsSectionState();
+  State<DocumentsSection> createState() => _DocumentsSectionState();
 }
 
 class _DocumentsSectionState extends State<DocumentsSection> {

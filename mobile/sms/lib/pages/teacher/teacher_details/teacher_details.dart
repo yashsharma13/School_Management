@@ -3,9 +3,11 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sms/pages/services/teacher_service.dart';
 import 'package:sms/widgets/custom_appbar.dart';
+import 'package:sms/widgets/custom_snackbar.dart';
+import 'package:sms/widgets/search_bar.dart';
 import 'package:sms/widgets/user_photo_widget.dart';
 import 'package:sms/widgets/pdf_viewer_widget.dart';
-import 'teacher_model.dart';
+import 'package:sms/models/teacher_model.dart';
 import 'edit_teacher.dart';
 import 'delete_teacher.dart';
 
@@ -16,7 +18,7 @@ class TeacherProfileManagementPage extends StatefulWidget {
   const TeacherProfileManagementPage({super.key});
 
   @override
-  _TeacherProfileManagementPageState createState() =>
+  State<TeacherProfileManagementPage> createState() =>
       _TeacherProfileManagementPageState();
 }
 
@@ -53,36 +55,13 @@ class _TeacherProfileManagementPageState
         filteredTeachers = fetchedTeachers;
       });
     } catch (e) {
-      _showErrorSnackBar('Error loading teachers: $e');
+      if (!mounted) return;
+      // _showErrorSnackBar('Error loading teachers: $e');
+      showCustomSnackBar(context, 'Error loading teachers: $e',
+          backgroundColor: Colors.red);
     } finally {
       setState(() => _isLoading = false);
     }
-  }
-
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red[800],
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-    );
-  }
-
-  void _showSuccessSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green[800],
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-    );
   }
 
   void _filterTeachers() {
@@ -119,10 +98,14 @@ class _TeacherProfileManagementPageState
         teachers.removeWhere((t) => t.id == teacher.id);
         filteredTeachers.removeWhere((t) => t.id == teacher.id); // ✅ Safe
       });
-
-      _showSuccessSnackBar('Teacher deleted successfully');
+      if (!mounted) return;
+      // _showSuccessSnackBar('Teacher deleted successfully');
+      showCustomSnackBar(context, 'Teacher deleted successfully',
+          backgroundColor: Colors.red);
     } else {
-      _showErrorSnackBar(error);
+      if (!mounted) return;
+      // _showErrorSnackBar(error);
+      showCustomSnackBar(context, error, backgroundColor: Colors.red);
     }
   }
 
@@ -151,36 +134,14 @@ class _TeacherProfileManagementPageState
                       padding: const EdgeInsets.all(16),
                       child: Column(
                         children: [
-                          TextField(
+                          CustomSearchBar(
+                            hintText: 'Search Teachers',
                             controller: searchController,
-                            decoration: InputDecoration(
-                              labelText: 'Search Teachers',
-                              labelStyle:
-                                  TextStyle(color: Colors.deepPurple[800]),
-                              prefixIcon: Icon(Icons.search,
-                                  color: Colors.deepPurple[800]),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide:
-                                    BorderSide(color: Colors.deepPurple[300]!),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(
-                                    color: Colors.deepPurple[800]!, width: 2),
-                              ),
-                              suffixIcon: IconButton(
-                                icon: Icon(Icons.clear,
-                                    color: Colors.deepPurple[800]),
-                                onPressed: () {
-                                  searchController.clear();
-                                  _filterTeachers();
-                                },
-                              ),
-                              filled: true,
-                              fillColor: Colors.deepPurple[50],
-                            ),
                             onChanged: (value) => _filterTeachers(),
+                            onClear: () {
+                              searchController.clear();
+                              _filterTeachers();
+                            },
                           ),
                         ],
                       ),
@@ -274,13 +235,13 @@ class _TeacherProfileManagementPageState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${teacher.email}',
+                  'Email: ${teacher.email}',
                   style: TextStyle(
                     color: Colors.grey[600],
                   ),
                 ),
                 Text(
-                  '${teacher.qualification}',
+                  'Qualification: ${teacher.qualification}',
                   style: TextStyle(
                     color: Colors.grey[600],
                   ),

@@ -3,17 +3,20 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sms/pages/principle/principle_dashboard.dart';
+import 'package:sms/pages/services/teacher_service.dart';
 import 'package:sms/widgets/button.dart';
 import 'package:sms/widgets/attendance_components.dart';
 import 'package:sms/pages/services/attendance_service.dart';
 import 'package:sms/widgets/custom_appbar.dart';
+import 'package:sms/widgets/custom_snackbar.dart';
 import 'package:sms/widgets/date_picker.dart';
+import 'package:sms/widgets/search_bar.dart';
 
 class TeacherAttendancePage extends StatefulWidget {
   const TeacherAttendancePage({super.key});
 
   @override
-  _TeacherAttendancePageState createState() => _TeacherAttendancePageState();
+  State<TeacherAttendancePage> createState() => _TeacherAttendancePageState();
 }
 
 class _TeacherAttendancePageState extends State<TeacherAttendancePage> {
@@ -33,48 +36,55 @@ class _TeacherAttendancePageState extends State<TeacherAttendancePage> {
   Future<void> _loadToken() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() => token = prefs.getString('token'));
-    if (token != null) await fetchTeachers();
+
+    if (token != null) {
+      setState(() => isLoading = true); // 👈 loader bhi dikhana
+      try {
+        final fetchedTeachers = await fetchTeachers(token!); // 👈 fetch karo
+        setState(() {
+          teachers = fetchedTeachers; // 👈 assign karo
+        });
+      } catch (e) {
+        if (!mounted) return;
+        // _showErrorSnackBar("Error fetching teachers: $e");
+        showCustomSnackBar(context, "Error fetching teachers: $e",
+            backgroundColor: Colors.red);
+      }
+      setState(() => isLoading = false);
+    }
+
     setState(() => _isInitialLoading = false);
   }
 
-  Future<void> fetchTeachers() async {
-    if (token == null) return _showErrorSnackBar('Please login to continue');
+  static Future<List<Teacher>> fetchTeachers(String token) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/teachers'),
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': token,
+      },
+    );
 
-    setState(() => isLoading = true);
-
-    try {
-      final response = await http.get(
-        Uri.parse('${AttendanceService.baseUrl}/api/teachers'),
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': token!,
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> teacherData = json.decode(response.body);
-        setState(() {
-          teachers = teacherData
-              .map((data) => Teacher(
-                    data['id'].toString(),
-                    data['teacher_name'],
-                    false,
-                  ))
-              .toList();
-        });
-      } else {
-        _handleResponseError(response);
-      }
-    } catch (error) {
-      _showErrorSnackBar('Error connecting to server: $error');
-    } finally {
-      setState(() => isLoading = false);
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data
+          .map((e) => Teacher(
+                e['id'].toString(),
+                e['teacher_name'],
+                false,
+              ))
+          .toList();
+    } else {
+      throw Exception('Failed to load teachers');
     }
   }
 
   Future<void> saveAttendance() async {
-    if (token == null) return _showErrorSnackBar('Please login to continue');
+    if (token == null) {
+      return showCustomSnackBar(context, 'Please login to continue',
+          backgroundColor: Colors.red);
+    }
 
     setState(() => isLoading = true);
 
@@ -90,54 +100,24 @@ class _TeacherAttendancePageState extends State<TeacherAttendancePage> {
       date: selectedDate,
       teachers: attendanceData,
     );
+    if (!mounted) return;
 
     if (result['success'] == true) {
-      _showSuccessSnackBar(result['message']);
+      // _showSuccessSnackBar(result['message']);
+      showCustomSnackBar(context, result['message'],
+          backgroundColor: Colors.green);
+      if (!mounted) return;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => PrincipleDashboard()),
       );
     } else {
-      _showErrorSnackBar(result['message']);
+      // _showErrorSnackBar(result['message']);
+      showCustomSnackBar(context, result['message'],
+          backgroundColor: Colors.red);
     }
 
     setState(() => isLoading = false);
-  }
-
-  void _handleResponseError(http.Response response) {
-    if (response.statusCode == 401) {
-      _handleUnauthorized();
-    } else {
-      _showErrorSnackBar('Request failed: ${response.reasonPhrase}');
-    }
-  }
-
-  void _handleUnauthorized() async {
-    await AttendanceService.handleUnauthorized();
-    setState(() => token = null);
-    _showErrorSnackBar('Session expired. Please login again.');
-  }
-
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red[800],
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-    );
-  }
-
-  void _showSuccessSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green[800],
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-    );
   }
 
   @override
@@ -201,10 +181,11 @@ class _TeacherAttendancePageState extends State<TeacherAttendancePage> {
   }
 
   Widget _buildSearchField() {
-    return AttendanceSearchField(
+    return CustomSearchBar(
+      hintText: 'Search Teacher',
       controller: searchController,
       onChanged: (_) => setState(() {}),
-      labelText: 'Search Teacher',
+      onClear: () => setState(() {}), // To refresh list after clearing search
     );
   }
 

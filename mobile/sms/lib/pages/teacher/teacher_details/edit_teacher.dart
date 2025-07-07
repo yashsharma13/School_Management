@@ -8,7 +8,7 @@ import 'package:sms/pages/services/teacher_service.dart';
 import 'package:sms/widgets/button.dart';
 import 'package:sms/widgets/user_photo_widget.dart';
 import 'package:sms/widgets/date_picker.dart';
-import 'teacher_model.dart';
+import '../../../models/teacher_model.dart';
 
 final String baseeUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
 final String uploadBaseUrl = '$baseeUrl/uploads';
@@ -18,13 +18,13 @@ class EditTeacherDialog extends StatefulWidget {
   final Function() onTeacherUpdated;
 
   const EditTeacherDialog({
-    Key? key,
+    super.key,
     required this.teacher,
     required this.onTeacherUpdated,
-  }) : super(key: key);
+  });
 
   @override
-  _EditTeacherDialogState createState() => _EditTeacherDialogState();
+  State<EditTeacherDialog> createState() => _EditTeacherDialogState();
 }
 
 class _EditTeacherDialogState extends State<EditTeacherDialog> {
@@ -146,6 +146,7 @@ class _EditTeacherDialogState extends State<EditTeacherDialog> {
           ),
         );
       }
+      if (!mounted) return;
       Navigator.of(context).pop();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -249,7 +250,7 @@ class _EditTeacherDialogState extends State<EditTeacherDialog> {
                       icon: Icons.camera_alt,
                       onPressed: _updatePhoto,
                       height: 45,
-                      width: 170,
+                      width: 190,
                     ),
                     SizedBox(height: 20),
                     _buildEditField(_nameController, 'Name', true),

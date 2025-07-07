@@ -4,7 +4,7 @@ class OTPVerificationPage extends StatefulWidget {
   const OTPVerificationPage({super.key});
 
   @override
-  _OTPVerificationPageState createState() => _OTPVerificationPageState();
+  State<OTPVerificationPage> createState() => _OTPVerificationPageState();
 }
 
 class _OTPVerificationPageState extends State<OTPVerificationPage> {

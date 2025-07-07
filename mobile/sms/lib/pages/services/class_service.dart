@@ -129,4 +129,24 @@ class ClassService {
       return [];
     }
   }
+
+  static Future<int> getClassCount() async {
+    try {
+      final headers = await ApiBase.getHeaders();
+
+      final response = await http.get(
+        Uri.parse('${ApiBase.baseUrl}/api/classes/count'),
+        headers: headers,
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        return responseData['totalClasses'] ?? 0;
+      } else {
+        throw Exception('Failed to load class count: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching class count: $e');
+    }
+  }
 }

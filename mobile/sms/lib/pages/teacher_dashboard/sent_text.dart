@@ -19,7 +19,7 @@ class SendTextPage extends StatefulWidget {
   });
 
   @override
-  _SendTextPageState createState() => _SendTextPageState();
+  State<SendTextPage> createState() => _SendTextPageState();
 }
 
 class _SendTextPageState extends State<SendTextPage> {
@@ -43,6 +43,7 @@ class _SendTextPageState extends State<SendTextPage> {
     token = prefs.getString('token');
 
     if (token == null) {
+      if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/login');
       return;
     }
@@ -117,6 +118,7 @@ class _SendTextPageState extends State<SendTextPage> {
         );
 
         await Future.delayed(const Duration(milliseconds: 500));
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => TeacherDashboard()),

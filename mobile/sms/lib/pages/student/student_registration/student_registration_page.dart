@@ -9,7 +9,7 @@ class StudentRegistrationPage extends StatefulWidget {
   const StudentRegistrationPage({super.key, required this.onStudentRegistered});
 
   @override
-  _StudentRegistrationPageState createState() =>
+  State<StudentRegistrationPage> createState() =>
       _StudentRegistrationPageState();
 }
 
