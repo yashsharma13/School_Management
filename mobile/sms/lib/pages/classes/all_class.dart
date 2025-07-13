@@ -22,6 +22,23 @@ class _AllClassesPageState extends State<AllClassesPage> {
   bool isFetchingTeachers = false;
   String? token;
   static final String baseeUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
+  final List<String> classOptions = [
+    'Nursery',
+    'LKG',
+    'UKG',
+    'class 1',
+    'class 2',
+    'class 3',
+    'class 4',
+    'class 5',
+    'class 6',
+    'class 7',
+    'class 8',
+    'class 9',
+    'class 10',
+    'class 11',
+    'class 12',
+  ];
 
   @override
   void initState() {
@@ -87,6 +104,32 @@ class _AllClassesPageState extends State<AllClassesPage> {
           })
           .where((c) => c.id.isNotEmpty)
           .toList();
+
+      // setState(() => classes = classesWithCounts);
+      final List<String> sectionOptions = [
+        'Section A',
+        'Section B',
+        'Section C',
+        'Section D',
+      ];
+
+      classesWithCounts.sort((a, b) {
+        int classIndexA = classOptions.indexWhere(
+            (opt) => opt.toLowerCase() == a.className.toLowerCase().trim());
+        int classIndexB = classOptions.indexWhere(
+            (opt) => opt.toLowerCase() == b.className.toLowerCase().trim());
+
+        if (classIndexA == classIndexB) {
+          int sectionIndexA = sectionOptions.indexWhere(
+              (opt) => opt.toLowerCase() == a.section.toLowerCase().trim());
+          int sectionIndexB = sectionOptions.indexWhere(
+              (opt) => opt.toLowerCase() == b.section.toLowerCase().trim());
+
+          return sectionIndexA.compareTo(sectionIndexB);
+        }
+
+        return classIndexA.compareTo(classIndexB);
+      });
 
       setState(() => classes = classesWithCounts);
     } catch (error) {

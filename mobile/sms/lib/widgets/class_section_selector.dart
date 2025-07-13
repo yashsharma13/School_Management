@@ -108,6 +108,125 @@ class _ClassSectionSelectorState extends State<ClassSectionSelector> {
       setState(() => isLoading = false);
     }
   }
+  // Future<void> _loadClasses() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   final token = prefs.getString('token');
+  //   if (token == null) {
+  //     _showError('No token, please login.');
+  //     setState(() => isLoading = false);
+  //     return;
+  //   }
+
+  //   try {
+  //     final response = await http.get(
+  //       Uri.parse('${ReportService.baseUrl}/api/classes'),
+  //       headers: {
+  //         'Accept': 'application/json',
+  //         'Authorization': 'Bearer $token',
+  //       },
+  //     );
+
+  //     if (response.statusCode == 200) {
+  //       final dynamic data = json.decode(response.body);
+  //       final List<dynamic> classData =
+  //           data is List ? data : data['data'] ?? [];
+  //       final Map<String, ClassModel> map = {};
+
+  //       for (var item in classData) {
+  //         final rawName = (item['class_name'] ?? '').toString().trim();
+  //         final section = (item['section'] ?? '').toString().trim();
+  //         final id = int.tryParse(
+  //                 (item['class_id'] ?? item['id'] ?? '0').toString()) ??
+  //             0;
+
+  //         if (rawName.isEmpty || id == 0) continue;
+
+  //         final name = normalizeClassName(rawName);
+
+  //         if (!map.containsKey(name)) {
+  //           map[name] = ClassModel(id: id, className: name, sections: []);
+  //         }
+
+  //         if (section.isNotEmpty && !map[name]!.sections.contains(section)) {
+  //           map[name]!.sections.add(section);
+  //         }
+  //       }
+
+  //       // Sort classes in custom order
+  //       final List<String> classOrder = [
+  //         'Nursery',
+  //         'LKG',
+  //         'UKG',
+  //         'Class 1',
+  //         'Class 2',
+  //         'Class 3',
+  //         'Class 4',
+  //         'Class 5',
+  //         'Class 6',
+  //         'Class 7',
+  //         'Class 8',
+  //         'Class 9',
+  //         'Class 10',
+  //         'Class 11',
+  //         'Class 12',
+  //       ];
+
+  //       List<ClassModel> sortedClasses = map.values.toList();
+  //       sortedClasses.sort((a, b) {
+  //         final indexA = classOrder.indexOf(a.className);
+  //         final indexB = classOrder.indexOf(b.className);
+
+  //         if (indexA == -1 && indexB == -1)
+  //           return a.className.compareTo(b.className);
+  //         if (indexA == -1) return 1;
+  //         if (indexB == -1) return -1;
+
+  //         return indexA.compareTo(indexB);
+  //       });
+
+  //       setState(() {
+  //         classes = sortedClasses;
+  //         if (selectedClass != null) {
+  //           selectedClass = classes.firstWhere(
+  //             (c) =>
+  //                 c.id == selectedClass!.id &&
+  //                 c.className == selectedClass!.className,
+  //             orElse: () => selectedClass!,
+  //           );
+  //           availableSections = selectedClass?.sections ?? [];
+  //           if (selectedSection != null &&
+  //               !availableSections.contains(selectedSection)) {
+  //             selectedSection = null;
+  //           }
+  //         }
+  //         isLoading = false;
+  //       });
+
+  //       widget.onSelectionChanged(selectedClass, selectedSection);
+  //     } else {
+  //       _showError('Failed to fetch classes: ${response.reasonPhrase}');
+  //       setState(() => isLoading = false);
+  //     }
+  //   } catch (e) {
+  //     _showError('Error fetching classes: $e');
+  //     setState(() => isLoading = false);
+  //   }
+  // }
+
+  // String normalizeClassName(String name) {
+  //   final lower = name.toLowerCase();
+
+  //   if (lower == 'nursery' || lower == 'n') return 'Nursery';
+  //   if (lower == 'lkg') return 'LKG';
+  //   if (lower == 'ukg') return 'UKG';
+
+  //   final numVal = int.tryParse(name);
+  //   if (numVal != null) {
+  //     return 'Class $numVal';
+  //   }
+
+  //   return name[0].toUpperCase() + name.substring(1);
+  // }
 
   void _showError(String msg) {
     if (mounted) {

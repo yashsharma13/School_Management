@@ -5,7 +5,6 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sms/pages/student/admission/admission_letter.dart';
 import 'package:sms/widgets/button.dart';
 import 'package:sms/widgets/custom_appbar.dart';
 import 'package:sms/pages/services/profile_service.dart';
@@ -16,6 +15,7 @@ import 'package:sms/widgets/pdf_widgets/pdf_utils.dart';
 import 'package:sms/widgets/pdf_widgets/pdf_photo.dart';
 import 'package:sms/widgets/pdf_widgets/pdf_info_table.dart';
 import 'package:sms/widgets/pdf_widgets/school_header.dart';
+import 'package:sms/models/student_model.dart';
 
 class AdmissionConfirmationPage extends StatefulWidget {
   final Student student;
@@ -138,7 +138,7 @@ class _AdmissionConfirmationPageState extends State<AdmissionConfirmationPage> {
                       {
                         'text': 'Class',
                         'value':
-                            '${widget.student.className} - ${widget.student.assignedSection}',
+                            '${widget.student.assignedClass} - ${widget.student.assignedSection}',
                         'isHeader': false,
                       },
                       {
@@ -253,7 +253,7 @@ class _AdmissionConfirmationPageState extends State<AdmissionConfirmationPage> {
                         ['Registration/ID', widget.student.registrationNumber]),
                     PdfTables.buildRow([
                       'Class',
-                      '${widget.student.className} - ${widget.student.assignedSection}'
+                      '${widget.student.assignedClass} - ${widget.student.assignedSection}'
                     ]),
                     PdfTables.buildStatusRow('Account Status', 'Active'),
                     PdfTables.buildRow(['Username', widget.student.username]),

@@ -80,33 +80,3 @@ class AttendanceListItem extends StatelessWidget {
     );
   }
 }
-
-// Common search field
-class AttendanceSearchField extends StatelessWidget {
-  final TextEditingController controller;
-  final ValueChanged<String> onChanged;
-  final String labelText;
-
-  const AttendanceSearchField({
-    super.key,
-    required this.controller,
-    required this.onChanged,
-    required this.labelText,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: labelText,
-        labelStyle: TextStyle(color: Colors.deepPurple.shade700),
-        prefixIcon: Icon(Icons.search, color: Colors.deepPurple.shade700),
-        border: OutlineInputBorder(),
-        filled: true,
-        fillColor: Colors.deepPurple.shade50,
-      ),
-      onChanged: onChanged,
-    );
-  }
-}

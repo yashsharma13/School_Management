@@ -188,206 +188,370 @@ class _SendTextPageState extends State<SendTextPage> {
       appBar: CustomAppBar(
         title: 'Send Message',
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Error message display
-            if (_errorMessage != null)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade100,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red.shade300),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.error_outline, color: Colors.red),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _errorMessage!,
-                        style: TextStyle(
-                          color: Colors.red.shade800,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close, size: 18),
-                      onPressed: () => setState(() => _errorMessage = null),
-                    ),
-                  ],
-                ),
-              ),
+      // body: Padding(
+      //   padding: const EdgeInsets.all(16.0),
+      //   child: Column(
+      //     crossAxisAlignment: CrossAxisAlignment.start,
+      //     children: [
+      //       // Error message display
+      //       if (_errorMessage != null)
+      //         Container(
+      //           width: double.infinity,
+      //           padding: const EdgeInsets.all(12),
+      //           margin: const EdgeInsets.only(bottom: 16),
+      //           decoration: BoxDecoration(
+      //             color: Colors.red.shade100,
+      //             borderRadius: BorderRadius.circular(8),
+      //             border: Border.all(color: Colors.red.shade300),
+      //           ),
+      //           child: Row(
+      //             children: [
+      //               const Icon(Icons.error_outline, color: Colors.red),
+      //               const SizedBox(width: 8),
+      //               Expanded(
+      //                 child: Text(
+      //                   _errorMessage!,
+      //                   style: TextStyle(
+      //                     color: Colors.red.shade800,
+      //                   ),
+      //                 ),
+      //               ),
+      //               IconButton(
+      //                 icon: const Icon(Icons.close, size: 18),
+      //                 onPressed: () => setState(() => _errorMessage = null),
+      //               ),
+      //             ],
+      //           ),
+      //         ),
 
-            // Message composition card
-            Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'To: ${_teacherName ?? 'Loading...'}',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey.shade700,
+      //       // Message composition card
+      //       Card(
+      //         elevation: 2,
+      //         shape: RoundedRectangleBorder(
+      //           borderRadius: BorderRadius.circular(12),
+      //         ),
+      //         child: Padding(
+      //           padding: const EdgeInsets.all(16.0),
+      //           child: Column(
+      //             crossAxisAlignment: CrossAxisAlignment.start,
+      //             children: [
+      //               Text(
+      //                 'To: ${_teacherName ?? 'Loading...'}',
+      //                 style: TextStyle(
+      //                   fontSize: 16,
+      //                   color: Colors.grey.shade700,
+      //                 ),
+      //               ),
+      //               const SizedBox(height: 16),
+      //               TextField(
+      //                 controller: _controller,
+      //                 maxLength: 200,
+      //                 maxLines: 4,
+      //                 decoration: InputDecoration(
+      //                   filled: true,
+      //                   fillColor: Colors.grey.shade50,
+      //                   hintText: 'Type your message here...',
+      //                   border: OutlineInputBorder(
+      //                     borderRadius: BorderRadius.circular(8),
+      //                     borderSide: BorderSide.none,
+      //                   ),
+      //                   focusedBorder: OutlineInputBorder(
+      //                     borderRadius: BorderRadius.circular(8),
+      //                     borderSide: BorderSide(
+      //                       color: Theme.of(context).primaryColor,
+      //                     ),
+      //                   ),
+      //                   contentPadding: const EdgeInsets.all(12),
+      //                 ),
+      //               ),
+      //               const SizedBox(height: 16),
+      //               Align(
+      //                 alignment: Alignment.centerRight,
+      //                 child: CustomButton(
+      //                   text: 'Send',
+      //                   onPressed: _handleSend,
+      //                   isLoading: _isLoading,
+      //                   width: 120,
+      //                   height: 45,
+      //                   icon: Icons.send,
+      //                 ),
+      //               ),
+      //             ],
+      //           ),
+      //         ),
+      //       ),
+
+      //       const SizedBox(height: 24),
+
+      //       // Sent messages section
+      //       Row(
+      //         children: [
+      //           Text(
+      //             'Message History',
+      //             style: Theme.of(context).textTheme.titleLarge?.copyWith(
+      //                   fontWeight: FontWeight.bold,
+      //                 ),
+      //           ),
+      //           const SizedBox(width: 8),
+      //           if (_sentMessages.isNotEmpty)
+      //             Chip(
+      //               label: Text('${_sentMessages.length}'),
+      //               backgroundColor:
+      //                   Theme.of(context).primaryColor.withAlpha(25),
+      //             ),
+      //         ],
+      //       ),
+      //       const SizedBox(height: 8),
+      //       if (_sentMessages.isEmpty)
+      //         Expanded(
+      //           child: Center(
+      //             child: Column(
+      //               mainAxisSize: MainAxisSize.min,
+      //               children: [
+      //                 Icon(
+      //                   Icons.inbox_outlined,
+      //                   size: 64,
+      //                   color: Colors.grey.shade400,
+      //                 ),
+      //                 const SizedBox(height: 16),
+      //                 Text(
+      //                   'No messages sent yet',
+      //                   style: TextStyle(
+      //                     fontSize: 16,
+      //                     color: Colors.grey.shade600,
+      //                   ),
+      //                 ),
+      //               ],
+      //             ),
+      //           ),
+      //         )
+      //       else
+      //         Expanded(
+      //           child: RefreshIndicator(
+      //             onRefresh: _fetchSentMessages,
+      //             child: ListView.builder(
+      //               physics: const AlwaysScrollableScrollPhysics(),
+      //               itemCount: _sentMessages.length,
+      //               itemBuilder: (_, i) {
+      //                 final msg = _sentMessages[i];
+      //                 return Card(
+      //                   margin: const EdgeInsets.symmetric(vertical: 6),
+      //                   elevation: 1,
+      //                   shape: RoundedRectangleBorder(
+      //                     borderRadius: BorderRadius.circular(8),
+      //                   ),
+      //                   child: ListTile(
+      //                     contentPadding: const EdgeInsets.symmetric(
+      //                       horizontal: 16,
+      //                       vertical: 8,
+      //                     ),
+      //                     title: Text(
+      //                       msg['message'],
+      //                       style: const TextStyle(fontSize: 15),
+      //                     ),
+      //                     subtitle: Padding(
+      //                       padding: const EdgeInsets.only(top: 4),
+      //                       child: Text(
+      //                         _formatDate(msg['created_at']),
+      //                         style: TextStyle(
+      //                           fontSize: 12,
+      //                           color: Colors.grey.shade600,
+      //                         ),
+      //                       ),
+      //                     ),
+      //                     trailing: IconButton(
+      //                       icon: Icon(
+      //                         Icons.delete_outline,
+      //                         color: Colors.grey.shade500,
+      //                       ),
+      //                       onPressed: () => _handleDelete(msg['id']),
+      //                     ),
+      //                   ),
+      //                 );
+      //               },
+      //             ),
+      //           ),
+      //         ),
+      //     ],
+      //   ),
+      // ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (_errorMessage != null)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.red.shade300),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: _controller,
-                      maxLength: 200,
-                      maxLines: 4,
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: Colors.grey.shade50,
-                        hintText: 'Type your message here...',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide.none,
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                            color: Theme.of(context).primaryColor,
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline, color: Colors.red),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _errorMessage!,
+                              style: TextStyle(color: Colors.red.shade800),
+                            ),
                           ),
-                        ),
-                        contentPadding: const EdgeInsets.all(12),
+                          IconButton(
+                            icon: const Icon(Icons.close, size: 18),
+                            onPressed: () =>
+                                setState(() => _errorMessage = null),
+                          ),
+                        ],
                       ),
                     ),
-                    // const SizedBox(height: 12),
-                    // Row(
-                    //   mainAxisAlignment: MainAxisAlignment.end,
-                    //   // children: [
-                    //   //   // Text(
-                    //   //   //   '${_controller.text.length}/200',
-                    //   //   //   // style: TextStyle(
-                    //   //   //   //   color: _controller.text.length > 200
-                    //   //   //   //       ? Colors.red
-                    //   //   //   //       : Colors.grey,
-                    //   //   //   // ),
-                    //   //   // ),
-                    //   // ],
-                    // ),
-                    const SizedBox(height: 16),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: CustomButton(
-                        text: 'Send',
-                        onPressed: _handleSend,
-                        isLoading: _isLoading,
-                        width: 120,
-                        height: 45,
-                        icon: Icons.send,
+                  // Message Card
+                  Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'To: ${_teacherName ?? 'Loading...'}',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey.shade700,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          TextField(
+                            controller: _controller,
+                            maxLength: 200,
+                            maxLines: 4,
+                            decoration: InputDecoration(
+                              filled: true,
+                              fillColor: Colors.grey.shade50,
+                              hintText: 'Type your message here...',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide.none,
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                              ),
+                              contentPadding: const EdgeInsets.all(12),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: CustomButton(
+                              text: 'Send',
+                              onPressed: _handleSend,
+                              isLoading: _isLoading,
+                              width: 120,
+                              height: 45,
+                              icon: Icons.send,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Sent messages section
-            Row(
-              children: [
-                Text(
-                  'Message History',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                const SizedBox(width: 8),
-                if (_sentMessages.isNotEmpty)
-                  Chip(
-                    label: Text('${_sentMessages.length}'),
-                    backgroundColor:
-                        Theme.of(context).primaryColor.withAlpha(25),
                   ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            if (_sentMessages.isEmpty)
-              Expanded(
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                  const SizedBox(height: 24),
+                  Row(
                     children: [
-                      Icon(
-                        Icons.inbox_outlined,
-                        size: 64,
-                        color: Colors.grey.shade400,
-                      ),
-                      const SizedBox(height: 16),
                       Text(
-                        'No messages sent yet',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey.shade600,
-                        ),
+                        'Message History',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
+                      const SizedBox(width: 8),
+                      if (_sentMessages.isNotEmpty)
+                        Chip(
+                          label: Text('${_sentMessages.length}'),
+                          backgroundColor:
+                              Theme.of(context).primaryColor.withAlpha(25),
+                        ),
                     ],
                   ),
-                ),
-              )
-            else
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: _fetchSentMessages,
-                  child: ListView.builder(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    itemCount: _sentMessages.length,
-                    itemBuilder: (_, i) {
-                      final msg = _sentMessages[i];
-                      return Card(
-                        margin: const EdgeInsets.symmetric(vertical: 6),
-                        elevation: 1,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
+                  const SizedBox(height: 8),
+                  _sentMessages.isEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.only(top: 40),
+                          child: Center(
+                            child: Column(
+                              children: [
+                                Icon(Icons.inbox_outlined,
+                                    size: 64, color: Colors.grey.shade400),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No messages sent yet',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                          title: Text(
-                            msg['message'],
-                            style: const TextStyle(fontSize: 15),
-                          ),
-                          subtitle: Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Text(
-                              _formatDate(msg['created_at']),
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey.shade600,
+                        )
+                      : ListView.builder(
+                          itemCount: _sentMessages.length,
+                          physics: const NeverScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          itemBuilder: (_, i) {
+                            final msg = _sentMessages[i];
+                            return Card(
+                              margin: const EdgeInsets.symmetric(vertical: 6),
+                              elevation: 1,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                            ),
-                          ),
-                          trailing: IconButton(
-                            icon: Icon(
-                              Icons.delete_outline,
-                              color: Colors.grey.shade500,
-                            ),
-                            onPressed: () => _handleDelete(msg['id']),
-                          ),
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 8),
+                                title: Text(
+                                  msg['message'],
+                                  style: const TextStyle(fontSize: 15),
+                                ),
+                                subtitle: Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Text(
+                                    _formatDate(msg['created_at']),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                ),
+                                trailing: IconButton(
+                                  icon: Icon(
+                                    Icons.delete_outline,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                  onPressed: () => _handleDelete(msg['id']),
+                                ),
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    },
-                  ),
-                ),
+                ],
               ),
-          ],
-        ),
+            ),
+          );
+        },
       ),
     );
   }

@@ -1,80 +1,78 @@
-// ye code shi hai pehla wala code hai
-
 // import 'dart:convert';
 // import 'package:flutter/material.dart';
-// import 'package:flutter_dotenv/flutter_dotenv.dart';
-// import 'package:image_downloader/image_downloader.dart';
-// import 'package:shared_preferences/shared_preferences.dart';
-// import 'package:http/http.dart' as http;
-// // import 'dart:io' as io;
-// // import 'dart:typed_data';
-// // import 'package:flutter/foundation.dart' show kIsWeb;
-// import 'package:sms/widgets/custom_appbar.dart';
-// // import 'package:path_provider/path_provider.dart';
-// // import 'package:permission_handler/permission_handler.dart';
 // import 'package:intl/intl.dart';
+// import 'package:http/http.dart' as http;
+// import 'package:flutter_dotenv/flutter_dotenv.dart';
+// import 'package:shared_preferences/shared_preferences.dart';
+// import 'package:sms/widgets/custom_appbar.dart';
 // import 'package:transparent_image/transparent_image.dart';
 
-// class EventGalleryPage extends StatefulWidget {
-//   const EventGalleryPage({super.key});
+// class EventImage {
+//   final int id;
+//   final String title, imageUrl, createdAt;
+//   final String? className, section, teacherName;
 
-//   @override
-//   State<EventGalleryPage> createState() => _EventGalleryPageState();
+//   EventImage.fromJson(Map<String, dynamic> j)
+//       : id = j['id'],
+//         title = j['title'] ?? '',
+//         imageUrl = '${dotenv.env['NEXT_PUBLIC_API_BASE_URL']}${j['image_url']}',
+//         createdAt = j['created_at'] ?? '',
+//         className = j['class_name'],
+//         section = j['section'],
+//         teacherName = j['teacher_name'];
 // }
 
-// class _EventGalleryPageState extends State<EventGalleryPage> {
+// class PrincipalEventImagesPage extends StatefulWidget {
+//   const PrincipalEventImagesPage({super.key});
+
+//   @override
+//   State<PrincipalEventImagesPage> createState() =>
+//       _PrincipalEventImagesPageState();
+// }
+
+// class _PrincipalEventImagesPageState extends State<PrincipalEventImagesPage> {
 //   final String baseUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
 //   bool _loading = true;
 //   String _error = '';
 //   List<EventImage> _images = [];
 //   EventImage? _selectedImage;
-//   String? _selectedFilter;
+//   String _selectedFilter = 'All Images';
 //   DateTime? _selectedDate;
 //   List<String> _uniqueTitles = [];
-//   List<String> _uniqueDates = [];
 
 //   @override
 //   void initState() {
 //     super.initState();
-//     fetchEventImages();
+//     _fetchImages();
 //   }
 
-//   Future<void> fetchEventImages() async {
+//   Future<void> _fetchImages() async {
+//     setState(() {
+//       _loading = true;
+//       _error = '';
+//     });
+
 //     try {
 //       final prefs = await SharedPreferences.getInstance();
 //       final token = prefs.getString('token');
-//       if (token == null) throw Exception('Authentication token not found.');
+//       if (token == null) throw Exception('Authentication token not found');
 
 //       final res = await http.get(
-//         Uri.parse('$baseUrl/api/parent/event-images'),
-//         headers: {
-//           'Authorization': 'Bearer $token',
-//           'Accept': 'application/json',
-//         },
+//         Uri.parse('$baseUrl/api/principal/event-images'),
+//         headers: {'Authorization': 'Bearer $token'},
 //       );
 
-//       final data = jsonDecode(res.body);
+//       final data = json.decode(res.body);
 //       if (res.statusCode != 200 || data['success'] != true) {
-//         throw Exception(data['message'] ?? 'Failed to load images.');
+//         throw Exception(data['message'] ?? 'Failed to fetch images');
 //       }
 
-//       final List list = data['data'] ?? [];
 //       setState(() {
-//         _images = list.map((e) => EventImage.fromJson(e, baseUrl)).toList();
+//         _images = (data['data'] as List)
+//             .map((json) => EventImage.fromJson(json))
+//             .toList();
 //         _uniqueTitles = _images.map((e) => e.title).toSet().toList();
 //         _uniqueTitles.insert(0, 'All Images');
-//         _uniqueDates = _images
-//             .map((e) {
-//               try {
-//                 return DateFormat('MMM dd, yyyy')
-//                     .format(DateTime.parse(e.createdAt));
-//               } catch (e) {
-//                 return 'Unknown Date';
-//               }
-//             })
-//             .toSet()
-//             .toList();
-//         _uniqueDates.insert(0, 'All Dates');
 //         _loading = false;
 //       });
 //     } catch (e) {
@@ -85,66 +83,76 @@
 //     }
 //   }
 
-//   Future<void> downloadImage(EventImage image) async {
+//   Future<void> _deleteImage(int id) async {
+//     final confirm = await showDialog<bool>(
+//       context: context,
+//       builder: (ctx) => AlertDialog(
+//         title: const Text('Delete Image'),
+//         content: const Text('Are you sure you want to delete this image?'),
+//         actions: [
+//           TextButton(
+//               onPressed: () => Navigator.pop(ctx, false),
+//               child: const Text('Cancel')),
+//           TextButton(
+//               onPressed: () => Navigator.pop(ctx, true),
+//               child: const Text('Delete')),
+//         ],
+//       ),
+//     );
+
+//     if (confirm != true) return;
+
 //     try {
-//       final imageId = await ImageDownloader.downloadImage(image.imageUrl);
-//       if (imageId == null) {
-//         ScaffoldMessenger.of(context).showSnackBar(
-//           const SnackBar(content: Text('Download cancelled')),
-//         );
-//         return;
+//       final prefs = await SharedPreferences.getInstance();
+//       final token = prefs.getString('token');
+//       if (token == null) throw Exception('Authentication token not found');
+
+//       final res = await http.delete(
+//         Uri.parse('$baseUrl/api/principal/delete-event-image/$id'),
+//         headers: {'Authorization': 'Bearer $token'},
+//       );
+
+//       final data = json.decode(res.body);
+//       if (res.statusCode != 200 || data['success'] != true) {
+//         throw Exception(data['message'] ?? 'Failed to delete');
 //       }
 
-//       final path = await ImageDownloader.findPath(imageId);
+//       setState(() {
+//         _images.removeWhere((img) => img.id == id);
+//       });
+
 //       if (!mounted) return;
 //       ScaffoldMessenger.of(context).showSnackBar(
-//         SnackBar(content: Text('✅ Image saved at: $path')),
+//         const SnackBar(content: Text('Image deleted successfully')),
 //       );
-//     } catch (error) {
+//     } catch (e) {
+//       if (!mounted) return;
 //       ScaffoldMessenger.of(context).showSnackBar(
-//         SnackBar(content: Text('❌ Failed to download image: $error')),
+//         SnackBar(content: Text('Delete failed: ${e.toString()}')),
 //       );
 //     }
 //   }
 
-// List<EventImage> getFilteredImages() {
-//   var filteredImages = _images;
-
-//   if (_selectedDate != null) {
-//     filteredImages = filteredImages.where((image) {
-//       try {
-//         final imageDate = DateTime.parse(image.createdAt).toLocal();
-//         return imageDate.year == _selectedDate!.year &&
-//             imageDate.month == _selectedDate!.month &&
-//             imageDate.day == _selectedDate!.day;
-//       } catch (e) {
-//         return false;
-//       }
+//   List<EventImage> getFilteredImages() {
+//     return _images.where((img) {
+//       final matchTitle =
+//           _selectedFilter == 'All Images' || img.title == _selectedFilter;
+//       final matchDate = _selectedDate == null ||
+//           DateFormat('yyyy-MM-dd').format(DateTime.parse(img.createdAt)) ==
+//               DateFormat('yyyy-MM-dd').format(_selectedDate!);
+//       return matchTitle && matchDate;
 //     }).toList();
 //   }
-
-//   if (_selectedFilter != null && _selectedFilter != 'All Images') {
-//     filteredImages = filteredImages
-//         .where((image) => image.title == _selectedFilter)
-//         .toList();
-//   }
-
-//   return filteredImages;
-// }
 
 //   List<String> getTitlesForSelectedDate() {
 //     if (_selectedDate == null) return _uniqueTitles;
 
 //     final titles = _images
-//         .where((image) {
-//           try {
-//             final imageDate = DateTime.parse(image.createdAt).toLocal();
-//             return imageDate.year == _selectedDate!.year &&
-//                 imageDate.month == _selectedDate!.month &&
-//                 imageDate.day == _selectedDate!.day;
-//           } catch (e) {
-//             return false;
-//           }
+//         .where((img) {
+//           final matchDate = _selectedDate == null ||
+//               DateFormat('yyyy-MM-dd').format(DateTime.parse(img.createdAt)) ==
+//                   DateFormat('yyyy-MM-dd').format(_selectedDate!);
+//           return matchDate;
 //         })
 //         .map((e) => e.title)
 //         .toSet()
@@ -181,7 +189,7 @@
 //     if (picked != null && picked != _selectedDate) {
 //       setState(() {
 //         _selectedDate = picked;
-//         _selectedFilter = 'All Images'; // Reset title filter when date changes
+//         _selectedFilter = 'All Images';
 //       });
 //     }
 //   }
@@ -189,7 +197,7 @@
 //   @override
 //   Widget build(BuildContext context) {
 //     return Scaffold(
-//       appBar: CustomAppBar(title: 'Event Gallery'),
+//       appBar: CustomAppBar(title: 'Event Images'),
 //       body: Stack(
 //         children: [
 //           Padding(
@@ -202,7 +210,7 @@
 //                   Padding(
 //                     padding: const EdgeInsets.only(bottom: 12.0),
 //                     child: DropdownButtonFormField<String>(
-//                       value: _selectedFilter ?? 'All Images',
+//                       value: _selectedFilter,
 //                       items: getTitlesForSelectedDate().map((String title) {
 //                         return DropdownMenuItem<String>(
 //                           value: title,
@@ -215,7 +223,7 @@
 //                       }).toList(),
 //                       onChanged: (String? newValue) {
 //                         setState(() {
-//                           _selectedFilter = newValue;
+//                           _selectedFilter = newValue ?? 'All Images';
 //                         });
 //                       },
 //                       decoration: InputDecoration(
@@ -408,6 +416,19 @@
 //                                                               Colors.grey[600],
 //                                                         ),
 //                                                       ),
+//                                                       if (img.teacherName !=
+//                                                           null)
+//                                                         Text(
+//                                                           img.teacherName!,
+//                                                           style: TextStyle(
+//                                                             fontSize: 10,
+//                                                             color: Colors
+//                                                                 .grey[600],
+//                                                           ),
+//                                                           maxLines: 1,
+//                                                           overflow: TextOverflow
+//                                                               .ellipsis,
+//                                                         ),
 //                                                     ],
 //                                                   ),
 //                                                 ),
@@ -417,18 +438,18 @@
 //                                               top: 4,
 //                                               right: 4,
 //                                               child: GestureDetector(
-//                                                 onTap: () => downloadImage(img),
+//                                                 onTap: () =>
+//                                                     _deleteImage(img.id),
 //                                                 child: Container(
 //                                                   decoration: BoxDecoration(
-//                                                     color: Theme.of(context)
-//                                                         .primaryColor
+//                                                     color: Colors.red
 //                                                         .withAlpha(229),
 //                                                     shape: BoxShape.circle,
 //                                                   ),
 //                                                   padding:
 //                                                       const EdgeInsets.all(6),
 //                                                   child: const Icon(
-//                                                     Icons.download,
+//                                                     Icons.delete,
 //                                                     size: 16,
 //                                                     color: Colors.white,
 //                                                   ),
@@ -482,12 +503,40 @@
 //                   ),
 //                   Positioned(
 //                     bottom: 16,
+//                     left: 16,
 //                     right: 16,
-//                     child: FloatingActionButton(
-//                       heroTag: 'download_fullscreen',
-//                       backgroundColor: Theme.of(context).primaryColor,
-//                       onPressed: () => downloadImage(_selectedImage!),
-//                       child: const Icon(Icons.download, color: Colors.white),
+//                     child: Container(
+//                       padding: const EdgeInsets.all(12),
+//                       color: Colors.black54,
+//                       child: Column(
+//                         crossAxisAlignment: CrossAxisAlignment.start,
+//                         children: [
+//                           Text(
+//                             _selectedImage!.title,
+//                             style: const TextStyle(
+//                               color: Colors.white,
+//                               fontSize: 16,
+//                               fontWeight: FontWeight.bold,
+//                             ),
+//                           ),
+//                           if (_selectedImage!.teacherName != null)
+//                             Text(
+//                               'By: ${_selectedImage!.teacherName!}',
+//                               style: const TextStyle(
+//                                 color: Colors.white,
+//                                 fontSize: 14,
+//                               ),
+//                             ),
+//                           Text(
+//                             DateFormat('MMM dd, yyyy').format(
+//                                 DateTime.parse(_selectedImage!.createdAt)),
+//                             style: const TextStyle(
+//                               color: Colors.white70,
+//                               fontSize: 14,
+//                             ),
+//                           ),
+//                         ],
+//                       ),
 //                     ),
 //                   ),
 //                 ],
@@ -499,399 +548,6 @@
 //   }
 // }
 
-// class EventImage {
-//   final int id;
-//   final String title;
-//   final String imageUrl;
-//   final String createdAt;
-
-//   EventImage({
-//     required this.id,
-//     required this.title,
-//     required this.imageUrl,
-//     required this.createdAt,
-//   });
-
-//   factory EventImage.fromJson(Map<String, dynamic> json, String baseUrl) {
-//     return EventImage(
-//       id: json['id'] ?? 0,
-//       title: json['title'] ?? 'Untitled',
-//       imageUrl: '$baseUrl${json['image_url'] ?? ''}',
-//       createdAt: json['created_at'] ?? DateTime.now().toIso8601String(),
-//     );
-//   }
-// }
-
-// ye dusra wala code hai
-// import 'dart:convert';
-// import 'package:flutter/material.dart';
-// import 'package:flutter_dotenv/flutter_dotenv.dart';
-// import 'package:image_gallery_saver/image_gallery_saver.dart';
-// import 'package:shared_preferences/shared_preferences.dart';
-// import 'package:http/http.dart' as http;
-// // import 'dart:io' as io;
-// import 'dart:typed_data';
-// import 'package:flutter/foundation.dart' show kIsWeb;
-// import 'package:sms/widgets/custom_appbar.dart';
-// // import 'package:path_provider/path_provider.dart';
-// import 'package:permission_handler/permission_handler.dart';
-// import 'package:intl/intl.dart';
-// import 'package:transparent_image/transparent_image.dart';
-
-// class EventGalleryPage extends StatefulWidget {
-//   const EventGalleryPage({super.key});
-
-//   @override
-//   State<EventGalleryPage> createState() => _EventGalleryPageState();
-// }
-
-// class _EventGalleryPageState extends State<EventGalleryPage> {
-//   final String baseUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
-//   bool _loading = true;
-//   String _error = '';
-//   List<EventImage> _images = [];
-//   EventImage? _selectedImage;
-//   String? _selectedFilter;
-//   DateTime? _selectedDate;
-//   List<String> _uniqueTitles = [];
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     fetchEventImages();
-//   }
-
-//   Future<void> fetchEventImages() async {
-//     try {
-//       final prefs = await SharedPreferences.getInstance();
-//       final token = prefs.getString('token');
-//       if (token == null) throw Exception('Authentication token not found.');
-
-//       final res = await http.get(
-//         Uri.parse('$baseUrl/api/parent/event-images'),
-//         headers: {
-//           'Authorization': 'Bearer $token',
-//           'Accept': 'application/json',
-//         },
-//       );
-
-//       final data = jsonDecode(res.body);
-//       if (res.statusCode != 200 || data['success'] != true) {
-//         throw Exception(data['message'] ?? 'Failed to load images.');
-//       }
-
-//       final List list = data['data'] ?? [];
-//       setState(() {
-//         _images = list.map((e) => EventImage.fromJson(e, baseUrl)).toList();
-//         _uniqueTitles = _images.map((e) => e.title).toSet().toList();
-//         _uniqueTitles.insert(0, 'All Images');
-//         _loading = false;
-//       });
-//     } catch (e) {
-//       setState(() {
-//         _error = 'Error loading images: ${e.toString()}';
-//         _loading = false;
-//       });
-//     }
-//   }
-
-//   // Future<void> downloadImage(EventImage image) async {
-//   //   try {
-//   //     if (kIsWeb) {
-//   //       ScaffoldMessenger.of(context).showSnackBar(
-//   //         const SnackBar(content: Text('Saving is not supported on web')),
-//   //       );
-//   //       return;
-//   //     }
-
-//   //     final response = await http.get(Uri.parse(image.imageUrl));
-//   //     if (response.statusCode != 200) {
-//   //       throw Exception('Failed to download image.');
-//   //     }
-
-//   //     final Uint8List bytes = response.bodyBytes;
-
-//   //     final status = await Permission.storage.request();
-//   //     if (!status.isGranted) {
-//   //       throw Exception('Storage permission not granted.');
-//   //     }
-
-//   //     io.Directory? directory;
-//   //     if (io.Platform.isAndroid) {
-//   //       directory = await getExternalStorageDirectory();
-//   //     } else if (io.Platform.isIOS) {
-//   //       directory = await getApplicationDocumentsDirectory();
-//   //     } else {
-//   //       throw Exception('Unsupported platform for file download.');
-//   //     }
-
-//   //     if (directory == null) {
-//   //       throw Exception('Unable to access storage directory.');
-//   //     }
-
-//   //     final path = directory.path;
-//   //     final savedDir = io.Directory('$path/EventImages');
-//   //     if (!savedDir.existsSync()) {
-//   //       savedDir.createSync(recursive: true);
-//   //     }
-
-//   //     final file = io.File(
-//   //         '${savedDir.path}/${image.title}_${DateTime.now().millisecondsSinceEpoch}.jpg');
-//   //     await file.writeAsBytes(bytes);
-//   //     if (!mounted) return;
-//   //     ScaffoldMessenger.of(context).showSnackBar(
-//   //       SnackBar(content: Text('Image saved to: ${file.path}')),
-//   //     );
-//   //   } catch (e) {
-//   //     ScaffoldMessenger.of(context).showSnackBar(
-//   //       SnackBar(content: Text('Error saving image: ${e.toString()}')),
-//   //     );
-//   //   }
-//   // }
-//   Future<void> downloadImage(EventImage image) async {
-//     try {
-//       if (kIsWeb) {
-//         ScaffoldMessenger.of(context).showSnackBar(
-//           const SnackBar(content: Text('Saving is not supported on web')),
-//         );
-//         return;
-//       }
-
-//       final status = await Permission.photos.request(); // Android 13+ and iOS
-//       final storage = await Permission.storage.request(); // Android <= 12
-
-//       if (!status.isGranted && !storage.isGranted) {
-//         throw Exception('Permission denied.');
-//       }
-
-//       final response = await http.get(Uri.parse(image.imageUrl));
-//       if (response.statusCode != 200) {
-//         throw Exception('Failed to download image.');
-//       }
-
-//       final Uint8List bytes = response.bodyBytes;
-
-//       final result = await ImageGallerySaver.saveImage(
-//         bytes,
-//         quality: 100,
-//         name: '${image.title}_${DateTime.now().millisecondsSinceEpoch}',
-//       );
-
-//       if (result['isSuccess'] == true) {
-//         ScaffoldMessenger.of(context).showSnackBar(
-//           const SnackBar(content: Text('✅ Image saved to gallery')),
-//         );
-//       } else {
-//         throw Exception('Failed to save image to gallery.');
-//       }
-//     } catch (e) {
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         SnackBar(content: Text('❌ Error: ${e.toString()}')),
-//       );
-//     }
-//   }
-
-//   List<EventImage> getFilteredImages() {
-//     return _images.where((image) {
-//       final matchTitle = _selectedFilter == null ||
-//           _selectedFilter == 'All Images' ||
-//           image.title == _selectedFilter;
-
-//       final matchDate = _selectedDate == null ||
-//           DateFormat('yyyy-MM-dd').format(DateTime.parse(image.createdAt)) ==
-//               DateFormat('yyyy-MM-dd').format(_selectedDate!);
-
-//       return matchTitle && matchDate;
-//     }).toList();
-//   }
-
-//   Future<void> _selectDate(BuildContext context) async {
-//     final DateTime? picked = await showDatePicker(
-//       context: context,
-//       initialDate: DateTime.now(),
-//       firstDate: DateTime(2020),
-//       lastDate: DateTime.now(),
-//     );
-
-//     if (picked != null && picked != _selectedDate) {
-//       setState(() {
-//         _selectedDate = picked;
-//         _selectedFilter = 'All Images';
-//       });
-//     }
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: CustomAppBar(title: 'Event Gallery'),
-//       body: LayoutBuilder(
-//         builder: (context, constraints) {
-//           return Stack(
-//             children: [
-//               SingleChildScrollView(
-//                 child: ConstrainedBox(
-//                   constraints: BoxConstraints(minHeight: constraints.maxHeight),
-//                   child: Padding(
-//                     padding: const EdgeInsets.all(12.0),
-//                     child: Column(
-//                       crossAxisAlignment: CrossAxisAlignment.start,
-//                       children: [
-//                         Row(
-//                           children: [
-//                             Expanded(
-//                               child: Text(
-//                                 _selectedDate == null
-//                                     ? 'Select Date'
-//                                     : 'Date: ${DateFormat('MMM dd, yyyy').format(_selectedDate!)}',
-//                               ),
-//                             ),
-//                             ElevatedButton(
-//                               onPressed: () => _selectDate(context),
-//                               child: const Text('Pick Date'),
-//                             ),
-//                             if (_selectedDate != null)
-//                               IconButton(
-//                                 icon: const Icon(Icons.clear),
-//                                 onPressed: () =>
-//                                     setState(() => _selectedDate = null),
-//                               ),
-//                           ],
-//                         ),
-//                         DropdownButtonFormField<String>(
-//                           value: _selectedFilter ?? 'All Images',
-//                           items: _uniqueTitles.map((String title) {
-//                             return DropdownMenuItem<String>(
-//                               value: title,
-//                               child: Text(title),
-//                             );
-//                           }).toList(),
-//                           onChanged: (String? newValue) {
-//                             setState(() {
-//                               _selectedFilter = newValue;
-//                             });
-//                           },
-//                           decoration: const InputDecoration(
-//                               labelText: 'Filter by Event'),
-//                         ),
-//                         const SizedBox(height: 12),
-//                         _loading
-//                             ? const Center(child: CircularProgressIndicator())
-//                             : _error.isNotEmpty
-//                                 ? Center(child: Text(_error))
-//                                 : getFilteredImages().isEmpty
-//                                     ? const Center(
-//                                         child: Text('No images found'))
-//                                     : GridView.builder(
-//                                         physics:
-//                                             const NeverScrollableScrollPhysics(),
-//                                         shrinkWrap: true,
-//                                         gridDelegate:
-//                                             const SliverGridDelegateWithFixedCrossAxisCount(
-//                                           crossAxisCount: 3,
-//                                           crossAxisSpacing: 8,
-//                                           mainAxisSpacing: 8,
-//                                         ),
-//                                         itemCount: getFilteredImages().length,
-//                                         itemBuilder: (context, index) {
-//                                           final img =
-//                                               getFilteredImages()[index];
-//                                           return GestureDetector(
-//                                             onTap: () => setState(
-//                                                 () => _selectedImage = img),
-//                                             child: Card(
-//                                               child: Column(
-//                                                 children: [
-//                                                   Expanded(
-//                                                     child: FadeInImage
-//                                                         .memoryNetwork(
-//                                                       placeholder:
-//                                                           kTransparentImage,
-//                                                       image: img.imageUrl,
-//                                                       fit: BoxFit.cover,
-//                                                     ),
-//                                                   ),
-//                                                   Text(img.title,
-//                                                       maxLines: 1,
-//                                                       overflow: TextOverflow
-//                                                           .ellipsis),
-//                                                   Text(DateFormat(
-//                                                           'MMM dd, yyyy')
-//                                                       .format(DateTime.parse(
-//                                                           img.createdAt)))
-//                                                 ],
-//                                               ),
-//                                             ),
-//                                           );
-//                                         },
-//                                       ),
-//                       ],
-//                     ),
-//                   ),
-//                 ),
-//               ),
-//               if (_selectedImage != null)
-//                 Dialog.fullscreen(
-//                   backgroundColor: Colors.black.withAlpha((242)),
-//                   child: Stack(
-//                     children: [
-//                       Center(
-//                         child: InteractiveViewer(
-//                           child: FadeInImage.memoryNetwork(
-//                             placeholder: kTransparentImage,
-//                             image: _selectedImage!.imageUrl,
-//                             fit: BoxFit.contain,
-//                           ),
-//                         ),
-//                       ),
-//                       Positioned(
-//                         top: 16,
-//                         left: 16,
-//                         child: SafeArea(
-//                           child: IconButton(
-//                             icon: const Icon(Icons.close, size: 32),
-//                             color: Colors.white,
-//                             onPressed: () =>
-//                                 setState(() => _selectedImage = null),
-//                           ),
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                 ),
-//             ],
-//           );
-//         },
-//       ),
-//     );
-//   }
-// }
-
-// class EventImage {
-//   final int id;
-//   final String title;
-//   final String imageUrl;
-//   final String createdAt;
-
-//   EventImage({
-//     required this.id,
-//     required this.title,
-//     required this.imageUrl,
-//     required this.createdAt,
-//   });
-
-//   factory EventImage.fromJson(Map<String, dynamic> json, String baseUrl) {
-//     return EventImage(
-//       id: json['id'] ?? 0,
-//       title: json['title'] ?? 'Untitled',
-//       imageUrl: '$baseUrl${json['image_url'] ?? ''}',
-//       createdAt: json['created_at'] ?? DateTime.now().toIso8601String(),
-//     );
-//   }
-// }
-
-// ye tesra wala code hai
-
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -900,40 +556,33 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:transparent_image/transparent_image.dart';
 import 'package:sms/widgets/custom_appbar.dart';
+import 'package:transparent_image/transparent_image.dart';
 
 class EventImage {
   final int id;
-  final String title;
-  final String imageUrl;
-  final String createdAt;
+  final String title, imageUrl, createdAt;
+  final String? className, section, teacherName;
 
-  EventImage({
-    required this.id,
-    required this.title,
-    required this.imageUrl,
-    required this.createdAt,
-  });
-
-  factory EventImage.fromJson(Map<String, dynamic> json, String baseUrl) {
-    return EventImage(
-      id: json['id'] ?? 0,
-      title: json['title'] ?? 'Untitled',
-      imageUrl: '$baseUrl${json['image_url'] ?? ''}',
-      createdAt: json['created_at'] ?? DateTime.now().toIso8601String(),
-    );
-  }
+  EventImage.fromJson(Map<String, dynamic> j)
+      : id = j['id'],
+        title = j['title'] ?? '',
+        imageUrl = '${dotenv.env['NEXT_PUBLIC_API_BASE_URL']}${j['image_url']}',
+        createdAt = j['created_at'] ?? '',
+        className = j['class_name'],
+        section = j['section'],
+        teacherName = j['teacher_name'];
 }
 
-class EventGalleryPage extends StatefulWidget {
-  const EventGalleryPage({super.key});
+class PrincipalEventImagesPage extends StatefulWidget {
+  const PrincipalEventImagesPage({super.key});
 
   @override
-  State<EventGalleryPage> createState() => _EventGalleryPageState();
+  State<PrincipalEventImagesPage> createState() =>
+      _PrincipalEventImagesPageState();
 }
 
-class _EventGalleryPageState extends State<EventGalleryPage> {
+class _PrincipalEventImagesPageState extends State<PrincipalEventImagesPage> {
   final String baseUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
   bool _loading = true;
   String _error = '';
@@ -946,31 +595,34 @@ class _EventGalleryPageState extends State<EventGalleryPage> {
   @override
   void initState() {
     super.initState();
-    fetchEventImages();
+    _fetchImages();
   }
 
-  Future<void> fetchEventImages() async {
+  Future<void> _fetchImages() async {
+    setState(() {
+      _loading = true;
+      _error = '';
+    });
+
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
-      if (token == null) throw Exception('Authentication token not found.');
+      if (token == null) throw Exception('Authentication token not found');
 
       final res = await http.get(
-        Uri.parse('$baseUrl/api/parent/event-images'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        },
+        Uri.parse('$baseUrl/api/principal/event-images'),
+        headers: {'Authorization': 'Bearer $token'},
       );
 
-      final data = jsonDecode(res.body);
+      final data = json.decode(res.body);
       if (res.statusCode != 200 || data['success'] != true) {
-        throw Exception(data['message'] ?? 'Failed to load images.');
+        throw Exception(data['message'] ?? 'Failed to fetch images');
       }
 
-      final List list = data['data'] ?? [];
       setState(() {
-        _images = list.map((e) => EventImage.fromJson(e, baseUrl)).toList();
+        _images = (data['data'] as List)
+            .map((json) => EventImage.fromJson(json))
+            .toList();
         _uniqueTitles = _images.map((e) => e.title).toSet().toList();
         _uniqueTitles.insert(0, 'All Images');
         _loading = false;
@@ -1024,14 +676,6 @@ class _EventGalleryPageState extends State<EventGalleryPage> {
 
       await file.writeAsBytes(response.bodyBytes);
 
-      final result = await Process.run('am', [
-        'broadcast',
-        '-a',
-        'android.intent.action.MEDIA_SCANNER_SCAN_FILE',
-        '-d',
-        'file://$filePath'
-      ]);
-
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('✅ Image saved to Gallery:\n$filePath')),
@@ -1040,6 +684,56 @@ class _EventGalleryPageState extends State<EventGalleryPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('❌ Failed to download image: $error')),
+      );
+    }
+  }
+
+  Future<void> _deleteImage(int id) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Image'),
+        content: const Text('Are you sure you want to delete this image?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Delete')),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      if (token == null) throw Exception('Authentication token not found');
+
+      final res = await http.delete(
+        Uri.parse('$baseUrl/api/principal/delete-event-image/$id'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      final data = json.decode(res.body);
+      if (res.statusCode != 200 || data['success'] != true) {
+        throw Exception(data['message'] ?? 'Failed to delete');
+      }
+
+      setState(() {
+        _images.removeWhere((img) => img.id == id);
+      });
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Image deleted successfully')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Delete failed: ${e.toString()}')),
       );
     }
   }
@@ -1108,7 +802,7 @@ class _EventGalleryPageState extends State<EventGalleryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(title: 'Event Gallery'),
+      appBar: CustomAppBar(title: 'Event Images'),
       body: Stack(
         children: [
           Padding(
@@ -1327,6 +1021,19 @@ class _EventGalleryPageState extends State<EventGalleryPage> {
                                                               Colors.grey[600],
                                                         ),
                                                       ),
+                                                      if (img.teacherName !=
+                                                          null)
+                                                        Text(
+                                                          img.teacherName!,
+                                                          style: TextStyle(
+                                                            fontSize: 10,
+                                                            color: Colors
+                                                                .grey[600],
+                                                          ),
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                        ),
                                                     ],
                                                   ),
                                                 ),
@@ -1335,23 +1042,49 @@ class _EventGalleryPageState extends State<EventGalleryPage> {
                                             Positioned(
                                               top: 4,
                                               right: 4,
-                                              child: GestureDetector(
-                                                onTap: () => downloadImage(img),
-                                                child: Container(
-                                                  decoration: BoxDecoration(
-                                                    color: Theme.of(context)
-                                                        .primaryColor
-                                                        .withAlpha(229),
-                                                    shape: BoxShape.circle,
+                                              child: Row(
+                                                children: [
+                                                  GestureDetector(
+                                                    onTap: () =>
+                                                        downloadImage(img),
+                                                    child: Container(
+                                                      decoration: BoxDecoration(
+                                                        color: Theme.of(context)
+                                                            .primaryColor
+                                                            .withAlpha(229),
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              6),
+                                                      child: const Icon(
+                                                        Icons.download,
+                                                        size: 16,
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
                                                   ),
-                                                  padding:
-                                                      const EdgeInsets.all(6),
-                                                  child: const Icon(
-                                                    Icons.download,
-                                                    size: 16,
-                                                    color: Colors.white,
+                                                  const SizedBox(width: 4),
+                                                  GestureDetector(
+                                                    onTap: () =>
+                                                        _deleteImage(img.id),
+                                                    child: Container(
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.red
+                                                            .withAlpha(229),
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              6),
+                                                      child: const Icon(
+                                                        Icons.delete,
+                                                        size: 16,
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
                                                   ),
-                                                ),
+                                                ],
                                               ),
                                             ),
                                           ],
@@ -1427,6 +1160,14 @@ class _EventGalleryPageState extends State<EventGalleryPage> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
+                          if (_selectedImage!.teacherName != null)
+                            Text(
+                              'By: ${_selectedImage!.teacherName!}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                              ),
+                            ),
                           Text(
                             DateFormat('MMM dd, yyyy').format(
                                 DateTime.parse(_selectedImage!.createdAt)),

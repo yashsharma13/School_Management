@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'student_model.dart';
+import 'package:sms/models/student_model.dart';
 
 // const String baseUrl = 'http://localhost:1000/api';
 final String baseeUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';

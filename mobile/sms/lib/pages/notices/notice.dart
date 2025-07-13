@@ -6,7 +6,7 @@ import 'package:sms/pages/notices/add_notice.dart';
 import 'package:sms/widgets/custom_appbar.dart';
 import 'package:sms/widgets/custom_snackbar.dart';
 import 'dart:convert';
-import 'notice_model.dart';
+import '../../models/notice_model.dart';
 import 'package:intl/intl.dart';
 
 class NoticesPage extends StatefulWidget {

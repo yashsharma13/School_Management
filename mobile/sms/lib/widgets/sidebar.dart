@@ -4,8 +4,10 @@ import 'package:sms/pages/auth/login.dart';
 import 'package:sms/pages/parents_dashboard/event_gallery.dart';
 import 'package:sms/pages/parents_dashboard/receive_message.dart';
 import 'package:sms/pages/parents_dashboard/sent_message.dart';
+import 'package:sms/pages/parents_dashboard/student_fee.dart';
 import 'package:sms/pages/parents_dashboard/view_attendance.dart';
 import 'package:sms/pages/parents_dashboard/view_homework.dart';
+import 'package:sms/pages/principle/event_images_page.dart';
 import 'package:sms/pages/teacher_dashboard/view_homework_page.dart';
 import 'package:sms/pages/teacher_dashboard/add_homework.dart';
 import 'package:sms/pages/teacher_dashboard/attendance_report.dart';
@@ -450,6 +452,12 @@ class Sidebar extends StatelessWidget {
             'route': NoticesPage(),
             'isExpansionTile': false,
           },
+          {
+            'title': 'Event Images',
+            'icon': Icons.image,
+            'route': PrincipalEventImagesPage(),
+            'isExpansionTile': false,
+          },
         ];
       case 'teacher':
         return [
@@ -496,7 +504,7 @@ class Sidebar extends StatelessWidget {
             'isExpansionTile': false,
           },
           {
-            'title': 'Sent Message',
+            'title': 'Send Message',
             'icon': Icons.outbox,
             'route': SendMessagePage(),
             'isExpansionTile': false,
@@ -536,7 +544,7 @@ class Sidebar extends StatelessWidget {
             'isExpansionTile': false,
           },
           {
-            'title': 'Sent Message',
+            'title': 'Send Message',
             'icon': Icons.send,
             'route': SendTextPage(),
             'isExpansionTile': false,
@@ -551,6 +559,12 @@ class Sidebar extends StatelessWidget {
             'title': 'Event Gallery',
             'icon': Icons.photo_library,
             'route': EventGalleryPage(),
+            'isExpansionTile': false,
+          },
+          {
+            'title': 'Fee Record',
+            'icon': Icons.receipt,
+            'route': StudentFeeRecord(),
             'isExpansionTile': false,
           },
         ];

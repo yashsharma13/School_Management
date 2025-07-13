@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-// import 'teacher_model.dart';
 import 'package:sms/models/teacher_model.dart';
 
 final String baseUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';

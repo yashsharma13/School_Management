@@ -9,7 +9,7 @@ import 'package:sms/widgets/button.dart';
 import 'package:sms/widgets/custom_snackbar.dart';
 import 'package:sms/widgets/user_photo_widget.dart';
 import 'package:sms/widgets/date_picker.dart';
-import 'student_model.dart';
+import 'package:sms/models/student_model.dart';
 import 'package:sms/models/class_model.dart';
 
 final String baseeUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';

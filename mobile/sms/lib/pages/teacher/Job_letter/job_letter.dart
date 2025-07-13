@@ -108,35 +108,6 @@ class _TeacherAdmissionLetterPageState
                             fontWeight: FontWeight.bold,
                             color: Colors.deepPurple[800])),
                     const SizedBox(height: 12),
-                    // TextField(
-                    //   decoration: InputDecoration(
-                    //     labelText: 'Search by name, email or qualification',
-                    //     labelStyle: TextStyle(color: Colors.deepPurple[800]),
-                    //     filled: true,
-                    //     fillColor: Colors.deepPurple[50],
-                    //     border: OutlineInputBorder(
-                    //       borderRadius: BorderRadius.circular(8),
-                    //     ),
-                    //     prefixIcon:
-                    //         Icon(Icons.search, color: Colors.deepPurple[800]),
-                    //     suffixIcon: IconButton(
-                    //       icon:
-                    //           Icon(Icons.clear, color: Colors.deepPurple[800]),
-                    //       onPressed: () {
-                    //         setState(() {
-                    //           searchQuery = null;
-                    //           _filterTeachers();
-                    //         });
-                    //       },
-                    //     ),
-                    //   ),
-                    //   onChanged: (value) {
-                    //     setState(() {
-                    //       searchQuery = value;
-                    //       _filterTeachers();
-                    //     });
-                    //   },
-                    // ),
                     CustomSearchBar(
                       hintText: 'Search by name, email or qualification',
                       controller: searchController,

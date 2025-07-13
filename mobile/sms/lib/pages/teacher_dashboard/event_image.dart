@@ -31,13 +31,175 @@ class _EventImageUploadPageState extends State<EventImageUploadPage> {
     super.initState();
   }
 
+  // @override
+  // Widget build(BuildContext context) {
+  //   return Scaffold(
+  //     appBar: CustomAppBar(title: 'Upload Event Images'),
+  //     body: Stack(
+  //       children: [
+  //         Padding(
+  //           padding: const EdgeInsets.all(20),
+  //           child: Column(
+  //             crossAxisAlignment: CrossAxisAlignment.stretch,
+  //             children: [
+  //               Text(
+  //                 'Event Title',
+  //                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
+  //                       fontWeight: FontWeight.w600,
+  //                       color: Colors.deepPurple[700],
+  //                     ),
+  //               ),
+  //               const SizedBox(height: 8),
+  //               Container(
+  //                 decoration: BoxDecoration(
+  //                   color: Colors.white,
+  //                   borderRadius: BorderRadius.circular(10),
+  //                   boxShadow: [
+  //                     BoxShadow(
+  //                       color: Colors.grey.withAlpha(25),
+  //                       spreadRadius: 2,
+  //                       blurRadius: 5,
+  //                       offset: const Offset(0, 2),
+  //                     ),
+  //                   ],
+  //                 ),
+  //                 child: TextField(
+  //                   decoration: const InputDecoration(
+  //                     hintText: 'Enter event title...',
+  //                     border: InputBorder.none,
+  //                     contentPadding:
+  //                         EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+  //                   ),
+  //                   style: Theme.of(context).textTheme.bodyLarge,
+  //                   onChanged: (v) => setState(() => _title = v),
+  //                 ),
+  //               ),
+  //               const SizedBox(height: 20),
+
+  //               // Image selection
+  //               Card(
+  //                 elevation: 2,
+  //                 shape: RoundedRectangleBorder(
+  //                   borderRadius: BorderRadius.circular(12),
+  //                 ),
+  //                 child: Padding(
+  //                   padding: const EdgeInsets.all(16),
+  //                   child: Column(
+  //                     crossAxisAlignment: CrossAxisAlignment.stretch,
+  //                     children: [
+  //                       Text(
+  //                         'Event Images',
+  //                         style:
+  //                             Theme.of(context).textTheme.titleMedium?.copyWith(
+  //                                   fontWeight: FontWeight.w600,
+  //                                   color: Colors.deepPurple[700],
+  //                                 ),
+  //                       ),
+  //                       const SizedBox(height: 12),
+  //                       if (_images.isEmpty)
+  //                         Container(
+  //                           height: 120,
+  //                           decoration: BoxDecoration(
+  //                             borderRadius: BorderRadius.circular(10),
+  //                             border: Border.all(
+  //                               color: Colors.grey.shade300,
+  //                               width: 1.5,
+  //                             ),
+  //                           ),
+  //                           child: Column(
+  //                             mainAxisAlignment: MainAxisAlignment.center,
+  //                             children: [
+  //                               Icon(Icons.image_outlined,
+  //                                   size: 40, color: Colors.grey.shade400),
+  //                               const SizedBox(height: 8),
+  //                               Text('No images selected',
+  //                                   style:
+  //                                       TextStyle(color: Colors.grey.shade500)),
+  //                             ],
+  //                           ),
+  //                         )
+  //                       else
+  //                         SizedBox(
+  //                           height: 120,
+  //                           child: ListView.builder(
+  //                             scrollDirection: Axis.horizontal,
+  //                             itemCount: _images.length,
+  //                             itemBuilder: (context, index) {
+  //                               final file = _images[index];
+  //                               return Padding(
+  //                                 padding: const EdgeInsets.only(right: 8),
+  //                                 child: kIsWeb
+  //                                     ? _buildWebImagePreview(file, index)
+  //                                     : _buildMobileImagePreview(file, index),
+  //                               );
+  //                             },
+  //                           ),
+  //                         ),
+  //                       const SizedBox(height: 12),
+  //                       OutlinedButton.icon(
+  //                         icon: const Icon(Icons.add_photo_alternate_outlined),
+  //                         label: const Text('Select Images'),
+  //                         onPressed: pickImages,
+  //                         style: OutlinedButton.styleFrom(
+  //                           padding: const EdgeInsets.symmetric(vertical: 14),
+  //                           shape: RoundedRectangleBorder(
+  //                             borderRadius: BorderRadius.circular(8),
+  //                           ),
+  //                           side: BorderSide(
+  //                             color: Theme.of(context).primaryColor,
+  //                             width: 1.5,
+  //                           ),
+  //                         ),
+  //                       ),
+  //                     ],
+  //                   ),
+  //                 ),
+  //               ),
+  //               const SizedBox(height: 20),
+
+  //               Align(
+  //                 alignment: Alignment.center,
+  //                 child: CustomButton(
+  //                   text: _loading ? 'Uploading...' : 'Upload Event',
+  //                   icon: Icons.cloud_upload_outlined,
+  //                   isLoading: _loading,
+  //                   width: 200, // Reduced width from full to 200
+  //                   height: 50,
+  //                   onPressed:
+  //                       (_loading || _title.trim().isEmpty || _images.isEmpty)
+  //                           ? null
+  //                           : uploadImages,
+  //                 ),
+  //               ),
+
+  //               const SizedBox(height: 8),
+  //               if (_error.isNotEmpty)
+  //                 Padding(
+  //                   padding: const EdgeInsets.symmetric(vertical: 8),
+  //                   child: Text(
+  //                     _error,
+  //                     style: TextStyle(
+  //                       color: Colors.red.shade700,
+  //                       fontSize: 14,
+  //                     ),
+  //                     textAlign: TextAlign.center,
+  //                   ),
+  //                 ),
+  //             ],
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(title: 'Upload Event Images'),
       body: Stack(
         children: [
-          Padding(
+          SingleChildScrollView(
+            // 👈 Wrap with scroll view
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -76,7 +238,7 @@ class _EventImageUploadPageState extends State<EventImageUploadPage> {
                 ),
                 const SizedBox(height: 20),
 
-                // Image selection
+                /// Image selection
                 Card(
                   elevation: 2,
                   shape: RoundedRectangleBorder(
@@ -155,28 +317,16 @@ class _EventImageUploadPageState extends State<EventImageUploadPage> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 20),
 
-                // // Upload button
-                // CustomButton(
-                //   text: _loading ? 'Uploading...' : 'Upload Event',
-                //   icon: Icons.cloud_upload_outlined,
-                //   isLoading: _loading,
-                //   width: double.infinity,
-                //   height: 50,
-                //   onPressed:
-                //       (_loading || _title.trim().isEmpty || _images.isEmpty)
-                //           ? null
-                //           : uploadImages,
-                // ),
-                // Upload button with reduced width
                 Align(
                   alignment: Alignment.center,
                   child: CustomButton(
                     text: _loading ? 'Uploading...' : 'Upload Event',
                     icon: Icons.cloud_upload_outlined,
                     isLoading: _loading,
-                    width: 200, // Reduced width from full to 200
+                    width: 200,
                     height: 50,
                     onPressed:
                         (_loading || _title.trim().isEmpty || _images.isEmpty)

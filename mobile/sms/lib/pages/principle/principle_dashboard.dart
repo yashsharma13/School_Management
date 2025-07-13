@@ -9,6 +9,7 @@ import 'package:sms/pages/services/profile_service.dart';
 import 'package:sms/widgets/custom_appbar.dart';
 import 'package:sms/widgets/sidebar.dart';
 import 'package:sms/widgets/notice_widget.dart';
+import 'package:sms/pages/principle/change_password.dart';
 
 class PrincipleDashboard extends StatefulWidget {
   const PrincipleDashboard({super.key});
@@ -245,6 +246,117 @@ class _PrincipleDashboardState extends State<PrincipleDashboard> {
     }
   }
 
+  // @override
+  // Widget build(BuildContext context) {
+  //   return Scaffold(
+  //     appBar: CustomAppBar(
+  //   actions: [
+  //     PopupMenuButton<String>(
+  //       icon: Row(
+  //         children: [
+  //           _buildLogoImage(radius: 20),
+  //           const SizedBox(width: 4),
+  //           const Icon(Icons.keyboard_arrow_down, color: Colors.white),
+  //         ],
+  //       ),
+  //       onSelected: (value) async {
+  //         if (value == 'profile') {
+  //           await Navigator.push(
+  //             context,
+  //             MaterialPageRoute(builder: (context) => ProfileSetupPage()),
+  //           );
+  //           _fetchProfileData();
+  //         } else if (value == 'settings') {
+  //           ScaffoldMessenger.of(context).showSnackBar(
+  //             const SnackBar(content: Text("Settings Page Coming Soon")),
+  //           );
+  //         } else if (value == 'logout') {
+  //           _logout();
+  //         }
+  //       },
+  //       itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+  //         const PopupMenuItem<String>(
+  //           value: 'profile',
+  //           child: ListTile(
+  //             leading: Icon(Icons.person),
+  //             title: Text('Set Profile'),
+  //           ),
+  //         ),
+  //         const PopupMenuItem<String>(
+  //           value: 'settings',
+  //           child: ListTile(
+  //             leading: Icon(Icons.settings),
+  //             title: Text('Settings'),
+  //           ),
+  //         ),
+  //         const PopupMenuItem<String>(
+  //           value: 'logout',
+  //           child: ListTile(
+  //             leading: Icon(Icons.logout),
+  //             title: Text('Logout'),
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   ],
+  //   title: '',
+  // ),
+  //     drawer: Sidebar(
+  //       userType: 'principal',
+  //       profileImageUrl: logoUrlFull,
+  //       instituteName: instituteName,
+  //       instituteAddress: instituteAddress,
+  //     ),
+  //     body: Padding(
+  //       padding: const EdgeInsets.all(20),
+  //       child: Column(
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: [
+  //           Text(
+  //             "Welcome to ${instituteName ?? 'Dashboard'}",
+  //             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+  //           ),
+  //           const SizedBox(height: 20),
+  //           isLoading
+  //               ? const Center(child: CircularProgressIndicator())
+  //               : Row(
+  //                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //                   children: [
+  //                     Expanded(
+  //                       child: buildDashboardCard(
+  //                         "Total Student",
+  //                         totalStudents.toString(),
+  //                         Icons.group,
+  //                         Colors.blue,
+  //                       ),
+  //                     ),
+  //                     const SizedBox(width: 10),
+  //                     Expanded(
+  //                       child: buildDashboardCard(
+  //                         "Total Teacher",
+  //                         totalTeachers.toString(),
+  //                         Icons.person,
+  //                         Colors.green,
+  //                       ),
+  //                     ),
+  //                     const SizedBox(width: 10),
+  //                     Expanded(
+  //                       child: buildDashboardCard(
+  //                         "Total Classes",
+  //                         totalClasses.toString(),
+  //                         Icons.class_,
+  //                         Colors.orange,
+  //                       ),
+  //                     ),
+  //                   ],
+  //                 ),
+  //           const SizedBox(height: 30),
+  //           const NoticeWidget(), // ✅ Reusable widget inserted here
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -266,8 +378,14 @@ class _PrincipleDashboardState extends State<PrincipleDashboard> {
                 );
                 _fetchProfileData();
               } else if (value == 'settings') {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Settings Page Coming Soon")),
+                // ScaffoldMessenger.of(context).showSnackBar(
+                //   const SnackBar(content: Text("Settings Page Coming Soon")),
+
+                //   // ChangePasswordPage
+                // );
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ChangePasswordPage()),
                 );
               } else if (value == 'logout') {
                 _logout();
@@ -299,6 +417,8 @@ class _PrincipleDashboardState extends State<PrincipleDashboard> {
           ),
         ],
         title: '',
+
+        // your existing appBar code ...
       ),
       drawer: Sidebar(
         userType: 'principal',
@@ -306,52 +426,65 @@ class _PrincipleDashboardState extends State<PrincipleDashboard> {
         instituteName: instituteName,
         instituteAddress: instituteAddress,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Welcome to ${instituteName ?? 'Dashboard'}",
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height -
+                  kToolbarHeight -
+                  MediaQuery.of(context).padding.top,
             ),
-            const SizedBox(height: 20),
-            isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: buildDashboardCard(
-                          "Total Student",
-                          totalStudents.toString(),
-                          Icons.group,
-                          Colors.blue,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: buildDashboardCard(
-                          "Total Teacher",
-                          totalTeachers.toString(),
-                          Icons.person,
-                          Colors.green,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: buildDashboardCard(
-                          "Total Classes",
-                          totalClasses.toString(),
-                          Icons.class_,
-                          Colors.orange,
-                        ),
-                      ),
-                    ],
+            child: IntrinsicHeight(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Welcome to ${instituteName ?? 'Dashboard'}",
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-            const SizedBox(height: 30),
-            const NoticeWidget(), // ✅ Reusable widget inserted here
-          ],
+                  const SizedBox(height: 20),
+                  isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: buildDashboardCard(
+                                "Total Student",
+                                totalStudents.toString(),
+                                Icons.group,
+                                Colors.blue,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: buildDashboardCard(
+                                "Total Teacher",
+                                totalTeachers.toString(),
+                                Icons.person,
+                                Colors.green,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: buildDashboardCard(
+                                "Total Classes",
+                                totalClasses.toString(),
+                                Icons.class_,
+                                Colors.orange,
+                              ),
+                            ),
+                          ],
+                        ),
+                  const SizedBox(height: 30),
+                  const NoticeWidget(),
+                  // Spacer can help push content up if needed, but here IntrinsicHeight is enough
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );

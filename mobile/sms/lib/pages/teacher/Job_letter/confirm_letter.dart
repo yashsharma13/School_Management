@@ -131,10 +131,19 @@ class _TeacherAdmissionConfirmationPageState
                         'isHeader': true,
                       },
                       {
-                        'text': 'Account Status',
-                        'value': 'Active',
+                        'text': 'Qualification',
+                        'value': widget.teacher.qualification,
                         'isHeader': false,
-                        'status': true,
+                      },
+                      {
+                        'text': 'Experience',
+                        'value': widget.teacher.experience,
+                        'isHeader': false,
+                      },
+                      {
+                        'text': 'Salary',
+                        'value': widget.teacher.salary,
+                        'isHeader': false,
                       },
                       {
                         'text': 'Date of Joining',
@@ -147,6 +156,12 @@ class _TeacherAdmissionConfirmationPageState
                         'value': widget.teacher.phone,
                         'isHeader': false,
                         'copyEnabled': true,
+                      },
+                      {
+                        'text': 'Account Status',
+                        'value': 'Active',
+                        'isHeader': false,
+                        'status': true,
                       },
                       {
                         'text': 'Username',
@@ -244,6 +259,11 @@ class _TeacherAdmissionConfirmationPageState
                   children: [
                     PdfTables.buildHeaderRow(['Field', 'Value']),
                     PdfTables.buildRow(['Teacher Name', widget.teacher.name]),
+                    PdfTables.buildRow(
+                        ['Qualification', widget.teacher.qualification]),
+                    PdfTables.buildRow(
+                        ['Experience', widget.teacher.experience]),
+                    PdfTables.buildRow(['Salary', widget.teacher.salary]),
                     PdfTables.buildStatusRow('Account Status', 'Active'),
                     PdfTables.buildRow(['Phone', widget.teacher.phone]),
                     PdfTables.buildRow(['Username', widget.teacher.email]),

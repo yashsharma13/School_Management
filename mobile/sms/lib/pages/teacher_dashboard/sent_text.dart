@@ -143,7 +143,7 @@ class _SendTextPageState extends State<SendTextPage> {
       //   title: Text("Message to $studentName"),
       //   centerTitle: true,
       // ),
-      appBar: CustomAppBar(title: 'Sent Message'),
+      appBar: CustomAppBar(title: 'Send Message'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Form(

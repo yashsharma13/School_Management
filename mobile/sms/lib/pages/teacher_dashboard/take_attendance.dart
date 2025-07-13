@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sms/pages/teacher_dashboard/t_dashboard.dart';
 import 'package:sms/widgets/button.dart';
 import 'package:sms/widgets/custom_appbar.dart';
-import 'package:sms/widgets/date_picker.dart'; // Add this import
+import 'package:sms/widgets/date_picker.dart';
 
 class TakeAttendancePage extends StatefulWidget {
   const TakeAttendancePage({super.key});
@@ -246,7 +246,6 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
           );
         });
       } else if (response.statusCode == 409) {
-        // Conflict - some attendance already exists
         final responseData = json.decode(response.body);
         _showError(responseData['message'] ??
             'Some attendance records already exist.');
@@ -269,223 +268,222 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
     return Scaffold(
       appBar: const CustomAppBar(
         title: 'Take Attendance',
-        // centerTitle: true,
-        // elevation: 0,
       ),
       body: isInitialLoading
           ? Center(child: CircularProgressIndicator(color: Colors.blue))
           : token == null
               ? Center(
                   child: Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.warning, size: 48, color: Colors.red),
-                          SizedBox(height: 16),
-                          Text(
-                            'You are not logged in.',
-                            style: TextStyle(
-                                fontSize: 16, color: Colors.red.shade600),
-                          ),
-                          SizedBox(height: 16),
-                          // ElevatedButton(
-                          //   onPressed: () {
-                          //     Navigator.pushReplacementNamed(context, '/login');
-                          //   },
-                          //   style: ElevatedButton.styleFrom(
-                          //     backgroundColor: Colors.blue.shade600,
-                          //     foregroundColor: Colors.white,
-                          //     shape: RoundedRectangleBorder(
-                          //       borderRadius: BorderRadius.circular(8),
-                          //     ),
-                          //   ),
-                          //   child: Text('Login'),
-                          // ),
-                          CustomButton(
-                            text: 'Login',
-                            onPressed: () {
-                              Navigator.pushReplacementNamed(context, '/login');
-                            },
-                          )
-                        ],
-                      ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.warning, size: 48, color: Colors.red),
+                        SizedBox(height: 16),
+                        Text(
+                          'You are not logged in.',
+                          style: TextStyle(
+                              fontSize: 16, color: Colors.red.shade600),
+                        ),
+                        SizedBox(height: 16),
+                        CustomButton(
+                          text: 'Login',
+                          onPressed: () {
+                            Navigator.pushReplacementNamed(context, '/login');
+                          },
+                        )
+                      ],
                     ),
                   ),
-                )
-              : Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Card(
-                        elevation: 3,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Class: ${selectedClass ?? "Not assigned"}',
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.deepPurple.shade900)),
-                              SizedBox(height: 8),
-                              Text(
-                                  'Section: ${selectedSection ?? "Not assigned"}',
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.deepPurple.shade900)),
-                              SizedBox(height: 16),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: CustomDatePicker(
-                                      selectedDate: selectedDate,
-                                      onDateSelected: (DateTime newDate) {
-                                        setState(() {
-                                          selectedDate = newDate;
-                                        });
-                                      },
-                                      isExpanded: true,
-                                      lastDate: DateTime
-                                          .now(), // Only allow dates up to today
-                                      backgroundColor: Colors.white,
-                                      foregroundColor: Colors.deepPurple,
-                                    ),
-                                  ),
-                                  SizedBox(width: 10),
-                                  Expanded(
-                                    child: TextField(
-                                      controller: searchController,
-                                      decoration: InputDecoration(
-                                        labelText: 'Search Student',
-                                        labelStyle: TextStyle(
-                                            color: Colors.deepPurple.shade700),
-                                        prefixIcon: Icon(Icons.search,
-                                            color: Colors.deepPurple.shade700),
-                                        border: OutlineInputBorder(),
-                                        filled: true,
-                                        fillColor: Colors.white,
+                ))
+              : SingleChildScrollView(
+                  physics: AlwaysScrollableScrollPhysics(),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Card(
+                          elevation: 3,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                    'Class: ${selectedClass ?? "Not assigned"}',
+                                    style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.deepPurple.shade900)),
+                                SizedBox(height: 8),
+                                Text(
+                                    'Section: ${selectedSection ?? "Not assigned"}',
+                                    style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.deepPurple.shade900)),
+                                SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: CustomDatePicker(
+                                        selectedDate: selectedDate,
+                                        onDateSelected: (DateTime newDate) {
+                                          setState(() {
+                                            selectedDate = newDate;
+                                          });
+                                        },
+                                        isExpanded: true,
+                                        lastDate: DateTime.now(),
+                                        backgroundColor: Colors.white,
+                                        foregroundColor: Colors.deepPurple,
                                       ),
-                                      onChanged: (value) => _filterStudents(),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                                    SizedBox(width: 8),
+                                    Expanded(
+                                      child: TextField(
+                                        controller: searchController,
+                                        decoration: InputDecoration(
+                                          labelText: 'Search Student',
+                                          labelStyle: TextStyle(
+                                              color:
+                                                  Colors.deepPurple.shade700),
+                                          prefixIcon: Icon(Icons.search,
+                                              color:
+                                                  Colors.deepPurple.shade700),
+                                          border: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8)),
+                                          filled: true,
+                                          fillColor: Colors.white,
+                                        ),
+                                        onChanged: (value) => _filterStudents(),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                      if (errorMessage != null) ...[
-                        SizedBox(height: 16),
-                        Container(
-                          padding: EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                              color: Colors.red.shade600,
-                              borderRadius: BorderRadius.circular(8)),
-                          child: Text(errorMessage!,
-                              style: TextStyle(color: Colors.white)),
-                        ),
-                      ],
-                      if (successMessage != null) ...[
-                        SizedBox(height: 16),
-                        Container(
-                          padding: EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                              color: Colors.green.shade600,
-                              borderRadius: BorderRadius.circular(8)),
-                          child: Text(successMessage!,
-                              style: TextStyle(color: Colors.white)),
-                        ),
-                      ],
-                      SizedBox(height: 16),
-                      Expanded(
-                        child: isLoading
+                        if (errorMessage != null) ...[
+                          SizedBox(height: 12),
+                          Container(
+                            padding: EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                                color: Colors.red.shade600,
+                                borderRadius: BorderRadius.circular(8)),
+                            child: Text(errorMessage!,
+                                style: TextStyle(color: Colors.white)),
+                          ),
+                        ],
+                        if (successMessage != null) ...[
+                          SizedBox(height: 12),
+                          Container(
+                            padding: EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                                color: Colors.green.shade600,
+                                borderRadius: BorderRadius.circular(8)),
+                            child: Text(successMessage!,
+                                style: TextStyle(color: Colors.white)),
+                          ),
+                        ],
+                        SizedBox(height: 12),
+                        isLoading
                             ? Center(
                                 child: CircularProgressIndicator(
                                     color: Colors.blue))
                             : filteredStudents.isEmpty
-                                ? Center(
-                                    child: Card(
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(16.0),
-                                        child: Text(
-                                          'No students found.',
-                                          style: TextStyle(
-                                              fontSize: 16,
-                                              color: Colors.grey.shade700),
-                                        ),
+                                ? Card(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16.0),
+                                      child: Text(
+                                        'No students found.',
+                                        style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.grey.shade700),
                                       ),
                                     ),
                                   )
-                                : ListView.separated(
-                                    itemCount: filteredStudents.length,
-                                    separatorBuilder: (context, index) =>
-                                        SizedBox(height: 8),
-                                    itemBuilder: (context, index) {
-                                      final student = filteredStudents[index];
-                                      return Card(
-                                        elevation: 2,
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(10)),
-                                        child: ListTile(
-                                          contentPadding: EdgeInsets.symmetric(
-                                              horizontal: 16, vertical: 8),
-                                          leading: CircleAvatar(
-                                            backgroundColor:
-                                                Colors.deepPurple.shade100,
-                                            child: Text(
-                                              student.name.isNotEmpty
-                                                  ? student.name.substring(0, 1)
-                                                  : '?',
+                                : Container(
+                                    constraints: BoxConstraints(
+                                        minHeight:
+                                            MediaQuery.of(context).size.height *
+                                                0.4),
+                                    child: ListView.separated(
+                                      shrinkWrap: true,
+                                      physics: NeverScrollableScrollPhysics(),
+                                      itemCount: filteredStudents.length,
+                                      separatorBuilder: (context, index) =>
+                                          SizedBox(height: 8),
+                                      itemBuilder: (context, index) {
+                                        final student = filteredStudents[index];
+                                        return Card(
+                                          elevation: 2,
+                                          shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10)),
+                                          child: ListTile(
+                                            contentPadding:
+                                                EdgeInsets.symmetric(
+                                                    horizontal: 16,
+                                                    vertical: 8),
+                                            leading: CircleAvatar(
+                                              backgroundColor:
+                                                  Colors.deepPurple.shade100,
+                                              child: Text(
+                                                student.name.isNotEmpty
+                                                    ? student.name
+                                                        .substring(0, 1)
+                                                    : '?',
+                                                style: TextStyle(
+                                                    color: Colors
+                                                        .deepPurple.shade800),
+                                              ),
+                                            ),
+                                            title: Text(
+                                              student.name,
                                               style: TextStyle(
+                                                  fontWeight: FontWeight.w500,
                                                   color: Colors
-                                                      .deepPurple.shade800),
+                                                      .deepPurple.shade900),
+                                            ),
+                                            subtitle: Text(
+                                              '${student.assignedClass} - ${student.assignedSection}',
+                                              style: TextStyle(
+                                                  color: Colors.grey.shade600),
+                                            ),
+                                            trailing: Transform.scale(
+                                              scale: 1.2,
+                                              child: Switch(
+                                                value: student.isPresent,
+                                                onChanged: (value) =>
+                                                    _toggleStudentAttendance(
+                                                        index),
+                                                activeColor: Colors.deepPurple,
+                                                activeTrackColor:
+                                                    Colors.deepPurple.shade200,
+                                              ),
                                             ),
                                           ),
-                                          title: Text(
-                                            student.name,
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.w500,
-                                                color:
-                                                    Colors.deepPurple.shade900),
-                                          ),
-                                          subtitle: Text(
-                                            '${student.assignedClass} - ${student.assignedSection}',
-                                            style: TextStyle(
-                                                color: Colors.grey.shade600),
-                                          ),
-                                          trailing: Transform.scale(
-                                            scale: 1.2,
-                                            child: Switch(
-                                              value: student.isPresent,
-                                              onChanged: (value) =>
-                                                  _toggleStudentAttendance(
-                                                      index),
-                                              activeColor: Colors.deepPurple,
-                                              activeTrackColor:
-                                                  Colors.deepPurple.shade200,
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    },
+                                        );
+                                      },
+                                    ),
                                   ),
-                      ),
-                      SizedBox(height: 16),
-                      CustomButton(
-                        text: isLoading ? 'Saving...' : 'Save',
-                        width: 120,
-                        onPressed: students.isEmpty || isLoading
-                            ? null
-                            : _saveAttendance,
-                        isLoading: isLoading,
-                      ),
-                    ],
+                        SizedBox(height: 12),
+                        CustomButton(
+                          text: isLoading ? 'Saving...' : 'Save',
+                          width: 120,
+                          onPressed: students.isEmpty || isLoading
+                              ? null
+                              : _saveAttendance,
+                          isLoading: isLoading,
+                        ),
+                        SizedBox(height: 12),
+                      ],
+                    ),
                   ),
                 ),
     );

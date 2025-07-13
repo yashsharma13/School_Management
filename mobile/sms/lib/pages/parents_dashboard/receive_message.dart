@@ -123,204 +123,414 @@ class _ViewMessagesPageState extends State<ViewMessagesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(title: "Messages from Teacher"),
+      // body: _isLoading
+      //     ? const Center(
+      //         child: CircularProgressIndicator(),
+      //       )
+      //     : Padding(
+      //         padding: const EdgeInsets.all(16.0),
+      //         child: Column(
+      //           crossAxisAlignment: CrossAxisAlignment.start,
+      //           children: [
+      //             // Error message display
+      //             if (_errorMessage != null)
+      //               Container(
+      //                 width: double.infinity,
+      //                 padding: const EdgeInsets.all(12),
+      //                 margin: const EdgeInsets.only(bottom: 16),
+      //                 decoration: BoxDecoration(
+      //                   color: Colors.red.shade100,
+      //                   borderRadius: BorderRadius.circular(8),
+      //                   border: Border.all(color: Colors.red.shade300),
+      //                 ),
+      //                 child: Row(
+      //                   children: [
+      //                     const Icon(Icons.error_outline, color: Colors.red),
+      //                     const SizedBox(width: 8),
+      //                     Expanded(
+      //                       child: Text(
+      //                         _errorMessage!,
+      //                         style: TextStyle(
+      //                           color: Colors.red.shade800,
+      //                         ),
+      //                       ),
+      //                     ),
+      //                     IconButton(
+      //                       icon: const Icon(Icons.close, size: 18),
+      //                       onPressed: () =>
+      //                           setState(() => _errorMessage = null),
+      //                     ),
+      //                   ],
+      //                 ),
+      //               ),
+
+      //             // Teacher info card
+      //             Card(
+      //               elevation: 2,
+      //               shape: RoundedRectangleBorder(
+      //                 borderRadius: BorderRadius.circular(12),
+      //               ),
+      //               child: Padding(
+      //                 padding: const EdgeInsets.all(16.0),
+      //                 child: Row(
+      //                   children: [
+      //                     const CircleAvatar(
+      //                       backgroundColor: Colors.blue,
+      //                       child: Icon(Icons.person, color: Colors.white),
+      //                     ),
+      //                     const SizedBox(width: 16),
+      //                     Expanded(
+      //                       child: Column(
+      //                         crossAxisAlignment: CrossAxisAlignment.start,
+      //                         children: [
+      //                           Text(
+      //                             'Messages from',
+      //                             style: TextStyle(
+      //                               fontSize: 14,
+      //                               color: Colors.grey.shade600,
+      //                             ),
+      //                           ),
+      //                           const SizedBox(height: 4),
+      //                           Text(
+      //                             _teacherName ?? 'Loading...',
+      //                             style: const TextStyle(
+      //                               fontSize: 18,
+      //                               fontWeight: FontWeight.bold,
+      //                             ),
+      //                           ),
+      //                         ],
+      //                       ),
+      //                     ),
+      //                   ],
+      //                 ),
+      //               ),
+      //             ),
+
+      //             const SizedBox(height: 24),
+
+      //             // Messages list header
+      //             Row(
+      //               children: [
+      //                 Text(
+      //                   'Messages',
+      //                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
+      //                         fontWeight: FontWeight.bold,
+      //                       ),
+      //                 ),
+      //                 const SizedBox(width: 8),
+      //                 if (_messages.isNotEmpty)
+      //                   Chip(
+      //                     label: Text('${_messages.length}'),
+      //                     backgroundColor:
+      //                         Theme.of(context).primaryColor.withAlpha(25),
+      //                   ),
+      //               ],
+      //             ),
+      //             const SizedBox(height: 8),
+
+      //             // Messages list
+      //             if (_messages.isEmpty)
+      //               Expanded(
+      //                 child: Center(
+      //                   child: Column(
+      //                     mainAxisSize: MainAxisSize.min,
+      //                     children: [
+      //                       Icon(
+      //                         Icons.inbox_outlined,
+      //                         size: 64,
+      //                         color: Colors.grey.shade400,
+      //                       ),
+      //                       const SizedBox(height: 16),
+      //                       Text(
+      //                         'No messages received yet',
+      //                         style: TextStyle(
+      //                           fontSize: 16,
+      //                           color: Colors.grey.shade600,
+      //                         ),
+      //                       ),
+      //                       const SizedBox(height: 8),
+      //                       Text(
+      //                         'Messages from your teacher will appear here',
+      //                         style: TextStyle(
+      //                           fontSize: 14,
+      //                           color: Colors.grey.shade500,
+      //                         ),
+      //                       ),
+      //                     ],
+      //                   ),
+      //                 ),
+      //               )
+      //             else
+      //               Expanded(
+      //                 child: RefreshIndicator(
+      //                   onRefresh: () => _fetchMessages(_token!),
+      //                   child: ListView.builder(
+      //                     physics: const AlwaysScrollableScrollPhysics(),
+      //                     itemCount: _messages.length,
+      //                     itemBuilder: (context, index) {
+      //                       final msg = _messages[index];
+      //                       return Card(
+      //                         margin: const EdgeInsets.symmetric(vertical: 8),
+      //                         elevation: 1,
+      //                         shape: RoundedRectangleBorder(
+      //                           borderRadius: BorderRadius.circular(12),
+      //                         ),
+      //                         child: Padding(
+      //                           padding: const EdgeInsets.all(12.0),
+      //                           child: Column(
+      //                             crossAxisAlignment: CrossAxisAlignment.start,
+      //                             children: [
+      //                               Row(
+      //                                 mainAxisAlignment:
+      //                                     MainAxisAlignment.spaceBetween,
+      //                                 children: [
+      //                                   Expanded(
+      //                                     child: Text(
+      //                                       msg['message'],
+      //                                       style:
+      //                                           const TextStyle(fontSize: 15),
+      //                                     ),
+      //                                   ),
+      //                                 ],
+      //                               ),
+      //                               const SizedBox(height: 8),
+      //                               Row(
+      //                                 children: [
+      //                                   Icon(
+      //                                     Icons.access_time,
+      //                                     size: 14,
+      //                                     color: Colors.grey.shade500,
+      //                                   ),
+      //                                   const SizedBox(width: 4),
+      //                                   Text(
+      //                                     _formatTimestamp(msg['created_at']),
+      //                                     style: TextStyle(
+      //                                       fontSize: 12,
+      //                                       color: Colors.grey.shade600,
+      //                                     ),
+      //                                   ),
+      //                                 ],
+      //                               ),
+      //                             ],
+      //                           ),
+      //                         ),
+      //                       );
+      //                     },
+      //                   ),
+      //                 ),
+      //               ),
+      //           ],
+      //         ),
+      //       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Error message display
-                  if (_errorMessage != null)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade100,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.red.shade300),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.error_outline, color: Colors.red),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _errorMessage!,
-                              style: TextStyle(
-                                color: Colors.red.shade800,
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.close, size: 18),
-                            onPressed: () =>
-                                setState(() => _errorMessage = null),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                  // Teacher info card
-                  Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Row(
-                        children: [
-                          const CircleAvatar(
-                            backgroundColor: Colors.blue,
-                            child: Icon(Icons.person, color: Colors.white),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Messages from',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  _teacherName ?? 'Loading...',
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Messages list header
-                  Row(
-                    children: [
-                      Text(
-                        'Messages',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                      const SizedBox(width: 8),
-                      if (_messages.isNotEmpty)
-                        Chip(
-                          label: Text('${_messages.length}'),
-                          backgroundColor:
-                              Theme.of(context).primaryColor.withAlpha(25),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Messages list
-                  if (_messages.isEmpty)
-                    Expanded(
-                      child: Center(
+          ? const Center(child: CircularProgressIndicator())
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                return RefreshIndicator(
+                  onRefresh: () => _fetchMessages(_token!),
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: ConstrainedBox(
+                      constraints:
+                          BoxConstraints(minHeight: constraints.maxHeight),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
                         child: Column(
-                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(
-                              Icons.inbox_outlined,
-                              size: 64,
-                              color: Colors.grey.shade400,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No messages received yet',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Messages from your teacher will appear here',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey.shade500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                  else
-                    Expanded(
-                      child: RefreshIndicator(
-                        onRefresh: () => _fetchMessages(_token!),
-                        child: ListView.builder(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          itemCount: _messages.length,
-                          itemBuilder: (context, index) {
-                            final msg = _messages[index];
-                            return Card(
-                              margin: const EdgeInsets.symmetric(vertical: 8),
-                              elevation: 1,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(12.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                            // 🔴 Error
+                            if (_errorMessage != null)
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(12),
+                                margin: const EdgeInsets.only(bottom: 16),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.shade100,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border:
+                                      Border.all(color: Colors.red.shade300),
+                                ),
+                                child: Row(
                                   children: [
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            msg['message'],
-                                            style:
-                                                const TextStyle(fontSize: 15),
-                                          ),
+                                    const Icon(Icons.error_outline,
+                                        color: Colors.red),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        _errorMessage!,
+                                        style: TextStyle(
+                                          color: Colors.red.shade800,
                                         ),
-                                      ],
+                                      ),
                                     ),
-                                    const SizedBox(height: 8),
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          Icons.access_time,
-                                          size: 14,
-                                          color: Colors.grey.shade500,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          _formatTimestamp(msg['created_at']),
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey.shade600,
-                                          ),
-                                        ),
-                                      ],
+                                    IconButton(
+                                      icon: const Icon(Icons.close, size: 18),
+                                      onPressed: () =>
+                                          setState(() => _errorMessage = null),
                                     ),
                                   ],
                                 ),
                               ),
-                            );
-                          },
+
+                            // 👤 Teacher Info
+                            Card(
+                              elevation: 2,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Row(
+                                  children: [
+                                    const CircleAvatar(
+                                      backgroundColor: Colors.blue,
+                                      child: Icon(Icons.person,
+                                          color: Colors.white),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Messages from',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.grey.shade600,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            _teacherName ?? 'Loading...',
+                                            style: const TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            // 📨 Message Header
+                            Row(
+                              children: [
+                                Text(
+                                  'Messages',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleLarge
+                                      ?.copyWith(fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(width: 8),
+                                if (_messages.isNotEmpty)
+                                  Chip(
+                                    label: Text('${_messages.length}'),
+                                    backgroundColor: Theme.of(context)
+                                        .primaryColor
+                                        .withAlpha(25),
+                                  ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 8),
+
+                            // 📬 Message List
+                            if (_messages.isEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 40),
+                                child: Center(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.inbox_outlined,
+                                        size: 64,
+                                        color: Colors.grey.shade400,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        'No messages received yet',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Messages from your teacher will appear here',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey.shade500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )
+                            else
+                              ListView.builder(
+                                physics: const NeverScrollableScrollPhysics(),
+                                shrinkWrap: true,
+                                itemCount: _messages.length,
+                                itemBuilder: (context, index) {
+                                  final msg = _messages[index];
+                                  return Card(
+                                    margin:
+                                        const EdgeInsets.symmetric(vertical: 8),
+                                    elevation: 1,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(12.0),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            msg['message'],
+                                            style:
+                                                const TextStyle(fontSize: 15),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                Icons.access_time,
+                                                size: 14,
+                                                color: Colors.grey.shade500,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                _formatTimestamp(
+                                                    msg['created_at']),
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.grey.shade600,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                          ],
                         ),
                       ),
                     ),
-                ],
-              ),
+                  ),
+                );
+              },
             ),
     );
   }

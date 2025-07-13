@@ -151,9 +151,12 @@ class _ViewTeacherHomeworkPageState extends State<ViewTeacherHomeworkPage> {
   }
 
   Widget _buildHomeworkItem(dynamic hw) {
-    final startDate =
-        DateTime.tryParse(hw['start_date'] ?? '') ?? DateTime.now();
-    final endDate = DateTime.tryParse(hw['end_date'] ?? '') ?? DateTime.now();
+    final startDate = hw['start_date'] != null
+        ? DateTime.parse(hw['start_date']).toLocal()
+        : DateTime.now();
+    final endDate = hw['end_date'] != null
+        ? DateTime.parse(hw['end_date']).toLocal()
+        : DateTime.now();
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),

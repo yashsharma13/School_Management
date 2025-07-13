@@ -8,6 +8,8 @@ import 'package:sms/widgets/button.dart';
 import 'package:sms/widgets/custom_appbar.dart';
 import 'package:sms/widgets/custom_snackbar.dart';
 import 'package:sms/widgets/class_section_selector.dart';
+import 'package:sms/models/teacher_model.dart';
+import 'package:sms/pages/services/teacher_service.dart';
 
 class AssignTeacherPage extends StatefulWidget {
   const AssignTeacherPage({super.key});
@@ -54,27 +56,7 @@ class _AssignTeacherPageState extends State<AssignTeacherPage> {
   Future<void> fetchTeachers() async {
     setState(() => isFetchingTeachers = true);
     try {
-      final resp = await http.get(
-        Uri.parse('$baseUrl/api/teachers'),
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-      if (resp.statusCode == 200) {
-        final data = json.decode(resp.body) as List;
-        teachers = data
-            .map((e) => Teacher(
-                  id: e['id'].toString(),
-                  name: e['teacher_name'] ?? 'Unknown',
-                ))
-            .toList();
-      } else if (resp.statusCode == 401) {
-        _signOut();
-        _showError('Session expired.');
-      } else {
-        _showError('Failed to fetch teachers.');
-      }
+      teachers = await TeacherService.fetchTeachers();
     } catch (e) {
       _showError('Error: $e');
     } finally {
@@ -123,68 +105,6 @@ class _AssignTeacherPageState extends State<AssignTeacherPage> {
     }
   }
 
-  void _signOut() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('token');
-    setState(() => token = null);
-  }
-
-  // Future<void> _submitForm() async {
-  //   if (!_formKey.currentState!.validate()) return;
-
-  //   if (selectedTeacher == null ||
-  //       selectedClass == null ||
-  //       selectedSection == null ||
-  //       selectedSubjectIds.isEmpty) {
-  //     _showError('Please complete all fields.');
-  //     return;
-  //   }
-
-  //   setState(() => isLoading = true);
-
-  //   try {
-  //     final resp = await http.post(
-  //       Uri.parse('$baseUrl/api/assign-teacher'),
-  //       headers: {
-  //         'Accept': 'application/json',
-  //         'Content-Type': 'application/json',
-  //         'Authorization': 'Bearer $token',
-  //       },
-  //       body: jsonEncode({
-  //         'teacher_id': selectedTeacher!.id,
-  //         'class_id': selectedClass!.id,
-  //         'section': selectedSection,
-  //         'subject_ids': selectedSubjectIds,
-  //       }),
-  //     );
-
-  //     if (resp.statusCode == 200 || resp.statusCode == 201) {
-  //       if (!mounted) return;
-  //       showCustomSnackBar(
-  //         context,
-  //         'Teacher assigned successfully!',
-  //         backgroundColor: Colors.green,
-  //       );
-
-  //       setState(() {
-  //         selectedTeacher = null;
-  //         selectedClass = null;
-  //         selectedSection = null;
-  //         selectedSubjectIds = [];
-  //         subjects = [];
-  //       });
-  //     } else {
-  //       _showError('Fail to assign teacher. ${resp.statusCode}');
-  //       // _showError('This subject is already Assigned.');
-  //     }
-  //   } catch (e) {
-  //     _showError('Error: $e');
-  //   } finally {
-  //     if (mounted) {
-  //       setState(() => isLoading = false);
-  //     }
-  //   }
-  // }
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -240,6 +160,7 @@ class _AssignTeacherPageState extends State<AssignTeacherPage> {
           }
         } catch (_) {
           // Use default error message if parsing fails
+          'Already assigned this subject to another teacher';
         }
 
         _showError(errorMessage);
@@ -344,11 +265,6 @@ class _AssignTeacherPageState extends State<AssignTeacherPage> {
       ),
     );
   }
-}
-
-class Teacher {
-  final String id, name;
-  Teacher({required this.id, required this.name});
 }
 
 class Subject {

@@ -241,6 +241,12 @@ class _TeacherProfileManagementPageState
                   ),
                 ),
                 Text(
+                  'Phone: ${teacher.phone}',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                  ),
+                ),
+                Text(
                   'Qualification: ${teacher.qualification}',
                   style: TextStyle(
                     color: Colors.grey[600],

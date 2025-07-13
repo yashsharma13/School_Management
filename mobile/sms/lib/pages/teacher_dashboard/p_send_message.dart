@@ -137,160 +137,322 @@ class _SendMessagePageState extends State<SendMessagePage> {
       appBar: CustomAppBar(
         title: 'Send Messages',
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: _initialLoading
-            ? const Center(child: CircularProgressIndicator())
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (_error != null)
-                    Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.errorContainer,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      padding: const EdgeInsets.all(12),
-                      margin: const EdgeInsets.only(bottom: 16),
-                      child: Text(
-                        _error!,
-                        style: TextStyle(
-                            color: theme.colorScheme.onErrorContainer),
-                      ),
-                    ),
-                  if (!_initialLoading) ...[
-                    Card(
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            _buildClassInfoItem(
-                              icon: Icons.school,
-                              label: 'Class',
-                              value: _selectedClass ?? "-",
-                              theme: theme,
+      // body: Padding(
+      //   padding: const EdgeInsets.all(16),
+      //   child: _initialLoading
+      //       ? const Center(child: CircularProgressIndicator())
+      //       : Column(
+      //           crossAxisAlignment: CrossAxisAlignment.start,
+      //           children: [
+      //             if (_error != null)
+      //               Container(
+      //                 width: double.infinity,
+      //                 decoration: BoxDecoration(
+      //                   color: theme.colorScheme.errorContainer,
+      //                   borderRadius: BorderRadius.circular(8),
+      //                 ),
+      //                 padding: const EdgeInsets.all(12),
+      //                 margin: const EdgeInsets.only(bottom: 16),
+      //                 child: Text(
+      //                   _error!,
+      //                   style: TextStyle(
+      //                       color: theme.colorScheme.onErrorContainer),
+      //                 ),
+      //               ),
+      //             if (!_initialLoading) ...[
+      //               Card(
+      //                 elevation: 2,
+      //                 shape: RoundedRectangleBorder(
+      //                   borderRadius: BorderRadius.circular(12),
+      //                 ),
+      //                 child: Padding(
+      //                   padding: const EdgeInsets.all(16),
+      //                   child: Row(
+      //                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      //                     children: [
+      //                       _buildClassInfoItem(
+      //                         icon: Icons.school,
+      //                         label: 'Class',
+      //                         value: _selectedClass ?? "-",
+      //                         theme: theme,
+      //                       ),
+      //                       Container(
+      //                         height: 40,
+      //                         width: 1,
+      //                         color: theme.dividerColor,
+      //                       ),
+      //                       _buildClassInfoItem(
+      //                         icon: Icons.group,
+      //                         label: 'Section',
+      //                         value: _selectedSection ?? "-",
+      //                         theme: theme,
+      //                       ),
+      //                     ],
+      //                   ),
+      //                 ),
+      //               ),
+      //               const SizedBox(height: 20),
+      //               Text(
+      //                 'Search Students',
+      //                 style: theme.textTheme.titleMedium?.copyWith(
+      //                   fontWeight: FontWeight.w600,
+      //                 ),
+      //               ),
+      //               const SizedBox(height: 8),
+      //               TextField(
+      //                 decoration: InputDecoration(
+      //                   labelText: 'Search by name',
+      //                   prefixIcon: const Icon(Icons.search),
+      //                   border: OutlineInputBorder(
+      //                     borderRadius: BorderRadius.circular(10),
+      //                     // filled: true,
+      //                     // fillColor: theme.cardTheme.color,
+      //                   ),
+      //                 ),
+      //                 onChanged: (v) => setState(() => _search = v),
+      //               ),
+      //               const SizedBox(height: 20),
+      //               Text(
+      //                 'Students List',
+      //                 style: theme.textTheme.titleMedium?.copyWith(
+      //                   fontWeight: FontWeight.w600,
+      //                 ),
+      //               ),
+      //               const SizedBox(height: 8),
+      //               Expanded(
+      //                 child: filtered.isEmpty
+      //                     ? Center(
+      //                         child: Column(
+      //                           mainAxisAlignment: MainAxisAlignment.center,
+      //                           children: [
+      //                             Icon(
+      //                               Icons.people_outline,
+      //                               size: 60,
+      //                               color: theme.disabledColor,
+      //                             ),
+      //                             const SizedBox(height: 16),
+      //                             Text(
+      //                               'No students found',
+      //                               style: theme.textTheme.bodyLarge?.copyWith(
+      //                                 color: theme.disabledColor,
+      //                               ),
+      //                             ),
+      //                           ],
+      //                         ),
+      //                       )
+      //                     : ListView.separated(
+      //                         itemCount: filtered.length,
+      //                         separatorBuilder: (_, i) =>
+      //                             const Divider(height: 1),
+      //                         itemBuilder: (_, i) {
+      //                           final s = filtered[i];
+      //                           return Card(
+      //                             elevation: 1,
+      //                             margin: EdgeInsets.zero,
+      //                             shape: RoundedRectangleBorder(
+      //                               borderRadius: BorderRadius.circular(8),
+      //                             ),
+      //                             child: ListTile(
+      //                               contentPadding: const EdgeInsets.symmetric(
+      //                                   horizontal: 16, vertical: 8),
+      //                               leading: CircleAvatar(
+      //                                 backgroundColor:
+      //                                     theme.primaryColor.withAlpha(51),
+      //                                 child: Text(
+      //                                   s.name[0].toUpperCase(),
+      //                                   style: TextStyle(
+      //                                     color: theme.primaryColor,
+      //                                     fontWeight: FontWeight.bold,
+      //                                   ),
+      //                                 ),
+      //                               ),
+      //                               title: Text(
+      //                                 s.name,
+      //                                 style: const TextStyle(
+      //                                   fontWeight: FontWeight.w500,
+      //                                 ),
+      //                               ),
+      //                               subtitle: Text(
+      //                                 '${s.assignedClass} - ${s.assignedSection}',
+      //                                 style: theme.textTheme.bodySmall,
+      //                               ),
+      //                               trailing: Icon(
+      //                                 Icons.arrow_forward_ios,
+      //                                 size: 16,
+      //                                 color: theme.disabledColor,
+      //                               ),
+      //                               onTap: () => _onStudentTap(s),
+      //                             ),
+      //                           );
+      //                         },
+      //                       ),
+      //               ),
+      //             ],
+      //           ],
+      //         ),
+      // ),
+      body: _initialLoading
+          ? const Center(child: CircularProgressIndicator())
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: ConstrainedBox(
+                    constraints:
+                        BoxConstraints(minHeight: constraints.maxHeight),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (_error != null)
+                          Container(
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.errorContainer,
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            Container(
-                              height: 40,
-                              width: 1,
-                              color: theme.dividerColor,
+                            padding: const EdgeInsets.all(12),
+                            margin: const EdgeInsets.only(bottom: 16),
+                            child: Text(
+                              _error!,
+                              style: TextStyle(
+                                  color: theme.colorScheme.onErrorContainer),
                             ),
-                            _buildClassInfoItem(
-                              icon: Icons.group,
-                              label: 'Section',
-                              value: _selectedSection ?? "-",
-                              theme: theme,
+                          ),
+                        Card(
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                _buildClassInfoItem(
+                                  icon: Icons.school,
+                                  label: 'Class',
+                                  value: _selectedClass ?? "-",
+                                  theme: theme,
+                                ),
+                                Container(
+                                  height: 40,
+                                  width: 1,
+                                  color: theme.dividerColor,
+                                ),
+                                _buildClassInfoItem(
+                                  icon: Icons.group,
+                                  label: 'Section',
+                                  value: _selectedSection ?? "-",
+                                  theme: theme,
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'Search Students',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      decoration: InputDecoration(
-                        labelText: 'Search by name',
-                        prefixIcon: const Icon(Icons.search),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          // filled: true,
-                          // fillColor: theme.cardTheme.color,
+                        const SizedBox(height: 20),
+                        Text(
+                          'Search Students',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                      onChanged: (v) => setState(() => _search = v),
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'Students List',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Expanded(
-                      child: filtered.isEmpty
-                          ? Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.people_outline,
-                                    size: 60,
-                                    color: theme.disabledColor,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'No students found',
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      color: theme.disabledColor,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : ListView.separated(
-                              itemCount: filtered.length,
-                              separatorBuilder: (_, i) =>
-                                  const Divider(height: 1),
-                              itemBuilder: (_, i) {
-                                final s = filtered[i];
-                                return Card(
-                                  elevation: 1,
-                                  margin: EdgeInsets.zero,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: ListTile(
-                                    contentPadding: const EdgeInsets.symmetric(
-                                        horizontal: 16, vertical: 8),
-                                    leading: CircleAvatar(
-                                      backgroundColor:
-                                          theme.primaryColor.withAlpha(51),
-                                      child: Text(
-                                        s.name[0].toUpperCase(),
-                                        style: TextStyle(
-                                          color: theme.primaryColor,
-                                          fontWeight: FontWeight.bold,
+                        const SizedBox(height: 8),
+                        TextField(
+                          decoration: InputDecoration(
+                            labelText: 'Search by name',
+                            prefixIcon: const Icon(Icons.search),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          onChanged: (v) => setState(() => _search = v),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          'Students List',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        filtered.isEmpty
+                            ? Padding(
+                                padding: const EdgeInsets.only(top: 60),
+                                child: Center(
+                                  child: Column(
+                                    children: [
+                                      Icon(
+                                        Icons.people_outline,
+                                        size: 60,
+                                        color: theme.disabledColor,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        'No students found',
+                                        style:
+                                            theme.textTheme.bodyLarge?.copyWith(
+                                          color: theme.disabledColor,
                                         ),
                                       ),
-                                    ),
-                                    title: Text(
-                                      s.name,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    subtitle: Text(
-                                      '${s.assignedClass} - ${s.assignedSection}',
-                                      style: theme.textTheme.bodySmall,
-                                    ),
-                                    trailing: Icon(
-                                      Icons.arrow_forward_ios,
-                                      size: 16,
-                                      color: theme.disabledColor,
-                                    ),
-                                    onTap: () => _onStudentTap(s),
+                                    ],
                                   ),
-                                );
-                              },
-                            ),
+                                ),
+                              )
+                            : ListView.separated(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: filtered.length,
+                                separatorBuilder: (_, i) =>
+                                    const Divider(height: 1),
+                                itemBuilder: (_, i) {
+                                  final s = filtered[i];
+                                  return Card(
+                                    elevation: 1,
+                                    margin: EdgeInsets.zero,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: ListTile(
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                              horizontal: 16, vertical: 8),
+                                      leading: CircleAvatar(
+                                        backgroundColor:
+                                            theme.primaryColor.withAlpha(51),
+                                        child: Text(
+                                          s.name[0].toUpperCase(),
+                                          style: TextStyle(
+                                            color: theme.primaryColor,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      title: Text(
+                                        s.name,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      subtitle: Text(
+                                        '${s.assignedClass} - ${s.assignedSection}',
+                                        style: theme.textTheme.bodySmall,
+                                      ),
+                                      trailing: Icon(
+                                        Icons.arrow_forward_ios,
+                                        size: 16,
+                                        color: theme.disabledColor,
+                                      ),
+                                      onTap: () => _onStudentTap(s),
+                                    ),
+                                  );
+                                },
+                              ),
+                      ],
                     ),
-                  ],
-                ],
-              ),
-      ),
+                  ),
+                );
+              },
+            ),
     );
   }
 

@@ -252,253 +252,524 @@ class _FeeCollectPageState extends State<FeeCollectPage> {
     });
   }
 
+  // @override
+  // Widget build(BuildContext context) {
+  //   final deepPurpleTheme = Colors.deepPurple.shade900;
+  //   return Scaffold(
+  //     backgroundColor: Colors.grey.shade100,
+  //     appBar: const CustomAppBar(
+  //       title: 'Collect Fee',
+  //     ),
+  //     body: Padding(
+  //       padding: const EdgeInsets.all(16.0),
+  //       child: Column(
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: [
+  //           Card(
+  //             elevation: 4,
+  //             shape: RoundedRectangleBorder(
+  //               borderRadius: BorderRadius.circular(12),
+  //             ),
+  //             child: Padding(
+  //               padding: const EdgeInsets.all(16.0),
+  //               child: Column(
+  //                 crossAxisAlignment: CrossAxisAlignment.start,
+  //                 children: [
+  //                   Text(
+  //                     'Filter Students',
+  //                     style: TextStyle(
+  //                       fontSize: 18,
+  //                       fontWeight: FontWeight.bold,
+  //                       color: deepPurpleTheme,
+  //                     ),
+  //                   ),
+  //                   const SizedBox(height: 12),
+  //                   ClassSectionSelector(
+  //                     onSelectionChanged: (ClassModel? cls, String? sec) {
+  //                       setState(() {
+  //                         selectedClass = cls;
+  //                         selectedSection = sec;
+  //                         students = [];
+  //                         filteredStudents = [];
+  //                         if (cls != null) {
+  //                           _fetchStudents();
+  //                         }
+  //                       });
+  //                     },
+  //                     initialClass: selectedClass,
+  //                     initialSection: selectedSection,
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
+  //           ),
+  //           const SizedBox(height: 16),
+  //           if (selectedClass != null)
+  //             Card(
+  //               elevation: 4,
+  //               shape: RoundedRectangleBorder(
+  //                 borderRadius: BorderRadius.circular(12),
+  //               ),
+  //               child: TextField(
+  //                 controller: searchController,
+  //                 decoration: InputDecoration(
+  //                   labelText: 'Search Student',
+  //                   labelStyle: TextStyle(color: deepPurpleTheme),
+  //                   prefixIcon: Icon(Icons.search, color: deepPurpleTheme),
+  //                   border: InputBorder.none,
+  //                   contentPadding: const EdgeInsets.symmetric(
+  //                       horizontal: 16, vertical: 14),
+  //                   filled: true,
+  //                   fillColor: Colors.deepPurple.shade50,
+  //                 ),
+  //                 style: TextStyle(color: deepPurpleTheme, fontSize: 14),
+  //               ),
+  //             ),
+  //           const SizedBox(height: 16),
+  //           if (selectedClass != null)
+  //             Text(
+  //               'Students',
+  //               style: TextStyle(
+  //                 fontSize: 18,
+  //                 fontWeight: FontWeight.bold,
+  //                 color: deepPurpleTheme,
+  //               ),
+  //             ),
+  //           const SizedBox(height: 8),
+  //           Expanded(
+  //             child: isLoadingStudents
+  //                 ? Center(
+  //                     child: CircularProgressIndicator(
+  //                       color: deepPurpleTheme,
+  //                     ),
+  //                   )
+  //                 : selectedClass == null
+  //                     ? Center(
+  //                         child: Column(
+  //                           mainAxisAlignment: MainAxisAlignment.center,
+  //                           children: [
+  //                             Icon(
+  //                               Icons.school,
+  //                               color: deepPurpleTheme,
+  //                               size: 48,
+  //                             ),
+  //                             const SizedBox(height: 16),
+  //                             Text(
+  //                               'Please select a class to view students',
+  //                               style: TextStyle(
+  //                                 fontSize: 16,
+  //                                 color: Colors.grey.shade600,
+  //                               ),
+  //                             ),
+  //                           ],
+  //                         ),
+  //                       )
+  //                     : filteredStudents.isEmpty
+  //                         ? Center(
+  //                             child: Column(
+  //                               mainAxisAlignment: MainAxisAlignment.center,
+  //                               children: [
+  //                                 Icon(
+  //                                   selectedSection == null
+  //                                       ? Icons.people_outline
+  //                                       : Icons.filter_alt_outlined,
+  //                                   color: deepPurpleTheme,
+  //                                   size: 48,
+  //                                 ),
+  //                                 const SizedBox(height: 16),
+  //                                 Text(
+  //                                   selectedSection == null
+  //                                       ? 'No students found in this class'
+  //                                       : 'No students found in this section',
+  //                                   style: TextStyle(
+  //                                     fontSize: 16,
+  //                                     color: Colors.grey.shade600,
+  //                                   ),
+  //                                 ),
+  //                               ],
+  //                             ),
+  //                           )
+  //                         : ListView.separated(
+  //                             itemCount: filteredStudents.length,
+  //                             separatorBuilder: (context, index) =>
+  //                                 const SizedBox(height: 8),
+  //                             itemBuilder: (context, index) {
+  //                               final student = filteredStudents[index];
+  //                               return Card(
+  //                                 elevation: 3,
+  //                                 shape: RoundedRectangleBorder(
+  //                                   borderRadius: BorderRadius.circular(12),
+  //                                 ),
+  //                                 child: ListTile(
+  //                                   leading: CircleAvatar(
+  //                                     backgroundColor:
+  //                                         Colors.deepPurple.shade50,
+  //                                     child: Icon(
+  //                                       Icons.person,
+  //                                       color: deepPurpleTheme,
+  //                                       size: 20,
+  //                                     ),
+  //                                   ),
+  //                                   title: Text(
+  //                                     student.name,
+  //                                     style: TextStyle(
+  //                                       fontWeight: FontWeight.w600,
+  //                                       color: deepPurpleTheme,
+  //                                       fontSize: 16,
+  //                                     ),
+  //                                   ),
+  //                                   subtitle: Text(
+  //                                     'Class: ${student.className} • Section: ${student.section}',
+  //                                     style: TextStyle(
+  //                                       color: Colors.grey.shade600,
+  //                                       fontSize: 13,
+  //                                     ),
+  //                                   ),
+  //                                   trailing: Container(
+  //                                     padding: const EdgeInsets.all(6),
+  //                                     decoration: BoxDecoration(
+  //                                       color: Colors.deepPurple.shade50,
+  //                                       shape: BoxShape.circle,
+  //                                     ),
+  //                                     child: Icon(
+  //                                       Icons.arrow_forward,
+  //                                       color: deepPurpleTheme,
+  //                                       size: 20,
+  //                                     ),
+  //                                   ),
+  //                                   onTap: () async {
+  //                                     // Show loading dialog
+  //                                     showDialog(
+  //                                       context: context,
+  //                                       barrierDismissible: false,
+  //                                       builder: (context) => Center(
+  //                                         child: CircularProgressIndicator(
+  //                                             color: deepPurpleTheme),
+  //                                       ),
+  //                                     );
+
+  //                                     final feeData =
+  //                                         await _fetchStudentFeeData(student);
+  //                                     if (context.mounted) {
+  //                                       // Dismiss loading dialog
+  //                                       Navigator.pop(context);
+  //                                     }
+  //                                     if (context.mounted) {
+  //                                       Navigator.push(
+  //                                         context,
+  //                                         PageRouteBuilder(
+  //                                           pageBuilder: (context, animation,
+  //                                                   secondaryAnimation) =>
+  //                                               FeesCollectionPage(
+  //                                             studentId: student.id,
+  //                                             studentName: student.name,
+  //                                             studentClass: student.className,
+  //                                             studentSection: student.section,
+  //                                             isNewAdmission: false,
+  //                                             preloadedData: feeData,
+  //                                           ),
+  //                                           transitionsBuilder: (context,
+  //                                               animation,
+  //                                               secondaryAnimation,
+  //                                               child) {
+  //                                             const begin = Offset(1.0, 0.0);
+  //                                             const end = Offset.zero;
+  //                                             const curve = Curves.easeInOut;
+  //                                             var tween = Tween(
+  //                                                     begin: begin, end: end)
+  //                                                 .chain(
+  //                                                     CurveTween(curve: curve));
+  //                                             return SlideTransition(
+  //                                               position:
+  //                                                   animation.drive(tween),
+  //                                               child: child,
+  //                                             );
+  //                                           },
+  //                                           transitionDuration: const Duration(
+  //                                               milliseconds: 300),
+  //                                         ),
+  //                                       );
+  //                                     }
+  //                                   },
+  //                                   contentPadding: const EdgeInsets.symmetric(
+  //                                       horizontal: 16, vertical: 12),
+  //                                 ),
+  //                               );
+  //                             },
+  //                           ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
   @override
   Widget build(BuildContext context) {
     final deepPurpleTheme = Colors.deepPurple.shade900;
+    // Get screen height for responsive design
+    final screenHeight = MediaQuery.of(context).size.height;
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
+
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: const CustomAppBar(
         title: 'Collect Fee',
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Filter Students',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: deepPurpleTheme,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    ClassSectionSelector(
-                      onSelectionChanged: (ClassModel? cls, String? sec) {
-                        setState(() {
-                          selectedClass = cls;
-                          selectedSection = sec;
-                          students = [];
-                          filteredStudents = [];
-                          if (cls != null) {
-                            _fetchStudents();
-                          }
-                        });
-                      },
-                      initialClass: selectedClass,
-                      initialSection: selectedSection,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            if (selectedClass != null)
+      body: SingleChildScrollView(
+        // Wrap content in SingleChildScrollView
+        child: Padding(
+          padding: EdgeInsets.all(
+              isLandscape ? 8.0 : 16.0), // Adjust padding for landscape
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Card(
                 elevation: 4,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: TextField(
-                  controller: searchController,
-                  decoration: InputDecoration(
-                    labelText: 'Search Student',
-                    labelStyle: TextStyle(color: deepPurpleTheme),
-                    prefixIcon: Icon(Icons.search, color: deepPurpleTheme),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
-                    filled: true,
-                    fillColor: Colors.deepPurple.shade50,
-                  ),
-                  style: TextStyle(color: deepPurpleTheme, fontSize: 14),
-                ),
-              ),
-            const SizedBox(height: 16),
-            if (selectedClass != null)
-              Text(
-                'Students',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: deepPurpleTheme,
-                ),
-              ),
-            const SizedBox(height: 8),
-            Expanded(
-              child: isLoadingStudents
-                  ? Center(
-                      child: CircularProgressIndicator(
-                        color: deepPurpleTheme,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Filter Students',
+                        style: TextStyle(
+                          fontSize: isLandscape
+                              ? 16
+                              : 18, // Smaller font in landscape
+                          fontWeight: FontWeight.bold,
+                          color: deepPurpleTheme,
+                        ),
                       ),
-                    )
-                  : selectedClass == null
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.school,
-                                color: deepPurpleTheme,
-                                size: 48,
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Please select a class to view students',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey.shade600,
+                      const SizedBox(height: 12),
+                      ClassSectionSelector(
+                        onSelectionChanged: (ClassModel? cls, String? sec) {
+                          setState(() {
+                            selectedClass = cls;
+                            selectedSection = sec;
+                            students = [];
+                            filteredStudents = [];
+                            if (cls != null) {
+                              _fetchStudents();
+                            }
+                          });
+                        },
+                        initialClass: selectedClass,
+                        initialSection: selectedSection,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (selectedClass != null)
+                Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: TextField(
+                    controller: searchController,
+                    decoration: InputDecoration(
+                      labelText: 'Search Student',
+                      labelStyle: TextStyle(color: deepPurpleTheme),
+                      prefixIcon: Icon(Icons.search, color: deepPurpleTheme),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
+                      filled: true,
+                      fillColor: Colors.deepPurple.shade50,
+                    ),
+                    style: TextStyle(
+                        color: deepPurpleTheme,
+                        fontSize: isLandscape ? 12 : 14),
+                  ),
+                ),
+              const SizedBox(height: 16),
+              if (selectedClass != null)
+                Text(
+                  'Students',
+                  style: TextStyle(
+                    fontSize: isLandscape ? 16 : 18,
+                    fontWeight: FontWeight.bold,
+                    color: deepPurpleTheme,
+                  ),
+                ),
+              const SizedBox(height: 8),
+              SizedBox(
+                // Constrain ListView height dynamically
+                height: isLandscape
+                    ? screenHeight * 0.5 // Smaller height in landscape
+                    : screenHeight * 0.6, // Larger height in portrait
+                child: isLoadingStudents
+                    ? Center(
+                        child: CircularProgressIndicator(
+                          color: deepPurpleTheme,
+                        ),
+                      )
+                    : selectedClass == null
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.school,
+                                  color: deepPurpleTheme,
+                                  size: isLandscape ? 36 : 48,
                                 ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : filteredStudents.isEmpty
-                          ? Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    selectedSection == null
-                                        ? Icons.people_outline
-                                        : Icons.filter_alt_outlined,
-                                    color: deepPurpleTheme,
-                                    size: 48,
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Please select a class to view students',
+                                  style: TextStyle(
+                                    fontSize: isLandscape ? 14 : 16,
+                                    color: Colors.grey.shade600,
                                   ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    selectedSection == null
-                                        ? 'No students found in this class'
-                                        : 'No students found in this section',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.grey.shade600,
+                                ),
+                              ],
+                            ),
+                          )
+                        : filteredStudents.isEmpty
+                            ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      selectedSection == null
+                                          ? Icons.people_outline
+                                          : Icons.filter_alt_outlined,
+                                      color: deepPurpleTheme,
+                                      size: isLandscape ? 36 : 48,
                                     ),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : ListView.separated(
-                              itemCount: filteredStudents.length,
-                              separatorBuilder: (context, index) =>
-                                  const SizedBox(height: 8),
-                              itemBuilder: (context, index) {
-                                final student = filteredStudents[index];
-                                return Card(
-                                  elevation: 3,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: ListTile(
-                                    leading: CircleAvatar(
-                                      backgroundColor:
-                                          Colors.deepPurple.shade50,
-                                      child: Icon(
-                                        Icons.person,
-                                        color: deepPurpleTheme,
-                                        size: 20,
-                                      ),
-                                    ),
-                                    title: Text(
-                                      student.name,
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      selectedSection == null
+                                          ? 'No students found in this class'
+                                          : 'No students found in this section',
                                       style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        color: deepPurpleTheme,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                    subtitle: Text(
-                                      'Class: ${student.className} • Section: ${student.section}',
-                                      style: TextStyle(
+                                        fontSize: isLandscape ? 14 : 16,
                                         color: Colors.grey.shade600,
-                                        fontSize: 13,
                                       ),
                                     ),
-                                    trailing: Container(
-                                      padding: const EdgeInsets.all(6),
-                                      decoration: BoxDecoration(
-                                        color: Colors.deepPurple.shade50,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(
-                                        Icons.arrow_forward,
-                                        color: deepPurpleTheme,
-                                        size: 20,
-                                      ),
+                                  ],
+                                ),
+                              )
+                            : ListView.separated(
+                                itemCount: filteredStudents.length,
+                                separatorBuilder: (context, index) =>
+                                    const SizedBox(height: 8),
+                                itemBuilder: (context, index) {
+                                  final student = filteredStudents[index];
+                                  return Card(
+                                    elevation: 3,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
-                                    onTap: () async {
-                                      // Show loading dialog
-                                      showDialog(
-                                        context: context,
-                                        barrierDismissible: false,
-                                        builder: (context) => Center(
-                                          child: CircularProgressIndicator(
-                                              color: deepPurpleTheme),
+                                    child: ListTile(
+                                      leading: CircleAvatar(
+                                        backgroundColor:
+                                            Colors.deepPurple.shade50,
+                                        child: Icon(
+                                          Icons.person,
+                                          color: deepPurpleTheme,
+                                          size: isLandscape ? 16 : 20,
                                         ),
-                                      );
-
-                                      final feeData =
-                                          await _fetchStudentFeeData(student);
-                                      if (context.mounted) {
-                                        // Dismiss loading dialog
-                                        Navigator.pop(context);
-                                      }
-                                      if (context.mounted) {
-                                        Navigator.push(
-                                          context,
-                                          PageRouteBuilder(
-                                            pageBuilder: (context, animation,
-                                                    secondaryAnimation) =>
-                                                FeesCollectionPage(
-                                              studentId: student.id,
-                                              studentName: student.name,
-                                              studentClass: student.className,
-                                              studentSection: student.section,
-                                              isNewAdmission: false,
-                                              preloadedData: feeData,
-                                            ),
-                                            transitionsBuilder: (context,
-                                                animation,
-                                                secondaryAnimation,
-                                                child) {
-                                              const begin = Offset(1.0, 0.0);
-                                              const end = Offset.zero;
-                                              const curve = Curves.easeInOut;
-                                              var tween = Tween(
-                                                      begin: begin, end: end)
-                                                  .chain(
-                                                      CurveTween(curve: curve));
-                                              return SlideTransition(
-                                                position:
-                                                    animation.drive(tween),
-                                                child: child,
-                                              );
-                                            },
-                                            transitionDuration: const Duration(
-                                                milliseconds: 300),
+                                      ),
+                                      title: Text(
+                                        student.name,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          color: deepPurpleTheme,
+                                          fontSize: isLandscape ? 14 : 16,
+                                        ),
+                                      ),
+                                      subtitle: Text(
+                                        'Class: ${student.className} • Section: ${student.section}',
+                                        style: TextStyle(
+                                          color: Colors.grey.shade600,
+                                          fontSize: isLandscape ? 11 : 13,
+                                        ),
+                                      ),
+                                      trailing: Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          color: Colors.deepPurple.shade50,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Icon(
+                                          Icons.arrow_forward,
+                                          color: deepPurpleTheme,
+                                          size: isLandscape ? 16 : 20,
+                                        ),
+                                      ),
+                                      onTap: () async {
+                                        // Show loading dialog
+                                        showDialog(
+                                          context: context,
+                                          barrierDismissible: false,
+                                          builder: (context) => Center(
+                                            child: CircularProgressIndicator(
+                                                color: deepPurpleTheme),
                                           ),
                                         );
-                                      }
-                                    },
-                                    contentPadding: const EdgeInsets.symmetric(
-                                        horizontal: 16, vertical: 12),
-                                  ),
-                                );
-                              },
-                            ),
-            ),
-          ],
+
+                                        final feeData =
+                                            await _fetchStudentFeeData(student);
+                                        if (context.mounted) {
+                                          // Dismiss loading dialog
+                                          Navigator.pop(context);
+                                        }
+                                        if (context.mounted) {
+                                          Navigator.push(
+                                            context,
+                                            PageRouteBuilder(
+                                              pageBuilder: (context, animation,
+                                                      secondaryAnimation) =>
+                                                  FeesCollectionPage(
+                                                studentId: student.id,
+                                                studentName: student.name,
+                                                studentClass: student.className,
+                                                studentSection: student.section,
+                                                isNewAdmission: false,
+                                                preloadedData: feeData,
+                                              ),
+                                              transitionsBuilder: (context,
+                                                  animation,
+                                                  secondaryAnimation,
+                                                  child) {
+                                                const begin = Offset(1.0, 0.0);
+                                                const end = Offset.zero;
+                                                const curve = Curves.easeInOut;
+                                                var tween = Tween(
+                                                        begin: begin, end: end)
+                                                    .chain(CurveTween(
+                                                        curve: curve));
+                                                return SlideTransition(
+                                                  position:
+                                                      animation.drive(tween),
+                                                  child: child,
+                                                );
+                                              },
+                                              transitionDuration:
+                                                  const Duration(
+                                                      milliseconds: 300),
+                                            ),
+                                          );
+                                        }
+                                      },
+                                      contentPadding: EdgeInsets.symmetric(
+                                        horizontal: isLandscape ? 8 : 16,
+                                        vertical: isLandscape ? 8 : 12,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -165,11 +165,12 @@ class _AddClassPageState extends State<AddClassPage> {
       } catch (error) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: $error'),
+            content: Text(error.toString().replaceFirst('Exception: ', '')),
             backgroundColor: Colors.red[400],
             behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
         );
       } finally {

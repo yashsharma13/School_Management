@@ -112,7 +112,7 @@ class _ViewSentMessagesPageState extends State<ViewSentMessagesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(title: 'Sent Messages'),
+      appBar: CustomAppBar(title: 'View Send Messages'),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: _isLoading
