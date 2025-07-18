@@ -7,8 +7,6 @@ import 'package:sms/pages/profile_setting/profile_setup.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sms/pages/services/auth_service.dart';
-
-import 'package:sms/pages/stud_dashboard/student_dashboard.dart';
 import 'package:sms/widgets/button.dart';
 import 'package:sms/pages/services/profile_service.dart';
 import 'package:sms/pages/teacher_dashboard/t_dashboard.dart';
@@ -102,9 +100,6 @@ class _LoginPageState extends State<LoginPage> {
     Widget dashboard;
 
     switch (role.toLowerCase()) {
-      case 'student':
-        dashboard = const StudentDashboard();
-        break;
       case 'teacher':
         dashboard = const TeacherDashboard();
         break;

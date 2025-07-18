@@ -20,8 +20,10 @@ class _FeeCollectPageState extends State<FeeCollectPage> {
   List<StudentModel> filteredStudents = [];
   bool isLoadingStudents = false;
   String? token;
-  TextEditingController searchController = TextEditingController();
+  final TextEditingController searchController = TextEditingController();
   static final String baseUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
+
+  // Caches for class IDs and fee structures
   static final Map<String, String> classIdCache = {};
   static final Map<String, List<FeeStructureModel>> feeStructureCache = {};
 
@@ -60,84 +62,75 @@ class _FeeCollectPageState extends State<FeeCollectPage> {
       filteredStudents = [];
     });
 
+    final classNameEncoded = Uri.encodeComponent(selectedClass!.className);
     try {
-      String encodedClassName = Uri.encodeComponent(selectedClass!.className);
-
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/students/$encodedClassName'),
+      final resp = await http.get(
+        Uri.parse('$baseUrl/api/students/$classNameEncoded'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
           'Authorization': token!,
         },
       );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> studentData = json.decode(response.body);
+      if (resp.statusCode == 200) {
+        final data = json.decode(resp.body) as List<dynamic>;
         setState(() {
-          students = studentData
-              .map((data) => StudentModel(
-                    id: data['_id']?.toString() ?? data['id']?.toString() ?? '',
-                    name: data['student_name']?.toString() ?? 'Unknown Student',
-                    classId: selectedClass!.id.toString(),
-                    className: selectedClass!.className,
-                    section: data['assigned_section']?.toString() ?? '',
-                  ))
-              .where((student) => student.id.isNotEmpty)
+          students = data
+              .map((d) {
+                return StudentModel(
+                  id: d['_id']?.toString() ?? d['id']?.toString() ?? '',
+                  name: d['student_name']?.toString() ?? 'Unknown Student',
+                  classId: selectedClass!.id.toString(),
+                  className: selectedClass!.className,
+                  section: d['assigned_section']?.toString() ?? '',
+                );
+              })
+              .where((s) => s.id.isNotEmpty)
               .toList();
-
           _filterStudents();
         });
       } else {
-        if (!mounted) return;
         showCustomSnackBar(
-            context, 'Failed to load students: ${response.reasonPhrase}',
+            context, 'Failed to load students: ${resp.reasonPhrase}',
             backgroundColor: Colors.red);
       }
-    } catch (error) {
-      if (!mounted) return;
-      showCustomSnackBar(context, 'Error loading students: $error',
+    } catch (e) {
+      showCustomSnackBar(context, 'Error loading students: $e',
           backgroundColor: Colors.red);
     } finally {
-      setState(() {
-        isLoadingStudents = false;
-      });
+      setState(() => isLoadingStudents = false);
     }
   }
 
-  Future<Map<String, dynamic>> _fetchStudentFeeData(
-      StudentModel student) async {
+  Future<Map<String, dynamic>> _fetchStudentFeeData(StudentModel st) async {
     final classId =
-        classIdCache[student.className] ?? await _getClassId(student.className);
-    final feeStructure =
-        feeStructureCache[student.className] ?? await _getFeeStructure(classId);
-    final paidFeeMasterIds = await _getPaidFees(student.id);
-    final previousBalance = await _getPreviousBalance(student.id);
+        classIdCache[st.className] ?? await _getClassId(st.className);
+    final feeStrList =
+        feeStructureCache[classId] ?? await _getFeeStructure(classId);
+    final paidIds = await _getPaidFees(st.id);
+    final prevBal = await _getPreviousBalance(st.id);
 
-    // Calculate total yearly fee for the student
-    double totalYearlyFee = 0.0;
-    for (var fee in feeStructure) {
-      if (!paidFeeMasterIds.contains(fee.feeMasterId.toString()) ||
-          !fee.isOneTime) {
-        double amount = double.tryParse(fee.amount) ?? 0.0;
-        totalYearlyFee += fee.isMonthly ? amount : amount;
+    double totalYearly = 0.0;
+    for (var fee in feeStrList) {
+      if (!paidIds.contains(fee.feeMasterId.toString()) || !fee.isOneTime) {
+        totalYearly += double.tryParse(fee.amount) ?? 0.0;
       }
     }
 
     return {
       'classId': classId,
-      'feeStructure': feeStructure,
-      'paidFeeMasterIds': paidFeeMasterIds,
-      'previousBalance': previousBalance,
-      'totalYearlyFee': totalYearlyFee,
+      'feeStructure': feeStrList,
+      'paidFeeMasterIds': paidIds,
+      'previousBalance': prevBal,
+      'totalYearlyFee': totalYearly,
     };
   }
 
-  Future<String> _getClassId(String className) async {
-    if (classIdCache.containsKey(className)) return classIdCache[className]!;
+  Future<String> _getClassId(String name) async {
+    if (classIdCache.containsKey(name)) return classIdCache[name]!;
 
     try {
-      final response = await http.get(
+      final resp = await http.get(
         Uri.parse('$baseUrl/api/classes'),
         headers: {
           'Accept': 'application/json',
@@ -145,35 +138,31 @@ class _FeeCollectPageState extends State<FeeCollectPage> {
           'Authorization': token!,
         },
       );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> classData = json.decode(response.body);
-        for (final data in classData) {
-          final name =
-              (data['class_name'] ?? data['className'] ?? '').toString().trim();
-          if (name.toLowerCase() == className.toLowerCase()) {
-            final id = data['id']?.toString() ?? data['class_id']?.toString();
+      if (resp.statusCode == 200) {
+        final list = json.decode(resp.body) as List<dynamic>;
+        for (var d in list) {
+          final nm =
+              (d['class_name'] ?? d['className'] ?? '').toString().trim();
+          if (nm.toLowerCase() == name.toLowerCase()) {
+            final id = d['id']?.toString() ?? d['class_id']?.toString();
             if (id != null) {
-              classIdCache[className] = id;
+              classIdCache[name] = id;
               return id;
             }
           }
         }
       }
-    } catch (error) {
-      // Fallback to class name if API fails
-    }
-    classIdCache[className] = className;
-    return className;
+    } catch (_) {}
+    classIdCache[name] = name;
+    return name;
   }
 
   Future<List<FeeStructureModel>> _getFeeStructure(String classId) async {
-    if (feeStructureCache.containsKey(classId)) {
+    if (feeStructureCache.containsKey(classId))
       return feeStructureCache[classId]!;
-    }
 
     try {
-      final response = await http.get(
+      final resp = await http.get(
         Uri.parse('$baseUrl/api/feestructure/$classId'),
         headers: {
           'Accept': 'application/json',
@@ -181,381 +170,136 @@ class _FeeCollectPageState extends State<FeeCollectPage> {
           'Authorization': token!,
         },
       );
-
-      if (response.statusCode == 200) {
-        final feeStructureData = jsonDecode(response.body);
-        List<dynamic> feeStructureList = feeStructureData is List
-            ? feeStructureData
-            : feeStructureData['data'] ?? [];
-        final feeStructure = feeStructureList
-            .map((item) => FeeStructureModel.fromJson(item))
-            .toList();
-        feeStructureCache[classId] = feeStructure;
-        return feeStructure;
+      if (resp.statusCode == 200) {
+        final decoded = json.decode(resp.body);
+        final list =
+            decoded is List ? decoded : decoded['data'] as List<dynamic>;
+        final mapped = list.map((i) => FeeStructureModel.fromJson(i)).toList();
+        feeStructureCache[classId] = mapped;
+        return mapped;
       }
-    } catch (error) {
-      // Return empty list on error
-    }
+    } catch (_) {}
     return [];
   }
 
-  Future<List<String>> _getPaidFees(String studentId) async {
+  Future<List<String>> _getPaidFees(String sid) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/fees/paid?studentId=$studentId'),
+      final resp = await http.get(
+        Uri.parse('$baseUrl/api/fees/paid?studentId=$sid'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
           'Authorization': token!,
         },
       );
-
-      if (response.statusCode == 200) {
-        return List<String>.from(jsonDecode(response.body));
+      if (resp.statusCode == 200) {
+        return List<String>.from(json.decode(resp.body));
       }
-    } catch (error) {
-      // Return empty list on error
-    }
+    } catch (_) {}
     return [];
   }
 
-  Future<double> _getPreviousBalance(String studentId) async {
+  Future<double> _getPreviousBalance(String sid) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/summary/$studentId'),
+      final resp = await http.get(
+        Uri.parse('$baseUrl/api/summary/$sid'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
           'Authorization': token!,
         },
       );
-
-      if (response.statusCode == 200) {
-        final balanceData = jsonDecode(response.body);
-        return (balanceData['data']['last_due_balance'] ?? 0).toDouble();
+      if (resp.statusCode == 200) {
+        return (json.decode(resp.body)['data']['last_due_balance'] ?? 0)
+            .toDouble();
       }
-    } catch (error) {
-      // Return 0 on error
-    }
+    } catch (_) {}
     return 0.0;
   }
 
   void _filterStudents() {
-    String searchText = searchController.text.toLowerCase();
+    final search = searchController.text.toLowerCase();
     setState(() {
-      filteredStudents = students.where((student) {
-        final nameMatch = student.name.toLowerCase().contains(searchText);
-        final sectionMatch =
-            selectedSection == null || student.section == selectedSection;
-        return nameMatch && sectionMatch;
+      filteredStudents = students.where((s) {
+        final nm = s.name.toLowerCase().contains(search);
+        final secMatch =
+            selectedSection == null || s.section == selectedSection;
+        return nm && secMatch;
       }).toList();
     });
   }
 
-  // @override
-  // Widget build(BuildContext context) {
-  //   final deepPurpleTheme = Colors.deepPurple.shade900;
-  //   return Scaffold(
-  //     backgroundColor: Colors.grey.shade100,
-  //     appBar: const CustomAppBar(
-  //       title: 'Collect Fee',
-  //     ),
-  //     body: Padding(
-  //       padding: const EdgeInsets.all(16.0),
-  //       child: Column(
-  //         crossAxisAlignment: CrossAxisAlignment.start,
-  //         children: [
-  //           Card(
-  //             elevation: 4,
-  //             shape: RoundedRectangleBorder(
-  //               borderRadius: BorderRadius.circular(12),
-  //             ),
-  //             child: Padding(
-  //               padding: const EdgeInsets.all(16.0),
-  //               child: Column(
-  //                 crossAxisAlignment: CrossAxisAlignment.start,
-  //                 children: [
-  //                   Text(
-  //                     'Filter Students',
-  //                     style: TextStyle(
-  //                       fontSize: 18,
-  //                       fontWeight: FontWeight.bold,
-  //                       color: deepPurpleTheme,
-  //                     ),
-  //                   ),
-  //                   const SizedBox(height: 12),
-  //                   ClassSectionSelector(
-  //                     onSelectionChanged: (ClassModel? cls, String? sec) {
-  //                       setState(() {
-  //                         selectedClass = cls;
-  //                         selectedSection = sec;
-  //                         students = [];
-  //                         filteredStudents = [];
-  //                         if (cls != null) {
-  //                           _fetchStudents();
-  //                         }
-  //                       });
-  //                     },
-  //                     initialClass: selectedClass,
-  //                     initialSection: selectedSection,
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-  //           ),
-  //           const SizedBox(height: 16),
-  //           if (selectedClass != null)
-  //             Card(
-  //               elevation: 4,
-  //               shape: RoundedRectangleBorder(
-  //                 borderRadius: BorderRadius.circular(12),
-  //               ),
-  //               child: TextField(
-  //                 controller: searchController,
-  //                 decoration: InputDecoration(
-  //                   labelText: 'Search Student',
-  //                   labelStyle: TextStyle(color: deepPurpleTheme),
-  //                   prefixIcon: Icon(Icons.search, color: deepPurpleTheme),
-  //                   border: InputBorder.none,
-  //                   contentPadding: const EdgeInsets.symmetric(
-  //                       horizontal: 16, vertical: 14),
-  //                   filled: true,
-  //                   fillColor: Colors.deepPurple.shade50,
-  //                 ),
-  //                 style: TextStyle(color: deepPurpleTheme, fontSize: 14),
-  //               ),
-  //             ),
-  //           const SizedBox(height: 16),
-  //           if (selectedClass != null)
-  //             Text(
-  //               'Students',
-  //               style: TextStyle(
-  //                 fontSize: 18,
-  //                 fontWeight: FontWeight.bold,
-  //                 color: deepPurpleTheme,
-  //               ),
-  //             ),
-  //           const SizedBox(height: 8),
-  //           Expanded(
-  //             child: isLoadingStudents
-  //                 ? Center(
-  //                     child: CircularProgressIndicator(
-  //                       color: deepPurpleTheme,
-  //                     ),
-  //                   )
-  //                 : selectedClass == null
-  //                     ? Center(
-  //                         child: Column(
-  //                           mainAxisAlignment: MainAxisAlignment.center,
-  //                           children: [
-  //                             Icon(
-  //                               Icons.school,
-  //                               color: deepPurpleTheme,
-  //                               size: 48,
-  //                             ),
-  //                             const SizedBox(height: 16),
-  //                             Text(
-  //                               'Please select a class to view students',
-  //                               style: TextStyle(
-  //                                 fontSize: 16,
-  //                                 color: Colors.grey.shade600,
-  //                               ),
-  //                             ),
-  //                           ],
-  //                         ),
-  //                       )
-  //                     : filteredStudents.isEmpty
-  //                         ? Center(
-  //                             child: Column(
-  //                               mainAxisAlignment: MainAxisAlignment.center,
-  //                               children: [
-  //                                 Icon(
-  //                                   selectedSection == null
-  //                                       ? Icons.people_outline
-  //                                       : Icons.filter_alt_outlined,
-  //                                   color: deepPurpleTheme,
-  //                                   size: 48,
-  //                                 ),
-  //                                 const SizedBox(height: 16),
-  //                                 Text(
-  //                                   selectedSection == null
-  //                                       ? 'No students found in this class'
-  //                                       : 'No students found in this section',
-  //                                   style: TextStyle(
-  //                                     fontSize: 16,
-  //                                     color: Colors.grey.shade600,
-  //                                   ),
-  //                                 ),
-  //                               ],
-  //                             ),
-  //                           )
-  //                         : ListView.separated(
-  //                             itemCount: filteredStudents.length,
-  //                             separatorBuilder: (context, index) =>
-  //                                 const SizedBox(height: 8),
-  //                             itemBuilder: (context, index) {
-  //                               final student = filteredStudents[index];
-  //                               return Card(
-  //                                 elevation: 3,
-  //                                 shape: RoundedRectangleBorder(
-  //                                   borderRadius: BorderRadius.circular(12),
-  //                                 ),
-  //                                 child: ListTile(
-  //                                   leading: CircleAvatar(
-  //                                     backgroundColor:
-  //                                         Colors.deepPurple.shade50,
-  //                                     child: Icon(
-  //                                       Icons.person,
-  //                                       color: deepPurpleTheme,
-  //                                       size: 20,
-  //                                     ),
-  //                                   ),
-  //                                   title: Text(
-  //                                     student.name,
-  //                                     style: TextStyle(
-  //                                       fontWeight: FontWeight.w600,
-  //                                       color: deepPurpleTheme,
-  //                                       fontSize: 16,
-  //                                     ),
-  //                                   ),
-  //                                   subtitle: Text(
-  //                                     'Class: ${student.className} • Section: ${student.section}',
-  //                                     style: TextStyle(
-  //                                       color: Colors.grey.shade600,
-  //                                       fontSize: 13,
-  //                                     ),
-  //                                   ),
-  //                                   trailing: Container(
-  //                                     padding: const EdgeInsets.all(6),
-  //                                     decoration: BoxDecoration(
-  //                                       color: Colors.deepPurple.shade50,
-  //                                       shape: BoxShape.circle,
-  //                                     ),
-  //                                     child: Icon(
-  //                                       Icons.arrow_forward,
-  //                                       color: deepPurpleTheme,
-  //                                       size: 20,
-  //                                     ),
-  //                                   ),
-  //                                   onTap: () async {
-  //                                     // Show loading dialog
-  //                                     showDialog(
-  //                                       context: context,
-  //                                       barrierDismissible: false,
-  //                                       builder: (context) => Center(
-  //                                         child: CircularProgressIndicator(
-  //                                             color: deepPurpleTheme),
-  //                                       ),
-  //                                     );
+  Future<void> _openFeePage(StudentModel st) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
 
-  //                                     final feeData =
-  //                                         await _fetchStudentFeeData(student);
-  //                                     if (context.mounted) {
-  //                                       // Dismiss loading dialog
-  //                                       Navigator.pop(context);
-  //                                     }
-  //                                     if (context.mounted) {
-  //                                       Navigator.push(
-  //                                         context,
-  //                                         PageRouteBuilder(
-  //                                           pageBuilder: (context, animation,
-  //                                                   secondaryAnimation) =>
-  //                                               FeesCollectionPage(
-  //                                             studentId: student.id,
-  //                                             studentName: student.name,
-  //                                             studentClass: student.className,
-  //                                             studentSection: student.section,
-  //                                             isNewAdmission: false,
-  //                                             preloadedData: feeData,
-  //                                           ),
-  //                                           transitionsBuilder: (context,
-  //                                               animation,
-  //                                               secondaryAnimation,
-  //                                               child) {
-  //                                             const begin = Offset(1.0, 0.0);
-  //                                             const end = Offset.zero;
-  //                                             const curve = Curves.easeInOut;
-  //                                             var tween = Tween(
-  //                                                     begin: begin, end: end)
-  //                                                 .chain(
-  //                                                     CurveTween(curve: curve));
-  //                                             return SlideTransition(
-  //                                               position:
-  //                                                   animation.drive(tween),
-  //                                               child: child,
-  //                                             );
-  //                                           },
-  //                                           transitionDuration: const Duration(
-  //                                               milliseconds: 300),
-  //                                         ),
-  //                                       );
-  //                                     }
-  //                                   },
-  //                                   contentPadding: const EdgeInsets.symmetric(
-  //                                       horizontal: 16, vertical: 12),
-  //                                 ),
-  //                               );
-  //                             },
-  //                           ),
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
+    final data = await _fetchStudentFeeData(st);
+    if (!mounted) return;
+    Navigator.pop(context);
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => FeesCollectionPage(
+          studentId: st.id,
+          studentName: st.name,
+          studentClass: st.className,
+          studentSection: st.section,
+          isNewAdmission: false,
+          preloadedData: data,
+        ),
+      ),
+    );
+
+    // 🔄 Clear caches after return
+    classIdCache.clear();
+    feeStructureCache.clear();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final deepPurpleTheme = Colors.deepPurple.shade900;
-    // Get screen height for responsive design
-    final screenHeight = MediaQuery.of(context).size.height;
+    final color = Colors.deepPurple.shade900;
+    final height = MediaQuery.of(context).size.height;
     final isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
 
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-      appBar: const CustomAppBar(
-        title: 'Collect Fee',
-      ),
+      appBar: const CustomAppBar(title: 'Collect Fee'),
       body: SingleChildScrollView(
-        // Wrap content in SingleChildScrollView
         child: Padding(
-          padding: EdgeInsets.all(
-              isLandscape ? 8.0 : 16.0), // Adjust padding for landscape
+          padding: EdgeInsets.all(isLandscape ? 8 : 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Class/Section selector
               Card(
                 elevation: 4,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                    borderRadius: BorderRadius.circular(12)),
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Filter Students',
-                        style: TextStyle(
-                          fontSize: isLandscape
-                              ? 16
-                              : 18, // Smaller font in landscape
-                          fontWeight: FontWeight.bold,
-                          color: deepPurpleTheme,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
+                      Text('Filter Students',
+                          style: TextStyle(
+                              fontSize: isLandscape ? 16 : 18,
+                              fontWeight: FontWeight.bold,
+                              color: color)),
+                      const SizedBox(height: 8),
                       ClassSectionSelector(
-                        onSelectionChanged: (ClassModel? cls, String? sec) {
+                        onSelectionChanged: (cls, sec) {
                           setState(() {
                             selectedClass = cls;
                             selectedSection = sec;
                             students = [];
                             filteredStudents = [];
-                            if (cls != null) {
-                              _fetchStudents();
-                            }
                           });
+                          if (cls != null) _fetchStudents();
                         },
                         initialClass: selectedClass,
                         initialSection: selectedSection,
@@ -566,203 +310,92 @@ class _FeeCollectPageState extends State<FeeCollectPage> {
               ),
               const SizedBox(height: 16),
               if (selectedClass != null)
-                Card(
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: TextField(
-                    controller: searchController,
-                    decoration: InputDecoration(
-                      labelText: 'Search Student',
-                      labelStyle: TextStyle(color: deepPurpleTheme),
-                      prefixIcon: Icon(Icons.search, color: deepPurpleTheme),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
-                      filled: true,
-                      fillColor: Colors.deepPurple.shade50,
-                    ),
-                    style: TextStyle(
-                        color: deepPurpleTheme,
-                        fontSize: isLandscape ? 12 : 14),
+                TextField(
+                  controller: searchController,
+                  decoration: InputDecoration(
+                    labelText: 'Search Student',
+                    prefixIcon: Icon(Icons.search, color: color),
+                    filled: true,
+                    fillColor: Colors.deepPurple.shade50,
+                    border: InputBorder.none,
                   ),
                 ),
               const SizedBox(height: 16),
               if (selectedClass != null)
-                Text(
-                  'Students',
-                  style: TextStyle(
-                    fontSize: isLandscape ? 16 : 18,
-                    fontWeight: FontWeight.bold,
-                    color: deepPurpleTheme,
-                  ),
-                ),
+                Text('Students',
+                    style: TextStyle(
+                        fontSize: isLandscape ? 16 : 18,
+                        fontWeight: FontWeight.bold,
+                        color: color)),
               const SizedBox(height: 8),
               SizedBox(
-                // Constrain ListView height dynamically
-                height: isLandscape
-                    ? screenHeight * 0.5 // Smaller height in landscape
-                    : screenHeight * 0.6, // Larger height in portrait
+                height: isLandscape ? height * 0.5 : height * 0.6,
                 child: isLoadingStudents
-                    ? Center(
-                        child: CircularProgressIndicator(
-                          color: deepPurpleTheme,
-                        ),
-                      )
+                    ? Center(child: CircularProgressIndicator(color: color))
                     : selectedClass == null
                         ? Center(
                             child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.school,
-                                  color: deepPurpleTheme,
-                                  size: isLandscape ? 36 : 48,
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'Please select a class to view students',
-                                  style: TextStyle(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.school,
+                                  color: color, size: isLandscape ? 36 : 48),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Select a class to view students',
+                                style: TextStyle(
                                     fontSize: isLandscape ? 14 : 16,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
+                                    color: Colors.grey.shade600),
+                              )
+                            ],
+                          ))
                         : filteredStudents.isEmpty
                             ? Center(
                                 child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
                                       selectedSection == null
                                           ? Icons.people_outline
                                           : Icons.filter_alt_outlined,
-                                      color: deepPurpleTheme,
-                                      size: isLandscape ? 36 : 48,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      selectedSection == null
-                                          ? 'No students found in this class'
-                                          : 'No students found in this section',
-                                      style: TextStyle(
+                                      color: color,
+                                      size: isLandscape ? 36 : 48),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    selectedSection == null
+                                        ? 'No students in this class'
+                                        : 'No students in this section',
+                                    style: TextStyle(
                                         fontSize: isLandscape ? 14 : 16,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
+                                        color: Colors.grey.shade600),
+                                  )
+                                ],
+                              ))
                             : ListView.separated(
                                 itemCount: filteredStudents.length,
-                                separatorBuilder: (context, index) =>
+                                separatorBuilder: (_, __) =>
                                     const SizedBox(height: 8),
-                                itemBuilder: (context, index) {
-                                  final student = filteredStudents[index];
+                                itemBuilder: (_, idx) {
+                                  final s = filteredStudents[idx];
                                   return Card(
                                     elevation: 3,
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
+                                        borderRadius:
+                                            BorderRadius.circular(12)),
                                     child: ListTile(
                                       leading: CircleAvatar(
-                                        backgroundColor:
-                                            Colors.deepPurple.shade50,
-                                        child: Icon(
-                                          Icons.person,
-                                          color: deepPurpleTheme,
-                                          size: isLandscape ? 16 : 20,
-                                        ),
-                                      ),
-                                      title: Text(
-                                        student.name,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          color: deepPurpleTheme,
-                                          fontSize: isLandscape ? 14 : 16,
-                                        ),
-                                      ),
+                                          child:
+                                              Icon(Icons.person, color: color)),
+                                      title: Text(s.name,
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              color: color)),
                                       subtitle: Text(
-                                        'Class: ${student.className} • Section: ${student.section}',
-                                        style: TextStyle(
-                                          color: Colors.grey.shade600,
-                                          fontSize: isLandscape ? 11 : 13,
-                                        ),
-                                      ),
-                                      trailing: Container(
-                                        padding: const EdgeInsets.all(6),
-                                        decoration: BoxDecoration(
-                                          color: Colors.deepPurple.shade50,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Icon(
-                                          Icons.arrow_forward,
-                                          color: deepPurpleTheme,
-                                          size: isLandscape ? 16 : 20,
-                                        ),
-                                      ),
-                                      onTap: () async {
-                                        // Show loading dialog
-                                        showDialog(
-                                          context: context,
-                                          barrierDismissible: false,
-                                          builder: (context) => Center(
-                                            child: CircularProgressIndicator(
-                                                color: deepPurpleTheme),
-                                          ),
-                                        );
-
-                                        final feeData =
-                                            await _fetchStudentFeeData(student);
-                                        if (context.mounted) {
-                                          // Dismiss loading dialog
-                                          Navigator.pop(context);
-                                        }
-                                        if (context.mounted) {
-                                          Navigator.push(
-                                            context,
-                                            PageRouteBuilder(
-                                              pageBuilder: (context, animation,
-                                                      secondaryAnimation) =>
-                                                  FeesCollectionPage(
-                                                studentId: student.id,
-                                                studentName: student.name,
-                                                studentClass: student.className,
-                                                studentSection: student.section,
-                                                isNewAdmission: false,
-                                                preloadedData: feeData,
-                                              ),
-                                              transitionsBuilder: (context,
-                                                  animation,
-                                                  secondaryAnimation,
-                                                  child) {
-                                                const begin = Offset(1.0, 0.0);
-                                                const end = Offset.zero;
-                                                const curve = Curves.easeInOut;
-                                                var tween = Tween(
-                                                        begin: begin, end: end)
-                                                    .chain(CurveTween(
-                                                        curve: curve));
-                                                return SlideTransition(
-                                                  position:
-                                                      animation.drive(tween),
-                                                  child: child,
-                                                );
-                                              },
-                                              transitionDuration:
-                                                  const Duration(
-                                                      milliseconds: 300),
-                                            ),
-                                          );
-                                        }
-                                      },
-                                      contentPadding: EdgeInsets.symmetric(
-                                        horizontal: isLandscape ? 8 : 16,
-                                        vertical: isLandscape ? 8 : 12,
-                                      ),
+                                          'Class: ${s.className} • Section: ${s.section}',
+                                          style: TextStyle(
+                                              color: Colors.grey.shade600)),
+                                      trailing: Icon(Icons.arrow_forward,
+                                          color: color),
+                                      onTap: () => _openFeePage(s),
                                     ),
                                   );
                                 },
@@ -777,12 +410,7 @@ class _FeeCollectPageState extends State<FeeCollectPage> {
 }
 
 class StudentModel {
-  final String id;
-  final String name;
-  final String classId;
-  final String className;
-  final String section;
-
+  final String id, name, classId, className, section;
   StudentModel({
     required this.id,
     required this.name,

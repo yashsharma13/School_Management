@@ -12,7 +12,7 @@ class PdfHeader {
       padding: const pw.EdgeInsets.symmetric(vertical: 16),
       width: double.infinity,
       decoration: pw.BoxDecoration(
-        color: PdfColors.lightBlue50,
+        color: PdfColors.purple50,
         borderRadius: pw.BorderRadius.circular(12),
       ),
       child: pw.Column(
@@ -33,7 +33,7 @@ class PdfHeader {
                   height: logoSize,
                   decoration: const pw.BoxDecoration(
                     shape: pw.BoxShape.circle,
-                    color: PdfColors.lightBlue200,
+                    color: PdfColors.purple200,
                   ),
                   child: pw.Center(
                     child: pw.Text(
@@ -41,7 +41,7 @@ class PdfHeader {
                       style: pw.TextStyle(
                         fontSize: logoSize * 0.33,
                         fontWeight: pw.FontWeight.bold,
-                        color: PdfColors.blue900,
+                        color: PdfColors.purple900,
                       ),
                     ),
                   ),
@@ -55,7 +55,7 @@ class PdfHeader {
             style: pw.TextStyle(
               fontSize: 24,
               fontWeight: pw.FontWeight.bold,
-              color: PdfColors.blue900,
+              color: PdfColors.purple900,
             ),
           ),
 
@@ -66,7 +66,7 @@ class PdfHeader {
               subtitle,
               style: const pw.TextStyle(
                 fontSize: 14,
-                color: PdfColors.blue900,
+                color: PdfColors.purple900,
               ),
             ),
           ]

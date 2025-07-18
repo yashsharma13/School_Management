@@ -19,406 +19,199 @@ class PrincipleDashboard extends StatefulWidget {
 }
 
 class _PrincipleDashboardState extends State<PrincipleDashboard> {
-  int totalStudents = 0;
-  int totalTeachers = 0;
-  int totalClasses = 0;
-  bool isLoading = false;
-  static final String baseeUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
+  int totalStudents = 0, totalTeachers = 0, totalClasses = 0;
+  bool loadingCounts = true, loadingProfile = true;
+  static final String baseUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
 
-  String? instituteName;
-  String? instituteAddress;
-  String? logoUrlFull;
+  String? instituteName, instituteAddress, logoUrlFull;
 
   @override
   void initState() {
     super.initState();
-    _loadUserData().then((_) {
-      _fetchCounts();
-      _fetchProfileData();
-    });
+    _initializeData();
   }
 
-  Future<void> _loadUserData() async {
-    setState(() => isLoading = true);
-    try {
-      // Can be used for future user data
-    } catch (e) {
-      debugPrint('Error loading user data: $e');
-    } finally {
-      setState(() => isLoading = false);
-    }
+  Future<void> _initializeData() async {
+    await Future.wait([_fetchProfileData(), _fetchCounts()]);
   }
 
   Future<void> _fetchProfileData() async {
+    setState(() => loadingProfile = true);
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
-
-      if (token == null) {
-        debugPrint('No token found, cannot fetch profile');
-        return;
-      }
+      if (token == null) throw Exception('No token');
 
       final profile = await ProfileService.getProfile();
-      final innerData = profile['data'];
-      if (innerData != null) {
+      final data = profile['data'];
+      if (data != null) {
+        final name = data['institute_name']?.toString() ?? '';
+        final addr = data['address']?.toString() ?? '';
+        final logo = data['logo_url']?.toString() ?? '';
+
+        String? fullUrl;
+        if (logo.isNotEmpty) {
+          final cleanedBase = baseUrl.replaceAll(RegExp(r'\/+$'), '');
+          final cleanedLogo = logo.startsWith('/') ? logo : '/$logo';
+          fullUrl = logo.startsWith('http') ? logo : cleanedBase + cleanedLogo;
+        }
+
         setState(() {
-          instituteName = innerData['institute_name'] ?? '';
-          instituteAddress = innerData['address'] ?? '';
-
-          final logoUrl = innerData['logo_url'] ?? '';
-          if (logoUrl.isNotEmpty) {
-            final cleanBaseUrl = baseeUrl.endsWith('/')
-                ? baseeUrl.substring(0, baseeUrl.length - 1)
-                : baseeUrl;
-            final cleanLogoUrl =
-                logoUrl.startsWith('/') ? logoUrl : '/$logoUrl';
-
-            logoUrlFull = logoUrl.startsWith('http')
-                ? logoUrl
-                : cleanBaseUrl + cleanLogoUrl;
-
-            _testLogoUrl(logoUrlFull!);
-          } else {
-            logoUrlFull = null;
-          }
+          instituteName = name;
+          instituteAddress = addr;
+          logoUrlFull = fullUrl;
         });
       }
     } catch (e) {
-      debugPrint('Error fetching profile: $e');
-    }
-  }
-
-  Future<void> _testLogoUrl(String url) async {
-    try {
-      final response = await http.head(Uri.parse(url));
-      if (response.statusCode != 200) {
-        debugPrint('Logo URL not accessible: $url');
-      }
-    } catch (e) {
-      debugPrint('Error testing logo URL: $e');
+      debugPrint('Profile fetch error: $e');
+    } finally {
+      setState(() => loadingProfile = false);
     }
   }
 
   Future<void> _fetchCounts() async {
+    setState(() => loadingCounts = true);
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
+      if (token == null) throw Exception('No token');
 
-      if (token == null) throw Exception('No token found.');
+      final headers = {'Authorization': 'Bearer $token'};
+      final sResp = await http.get(Uri.parse('$baseUrl/api/api/students/count'),
+          headers: headers);
+      final tResp = await http.get(Uri.parse('$baseUrl/api/api/teachers/count'),
+          headers: headers);
+      final cResp =
+          await http.get(Uri.parse('$baseUrl/api/count'), headers: headers);
 
-      // Fetch student count
-      final studentResponse = await http.get(
-        Uri.parse('$baseeUrl/api/api/students/count'), // Removed duplicate /api
-        headers: {'Authorization': 'Bearer $token'}, // Added Bearer prefix
-      );
-
-      // Fetch teacher count
-      final teacherResponse = await http.get(
-        Uri.parse('$baseeUrl/api/api/teachers/count'), // Removed duplicate /api
-        headers: {'Authorization': 'Bearer $token'}, // Added Bearer prefix
-      );
-
-      // Fetch class count
-      final classResponse = await http.get(
-        Uri.parse('$baseeUrl/api/count'),
-        headers: {'Authorization': 'Bearer $token'}, // Added Bearer prefix
-      );
-
-      if (studentResponse.statusCode == 200 &&
-          teacherResponse.statusCode == 200 &&
-          classResponse.statusCode == 200) {
-        final studentData = json.decode(studentResponse.body);
-        final teacherData = json.decode(teacherResponse.body);
-        final classData = json.decode(classResponse.body);
-
+      if (sResp.statusCode == 200 &&
+          tResp.statusCode == 200 &&
+          cResp.statusCode == 200) {
         setState(() {
-          // Parse all counts as integers
-          totalStudents =
-              int.tryParse(studentData['totalStudents'].toString()) ?? 0;
-          totalTeachers =
-              int.tryParse(teacherData['totalTeachers'].toString()) ?? 0;
-          totalClasses =
-              int.tryParse(classData['totalClasses'].toString()) ?? 0;
+          totalStudents = int.tryParse(
+                  json.decode(sResp.body)['totalStudents'].toString()) ??
+              0;
+          totalTeachers = int.tryParse(
+                  json.decode(tResp.body)['totalTeachers'].toString()) ??
+              0;
+          totalClasses = int.tryParse(
+                  json.decode(cResp.body)['totalClasses'].toString()) ??
+              0;
         });
       } else {
-        debugPrint('Failed to fetch counts: '
-            'Students: ${studentResponse.statusCode}, '
-            'Teachers: ${teacherResponse.statusCode}, '
-            'Classes: ${classResponse.statusCode}');
+        throw Exception('Count fetch failed');
       }
     } catch (e) {
-      debugPrint('Error fetching counts: $e');
-      if (!mounted) return;
-      // Optionally show error to user
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error loading counts: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      debugPrint('Count fetch error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load counts')),
+        );
+      }
+    } finally {
+      setState(() => loadingCounts = false);
     }
   }
 
   Future<void> _logout() async {
-    bool? shouldLogout = await showDialog<bool>(
+    final confirm = await showDialog<bool>(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Confirm Logout"),
-          content: const Text("Are you sure you want to logout?"),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text("No"),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text("Yes"),
-            ),
-          ],
-        );
-      },
+      builder: (_) => AlertDialog(
+        title: const Text('Confirm Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('No')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Yes')),
+        ],
+      ),
     );
-
-    if (shouldLogout == true) {
-      setState(() => isLoading = true);
-      await Future.delayed(const Duration(seconds: 1));
+    if (confirm == true) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('token');
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginPage()),
+      if (mounted) {
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (_) => const LoginPage()));
+      }
+    }
+  }
+
+  Widget _buildLogo(double size) {
+    if (logoUrlFull?.isNotEmpty == true) {
+      return CircleAvatar(
+        radius: size / 2,
+        backgroundColor: Colors.grey.shade300,
+        backgroundImage: NetworkImage(logoUrlFull!),
       );
     }
+    return CircleAvatar(
+      radius: size / 2,
+      backgroundImage: const AssetImage('assets/images/almanet1.jpg'),
+    );
   }
 
-  Widget _buildLogoImage({double? radius, double? width, double? height}) {
-    if (logoUrlFull != null && logoUrlFull!.isNotEmpty) {
-      if (radius != null) {
-        return CircleAvatar(
-          radius: radius,
-          backgroundColor: Colors.grey[300],
-          child: ClipOval(
-            child: Image.network(
-              logoUrlFull!,
-              width: radius * 2,
-              height: radius * 2,
-              fit: BoxFit.cover,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Center(
-                  child: CircularProgressIndicator(
-                    value: loadingProgress.expectedTotalBytes != null
-                        ? loadingProgress.cumulativeBytesLoaded /
-                            loadingProgress.expectedTotalBytes!
-                        : null,
-                  ),
-                );
-              },
-              errorBuilder: (context, error, stackTrace) {
-                return Icon(Icons.school, size: radius, color: Colors.white);
-              },
-            ),
-          ),
-        );
-      } else {
-        return Image.network(
-          logoUrlFull!,
-          width: width ?? 80,
-          height: height ?? 80,
-          fit: BoxFit.contain,
-        );
-      }
-    } else {
-      if (radius != null) {
-        return CircleAvatar(
-          radius: radius,
-          backgroundImage: const AssetImage('assets/images/almanet1.jpg'),
-        );
-      } else {
-        return CircleAvatar(
-          radius: (width ?? 80) / 2,
-          backgroundImage: const AssetImage('assets/images/almanet1.jpg'),
-        );
-      }
-    }
+  Widget _buildDashboardCard(
+      String title, int value, IconData icon, Color color) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, size: 40, color: color),
+          const SizedBox(height: 10),
+          Text(title, style: const TextStyle(fontSize: 16)),
+          const SizedBox(height: 5),
+          Text(value.toString(),
+              style:
+                  const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        ]),
+      ),
+    );
   }
 
-  // @override
-  // Widget build(BuildContext context) {
-  //   return Scaffold(
-  //     appBar: CustomAppBar(
-  //   actions: [
-  //     PopupMenuButton<String>(
-  //       icon: Row(
-  //         children: [
-  //           _buildLogoImage(radius: 20),
-  //           const SizedBox(width: 4),
-  //           const Icon(Icons.keyboard_arrow_down, color: Colors.white),
-  //         ],
-  //       ),
-  //       onSelected: (value) async {
-  //         if (value == 'profile') {
-  //           await Navigator.push(
-  //             context,
-  //             MaterialPageRoute(builder: (context) => ProfileSetupPage()),
-  //           );
-  //           _fetchProfileData();
-  //         } else if (value == 'settings') {
-  //           ScaffoldMessenger.of(context).showSnackBar(
-  //             const SnackBar(content: Text("Settings Page Coming Soon")),
-  //           );
-  //         } else if (value == 'logout') {
-  //           _logout();
-  //         }
-  //       },
-  //       itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-  //         const PopupMenuItem<String>(
-  //           value: 'profile',
-  //           child: ListTile(
-  //             leading: Icon(Icons.person),
-  //             title: Text('Set Profile'),
-  //           ),
-  //         ),
-  //         const PopupMenuItem<String>(
-  //           value: 'settings',
-  //           child: ListTile(
-  //             leading: Icon(Icons.settings),
-  //             title: Text('Settings'),
-  //           ),
-  //         ),
-  //         const PopupMenuItem<String>(
-  //           value: 'logout',
-  //           child: ListTile(
-  //             leading: Icon(Icons.logout),
-  //             title: Text('Logout'),
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   ],
-  //   title: '',
-  // ),
-  //     drawer: Sidebar(
-  //       userType: 'principal',
-  //       profileImageUrl: logoUrlFull,
-  //       instituteName: instituteName,
-  //       instituteAddress: instituteAddress,
-  //     ),
-  //     body: Padding(
-  //       padding: const EdgeInsets.all(20),
-  //       child: Column(
-  //         crossAxisAlignment: CrossAxisAlignment.start,
-  //         children: [
-  //           Text(
-  //             "Welcome to ${instituteName ?? 'Dashboard'}",
-  //             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-  //           ),
-  //           const SizedBox(height: 20),
-  //           isLoading
-  //               ? const Center(child: CircularProgressIndicator())
-  //               : Row(
-  //                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //                   children: [
-  //                     Expanded(
-  //                       child: buildDashboardCard(
-  //                         "Total Student",
-  //                         totalStudents.toString(),
-  //                         Icons.group,
-  //                         Colors.blue,
-  //                       ),
-  //                     ),
-  //                     const SizedBox(width: 10),
-  //                     Expanded(
-  //                       child: buildDashboardCard(
-  //                         "Total Teacher",
-  //                         totalTeachers.toString(),
-  //                         Icons.person,
-  //                         Colors.green,
-  //                       ),
-  //                     ),
-  //                     const SizedBox(width: 10),
-  //                     Expanded(
-  //                       child: buildDashboardCard(
-  //                         "Total Classes",
-  //                         totalClasses.toString(),
-  //                         Icons.class_,
-  //                         Colors.orange,
-  //                       ),
-  //                     ),
-  //                   ],
-  //                 ),
-  //           const SizedBox(height: 30),
-  //           const NoticeWidget(), // ✅ Reusable widget inserted here
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
+        title: '',
         actions: [
           PopupMenuButton<String>(
-            icon: Row(
-              children: [
-                _buildLogoImage(radius: 20),
-                const SizedBox(width: 4),
-                const Icon(Icons.keyboard_arrow_down, color: Colors.white),
-              ],
-            ),
-            onSelected: (value) async {
-              if (value == 'profile') {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => ProfileSetupPage()),
-                );
+            icon: Row(children: [
+              _buildLogo(40),
+              const Icon(Icons.arrow_drop_down, color: Colors.white)
+            ]),
+            onSelected: (v) async {
+              if (v == 'profile') {
+                await Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => ProfileSetupPage()));
                 _fetchProfileData();
-              } else if (value == 'settings') {
-                // ScaffoldMessenger.of(context).showSnackBar(
-                //   const SnackBar(content: Text("Settings Page Coming Soon")),
-
-                //   // ChangePasswordPage
-                // );
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => ChangePasswordPage()),
-                );
-              } else if (value == 'logout') {
+              } else if (v == 'settings') {
+                await Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => ChangePasswordPage()));
+              } else if (v == 'logout') {
                 _logout();
               }
             },
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              const PopupMenuItem<String>(
-                value: 'profile',
-                child: ListTile(
-                  leading: Icon(Icons.person),
-                  title: Text('Set Profile'),
-                ),
-              ),
-              const PopupMenuItem<String>(
-                value: 'settings',
-                child: ListTile(
-                  leading: Icon(Icons.settings),
-                  title: Text('Settings'),
-                ),
-              ),
-              const PopupMenuItem<String>(
-                value: 'logout',
-                child: ListTile(
-                  leading: Icon(Icons.logout),
-                  title: Text('Logout'),
-                ),
-              ),
+            itemBuilder: (_) => [
+              const PopupMenuItem(
+                  value: 'profile',
+                  child: ListTile(
+                      leading: Icon(Icons.person), title: Text('Set Profile'))),
+              const PopupMenuItem(
+                  value: 'settings',
+                  child: ListTile(
+                      leading: Icon(Icons.settings), title: Text('Settings'))),
+              const PopupMenuItem(
+                  value: 'logout',
+                  child: ListTile(
+                      leading: Icon(Icons.logout), title: Text('Logout'))),
             ],
           ),
         ],
-        title: '',
-
-        // your existing appBar code ...
       ),
       drawer: Sidebar(
         userType: 'principal',
@@ -427,86 +220,38 @@ class _PrincipleDashboardState extends State<PrincipleDashboard> {
         instituteAddress: instituteAddress,
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: MediaQuery.of(context).size.height -
-                  kToolbarHeight -
-                  MediaQuery.of(context).padding.top,
-            ),
-            child: IntrinsicHeight(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Welcome to ${instituteName ?? 'Dashboard'}",
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 20),
-                  isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: buildDashboardCard(
-                                "Total Student",
-                                totalStudents.toString(),
-                                Icons.group,
-                                Colors.blue,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: buildDashboardCard(
-                                "Total Teacher",
-                                totalTeachers.toString(),
-                                Icons.person,
-                                Colors.green,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: buildDashboardCard(
-                                "Total Classes",
-                                totalClasses.toString(),
-                                Icons.class_,
-                                Colors.orange,
-                              ),
-                            ),
-                          ],
-                        ),
-                  const SizedBox(height: 30),
-                  const NoticeWidget(),
-                  // Spacer can help push content up if needed, but here IntrinsicHeight is enough
-                ],
-              ),
-            ),
+        child: RefreshIndicator(
+          onRefresh: _initializeData,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(20),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text("Welcome to ${instituteName ?? 'Dashboard'}",
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 20),
+              loadingCounts
+                  ? const Center(child: CircularProgressIndicator())
+                  : Row(
+                      children: [
+                        Expanded(
+                            child: _buildDashboardCard("Students",
+                                totalStudents, Icons.group, Colors.blue)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                            child: _buildDashboardCard("Teachers",
+                                totalTeachers, Icons.person, Colors.green)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                            child: _buildDashboardCard("Classes", totalClasses,
+                                Icons.class_, Colors.orange)),
+                      ],
+                    ),
+              const SizedBox(height: 30),
+              const NoticeWidget(),
+            ]),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget buildDashboardCard(
-      String title, String value, IconData icon, Color color) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Icon(icon, size: 40, color: color),
-            const SizedBox(height: 10),
-            Text(title, style: const TextStyle(fontSize: 16)),
-            const SizedBox(height: 5),
-            Text(value,
-                style:
-                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-          ],
         ),
       ),
     );

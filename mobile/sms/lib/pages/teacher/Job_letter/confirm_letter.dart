@@ -110,7 +110,7 @@ class _TeacherAdmissionConfirmationPageState
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: Colors.blue[900],
+                      color: Colors.deepPurple[900],
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -224,7 +224,7 @@ class _TeacherAdmissionConfirmationPageState
                 style: pw.TextStyle(
                   fontSize: 22,
                   fontWeight: pw.FontWeight.bold,
-                  color: PdfColors.blue900,
+                  color: PdfColors.purple900,
                 ),
               ),
               pw.SizedBox(height: 20),
@@ -234,7 +234,7 @@ class _TeacherAdmissionConfirmationPageState
                 height: 120,
                 decoration: pw.BoxDecoration(
                   shape: pw.BoxShape.circle,
-                  border: pw.Border.all(color: PdfColors.blue200, width: 2),
+                  border: pw.Border.all(color: PdfColors.purple200, width: 2),
                 ),
                 child: teacherImage != null
                     ? pw.ClipOval(
@@ -245,12 +245,12 @@ class _TeacherAdmissionConfirmationPageState
               // Teacher information table
               pw.Container(
                 decoration: pw.BoxDecoration(
-                  border: pw.Border.all(color: PdfColors.blue100),
+                  border: pw.Border.all(color: PdfColors.purple100),
                   borderRadius: pw.BorderRadius.circular(12),
                 ),
                 child: pw.Table(
                   border: pw.TableBorder.symmetric(
-                    inside: const pw.BorderSide(color: PdfColors.blue100),
+                    inside: const pw.BorderSide(color: PdfColors.purple100),
                   ),
                   columnWidths: const {
                     0: pw.FlexColumnWidth(1.2),
@@ -278,7 +278,7 @@ class _TeacherAdmissionConfirmationPageState
                 width: double.infinity,
                 padding: const pw.EdgeInsets.all(10),
                 decoration: pw.BoxDecoration(
-                  color: PdfColors.lightBlue50,
+                  color: PdfColors.purple50,
                   borderRadius: pw.BorderRadius.circular(8),
                 ),
                 child: pw.Column(
@@ -287,13 +287,13 @@ class _TeacherAdmissionConfirmationPageState
                       'Important Note:',
                       style: pw.TextStyle(
                           fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.blue900),
+                          color: PdfColors.purple900),
                     ),
                     pw.SizedBox(height: 5),
                     pw.Text(
                       'Please keep this job confirmation letter for your records. Your username and password will be required to access the teacher portal.',
                       textAlign: pw.TextAlign.center,
-                      style: const pw.TextStyle(color: PdfColors.blue900),
+                      style: const pw.TextStyle(color: PdfColors.purple900),
                     ),
                   ],
                 ),

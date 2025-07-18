@@ -54,13 +54,6 @@ class PDFViewerScreen extends StatelessWidget {
                 final Uri url = Uri.parse(fullUrl);
                 if (!await launchUrl(url,
                     mode: LaunchMode.externalApplication)) {
-                  // ScaffoldMessenger.of(context).showSnackBar(
-                  //   SnackBar(
-                  //     content: Text(
-                  //         'Could not open PDF. Please check if you have a PDF viewer installed.'),
-                  //     duration: Duration(seconds: 3),
-                  //   ),
-                  // );
                   if (context.mounted) {
                     showCustomSnackBar(context,
                         'Could not open PDF. Please check if you have a PDF viewer installed.',
@@ -68,12 +61,6 @@ class PDFViewerScreen extends StatelessWidget {
                   }
                 }
               } catch (e) {
-                // ScaffoldMessenger.of(context).showSnackBar(
-                //   SnackBar(
-                //     content: Text('Error opening PDF: $e'),
-                //     duration: Duration(seconds: 3),
-                //   ),
-                // );
                 if (context.mounted) {
                   showCustomSnackBar(context, 'Error opening PDF: $e',
                       backgroundColor: Colors.red);

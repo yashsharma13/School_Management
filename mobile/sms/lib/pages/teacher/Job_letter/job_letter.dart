@@ -86,128 +86,180 @@ class _TeacherAdmissionLetterPageState
       appBar: const CustomAppBar(
         title: 'Teacher Job Letters',
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Search Card
-            Card(
-              elevation: 3,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final bool isWideScreen = constraints.maxWidth > 600;
+
+          return Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: isWideScreen ? 24.0 : 16.0,
+              vertical: 16.0,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Search Card
+                Card(
+                  elevation: 3,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Search Teachers',
+                            style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.deepPurple[800])),
+                        const SizedBox(height: 12),
+                        CustomSearchBar(
+                          hintText: 'Search by name, email or qualification',
+                          controller: searchController,
+                          onChanged: (value) {
+                            searchQuery = value;
+                            _filterTeachers();
+                          },
+                          onClear: () {
+                            searchQuery = '';
+                            _filterTeachers();
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Teacher List
+                Expanded(
+                  child: isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                              color: Colors.deepPurple))
+                      : filteredTeachers.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.people_outline,
+                                      size: 48, color: Colors.deepPurple[800]),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                      searchQuery == null ||
+                                              searchQuery!.isEmpty
+                                          ? 'No teachers found'
+                                          : 'No teachers match your search',
+                                      style: TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.red[900])),
+                                ],
+                              ),
+                            )
+                          : isWideScreen
+                              ? GridView.builder(
+                                  gridDelegate:
+                                      SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    crossAxisSpacing: 16,
+                                    mainAxisSpacing: 16,
+                                    childAspectRatio: 3,
+                                  ),
+                                  itemCount: filteredTeachers.length,
+                                  itemBuilder: (context, index) {
+                                    return _buildTeacherCard(
+                                        filteredTeachers[index]);
+                                  },
+                                )
+                              : ListView.builder(
+                                  itemCount: filteredTeachers.length,
+                                  itemBuilder: (context, index) {
+                                    return _buildTeacherCard(
+                                        filteredTeachers[index]);
+                                  },
+                                ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildTeacherCard(Teacher teacher) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => _viewAdmissionConfirmation(teacher),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 28,
+                backgroundColor: Colors.deepPurple[100],
+                child: buildUserPhoto(
+                  teacher.teacherPhoto,
+                  uploadBaseUrl,
+                ),
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
+              const SizedBox(width: 16),
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('Search Teachers',
-                        style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.deepPurple[800])),
-                    const SizedBox(height: 12),
-                    CustomSearchBar(
-                      hintText: 'Search by name, email or qualification',
-                      controller: searchController,
-                      onChanged: (value) {
-                        searchQuery = value;
-                        _filterTeachers();
-                      },
-                      onClear: () {
-                        searchQuery = '';
-                        _filterTeachers();
-                      },
+                    Text(
+                      teacher.name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Colors.deepPurple[900],
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      teacher.email,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.deepPurple[800],
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      teacher.qualification,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.deepPurple[800],
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            // Teacher List
-            Expanded(
-              child: isLoading
-                  ? const Center(
-                      child:
-                          CircularProgressIndicator(color: Colors.deepPurple))
-                  : filteredTeachers.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.people_outline,
-                                  size: 48, color: Colors.deepPurple[800]),
-                              const SizedBox(height: 16),
-                              Text(
-                                  searchQuery == null || searchQuery!.isEmpty
-                                      ? 'No teachers found'
-                                      : 'No teachers match your search',
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.deepPurple[900])),
-                            ],
-                          ),
-                        )
-                      : ListView.builder(
-                          itemCount: filteredTeachers.length,
-                          itemBuilder: (context, index) {
-                            final teacher = filteredTeachers[index];
-                            return Card(
-                              margin: const EdgeInsets.symmetric(vertical: 8),
-                              elevation: 2,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: ListTile(
-                                contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 12),
-                                leading: CircleAvatar(
-                                  backgroundColor: Colors.deepPurple[100],
-                                  child: buildUserPhoto(
-                                    teacher.teacherPhoto,
-                                    uploadBaseUrl,
-                                    // icon: Icon(Icons.person,
-                                    //     color: Colors.deepPurple[800]),
-                                  ),
-                                ),
-                                title: Text(teacher.name,
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.deepPurple[900])),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('Email: ${teacher.email}',
-                                        style: TextStyle(
-                                            color: Colors.deepPurple[800])),
-                                    Text(
-                                        'Qualification: ${teacher.qualification}',
-                                        style: TextStyle(
-                                            color: Colors.deepPurple[800])),
-                                    // Text(
-                                    //     'Joined: ${TeacherService.formatDate(teacher.dateOfJoining)}',
-                                    //     style: TextStyle(
-                                    //         color: Colors.deepPurple[800])),
-                                  ],
-                                ),
-                                trailing: Container(
-                                  padding: const EdgeInsets.all(6),
-                                  decoration: BoxDecoration(
-                                    color: Colors.deepPurple[50],
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(Icons.arrow_forward,
-                                      color: Colors.deepPurple[800], size: 20),
-                                ),
-                                onTap: () =>
-                                    _viewAdmissionConfirmation(teacher),
-                              ),
-                            );
-                          },
-                        ),
-            ),
-          ],
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.deepPurple[50],
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.arrow_forward,
+                  color: Colors.deepPurple[800],
+                  size: 20,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

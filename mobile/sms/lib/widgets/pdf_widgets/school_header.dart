@@ -23,7 +23,7 @@ class SchoolHeader extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 16),
         width: double.infinity,
         decoration: BoxDecoration(
-          color: Colors.blue[50],
+          color: Colors.deepPurple[50],
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -42,7 +42,7 @@ class SchoolHeader extends StatelessWidget {
                       height: logoSize,
                       decoration: const BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.blueAccent,
+                        color: Colors.deepPurpleAccent,
                       ),
                       child: Icon(
                         Icons.school,
@@ -59,7 +59,7 @@ class SchoolHeader extends StatelessWidget {
                 height: logoSize,
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.blueAccent,
+                  color: Colors.deepPurpleAccent,
                 ),
                 child: Icon(
                   Icons.school,
@@ -73,7 +73,7 @@ class SchoolHeader extends StatelessWidget {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Colors.blue[900],
+                color: Colors.deepPurple[900],
               ),
             ),
             const SizedBox(height: 4),
@@ -81,7 +81,7 @@ class SchoolHeader extends StatelessWidget {
               'Excellence in Education',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.blue[900],
+                color: Colors.deepPurple[900],
               ),
             ),
           ],

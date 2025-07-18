@@ -245,16 +245,23 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
   Future<void> _loadFeeData() async {
     try {
       final response = await http.get(
-        Uri.parse(
-            '$baseUrl/api/structure?classId=$classId&studentId=${widget.studentId}'),
+        Uri.parse('$baseUrl/api/feestructure/$classId'),
         headers: {'Authorization': 'Bearer $token'},
       );
 
+      debugPrint('Raw API response: ${response.body}');
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        debugPrint('Decoded JSON: ${jsonEncode(data)}');
         if (data['success']) {
+          // Log each item in the data list
+          final feeList = data['data'] as List;
+          for (var i = 0; i < feeList.length; i++) {
+            debugPrint('Fee item $i: ${jsonEncode(feeList[i])}');
+          }
           setState(() {
-            feeStructure = (data['data'] as List)
+            feeStructure = feeList
                 .map((item) => FeeStructureModel.fromJson(item))
                 .toList();
             debugPrint('Loaded feeStructure: $feeStructure');
@@ -648,7 +655,7 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
 
   @override
   Widget build(BuildContext context) {
-    final deepPurpleTheme = Colors.deepPurple.shade900;
+    final deepPurpleTheme = Colors.deepPurple.shade700;
     final whiteTheme = Colors.white;
 
     return Scaffold(
@@ -804,12 +811,6 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                                           child: Text(
                                             'Yearly',
                                             style: TextStyle(
-                                              // color: isYearlyPayment
-                                              //     ? deepPurpleTheme
-                                              //     : whiteTheme.withOpacity(
-                                              //         hasPaidMonthly
-                                              //             ? 0.5
-                                              //             : 1.0),
                                               color: isYearlyPayment
                                                   ? deepPurpleTheme
                                                   : whiteTheme.withAlpha(
@@ -887,13 +888,13 @@ class _FeesCollectionPageState extends State<FeesCollectionPage> {
                                   decoration: BoxDecoration(
                                     // color: whiteTheme.withOpacity(0.2),
                                     color: whiteTheme
-                                        .withAlpha((0.7 * 255).round()),
+                                        .withAlpha((0.2 * 255).round()),
 
                                     borderRadius: BorderRadius.circular(8),
                                     border: Border.all(
                                       // color: whiteTheme.withOpacity(0.3)
                                       color: whiteTheme
-                                          .withAlpha((0.7 * 255).round()),
+                                          .withAlpha((0.3 * 255).round()),
                                     ),
                                   ),
                                   padding: EdgeInsets.symmetric(
@@ -1513,36 +1514,70 @@ class FeeStructureModel {
     required this.feeMasterId,
   });
 
+  static bool parseBool(dynamic val) {
+    debugPrint('Parsing bool value: $val');
+    if (val == null) return false;
+    if (val is bool) return val;
+    if (val is String) {
+      final lower = val.toLowerCase();
+      return lower == 't' || lower == 'true' || lower == '1';
+    }
+    if (val is num) return val == 1;
+    return false;
+  }
+
   factory FeeStructureModel.fromJson(Map<String, dynamic> json) {
+    debugPrint('Input JSON for fee: ${jsonEncode(json)}');
+
     String amountStr = '0.0';
     if (json['amount'] != null) {
       amountStr = json['amount'] is num
           ? json['amount'].toString()
-          : json['amount'].trim();
+          : json['amount'].toString().trim();
+    }
+
+    bool isOneTime = parseBool(json['is_one_time']); // Updated key
+    bool isMonthly = parseBool(json['is_monthly']); // Updated key
+
+    // Fallback to frequency if is_one_time/is_monthly are missing
+    if (json['is_one_time'] == null && json['frequency'] != null) {
+      final frequency = json['frequency'].toString().toLowerCase();
+      isOneTime = frequency == 'onetime' ||
+          frequency == 'one-time' ||
+          frequency == 'one_time';
+      isMonthly = frequency == 'monthly';
+      if (frequency == 'yearly') {
+        isOneTime =
+            json['fee_field_name']?.toString().toLowerCase() == 'transport fee';
+        isMonthly = !isOneTime;
+      }
+      debugPrint(
+          'Inferred from frequency "$frequency": isOneTime=$isOneTime, isMonthly=$isMonthly');
     }
 
     debugPrint(
-        'Parsing fee: ${json['fee_field_name']}, is_one_time=${json['is_one_time']}, fee_master_id=${json['fee_master_id']}');
+      'Parsing fee: ${json['fee_field_name']}, '
+      'isOneTime=$isOneTime, '
+      'isMonthly=$isMonthly, '
+      'fee_master_id=${json['fee_master_id']}',
+    );
 
     return FeeStructureModel(
       feeFieldName: json['fee_field_name']?.toString() ?? '',
       amount: amountStr,
-      isCollectable: json['is_collectable'] == true,
-      isMandatory: json['is_mandatory'] == true,
-      isMonthly: (json['fee_field_name']
-                  ?.toString()
-                  .toLowerCase()
-                  .contains('tution') ??
-              false) ||
-          (json['fee_field_name']
-                  ?.toString()
-                  .toLowerCase()
-                  .contains('monthly') ??
-              false),
-      isOneTime: json['is_one_time'] == true,
+      isCollectable: parseBool(json['is_collectable']),
+      isMandatory:
+          parseBool(json['is_mandatory'] ?? json['installments_allowed']),
+      isMonthly: isMonthly,
+      isOneTime: isOneTime,
       feeMasterId: json['fee_master_id'] is int
           ? json['fee_master_id']
           : int.tryParse(json['fee_master_id'].toString()) ?? 0,
     );
+  }
+
+  @override
+  String toString() {
+    return 'FeeStructureModel(feeFieldName: $feeFieldName, amount: $amount, isCollectable: $isCollectable, isMandatory: $isMandatory, isMonthly: $isMonthly, isOneTime: $isOneTime, feeMasterId: $feeMasterId)';
   }
 }

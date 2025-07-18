@@ -5,7 +5,6 @@ import 'package:sms/pages/teacher_dashboard/t_dashboard.dart';
 import 'package:sms/pages/welcome/welcome.dart';
 import 'package:sms/pages/admin/admin_dashboard.dart';
 import 'package:sms/pages/principle/principle_dashboard.dart';
-import 'package:sms/pages/stud_dashboard/student_dashboard.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -30,9 +29,6 @@ void main() async {
       case 'principal':
         initialPage = const PrincipleDashboard();
         break;
-      case 'student':
-        initialPage = const StudentDashboard();
-        break;
       case 'teacher':
         initialPage = const TeacherDashboard();
         break;
@@ -46,7 +42,7 @@ void main() async {
         break;
     }
   } else {
-    initialPage = const WelcomePage(); // Show login/register options
+    initialPage = const WelcomePage();
   }
 
   runApp(MyApp(initialPage: initialPage));

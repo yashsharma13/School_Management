@@ -243,7 +243,7 @@ export const deletePrincipalEventImage = async (req, res) => {
 
     // Verify the user is a principal and get school_id
     const principalQuery = await pool.query(
-      `SELECT school_id FROM signup WHERE id = $1 AND role = 'principal' LIMIT 1`,
+      `SELECT school_id FROM signup WHERE id = $1  LIMIT 1`,
       [signup_id]
     );
 

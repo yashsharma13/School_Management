@@ -297,194 +297,286 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
                     ),
                   ),
                 ))
-              : SingleChildScrollView(
-                  physics: AlwaysScrollableScrollPhysics(),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Card(
-                          elevation: 3,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                    'Class: ${selectedClass ?? "Not assigned"}',
-                                    style: TextStyle(
-                                        fontSize: 16,
-                                        color: Colors.deepPurple.shade900)),
-                                SizedBox(height: 8),
-                                Text(
-                                    'Section: ${selectedSection ?? "Not assigned"}',
-                                    style: TextStyle(
-                                        fontSize: 16,
-                                        color: Colors.deepPurple.shade900)),
-                                SizedBox(height: 12),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: CustomDatePicker(
-                                        selectedDate: selectedDate,
-                                        onDateSelected: (DateTime newDate) {
-                                          setState(() {
-                                            selectedDate = newDate;
-                                          });
+              : Column(
+                  children: [
+                    Expanded(
+                      child: SingleChildScrollView(
+                        physics: AlwaysScrollableScrollPhysics(),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Card(
+                                elevation: 3,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                          'Class: ${selectedClass ?? "Not assigned"}',
+                                          style: TextStyle(
+                                              fontSize: 16,
+                                              color:
+                                                  Colors.deepPurple.shade900)),
+                                      SizedBox(height: 8),
+                                      Text(
+                                          'Section: ${selectedSection ?? "Not assigned"}',
+                                          style: TextStyle(
+                                              fontSize: 16,
+                                              color:
+                                                  Colors.deepPurple.shade900)),
+                                      SizedBox(height: 12),
+                                      LayoutBuilder(
+                                        builder: (context, constraints) {
+                                          if (constraints.maxWidth > 600) {
+                                            return Row(
+                                              children: [
+                                                Expanded(
+                                                  child: CustomDatePicker(
+                                                    selectedDate: selectedDate,
+                                                    onDateSelected:
+                                                        (DateTime newDate) {
+                                                      setState(() {
+                                                        selectedDate = newDate;
+                                                      });
+                                                    },
+                                                    isExpanded: true,
+                                                    lastDate: DateTime.now(),
+                                                    backgroundColor:
+                                                        Colors.white,
+                                                    foregroundColor:
+                                                        Colors.deepPurple,
+                                                  ),
+                                                ),
+                                                SizedBox(width: 8),
+                                                Expanded(
+                                                  child: TextField(
+                                                    controller:
+                                                        searchController,
+                                                    decoration: InputDecoration(
+                                                      labelText:
+                                                          'Search Student',
+                                                      labelStyle: TextStyle(
+                                                          color: Colors
+                                                              .deepPurple
+                                                              .shade700),
+                                                      prefixIcon: Icon(
+                                                          Icons.search,
+                                                          color: Colors
+                                                              .deepPurple
+                                                              .shade700),
+                                                      border:
+                                                          OutlineInputBorder(
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          8)),
+                                                      filled: true,
+                                                      fillColor: Colors.white,
+                                                    ),
+                                                    onChanged: (value) =>
+                                                        _filterStudents(),
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          } else {
+                                            return Column(
+                                              children: [
+                                                CustomDatePicker(
+                                                  selectedDate: selectedDate,
+                                                  onDateSelected:
+                                                      (DateTime newDate) {
+                                                    setState(() {
+                                                      selectedDate = newDate;
+                                                    });
+                                                  },
+                                                  isExpanded: true,
+                                                  lastDate: DateTime.now(),
+                                                  backgroundColor: Colors.white,
+                                                  foregroundColor:
+                                                      Colors.deepPurple,
+                                                ),
+                                                SizedBox(height: 8),
+                                                TextField(
+                                                  controller: searchController,
+                                                  decoration: InputDecoration(
+                                                    labelText: 'Search Student',
+                                                    labelStyle: TextStyle(
+                                                        color: Colors.deepPurple
+                                                            .shade700),
+                                                    prefixIcon: Icon(
+                                                        Icons.search,
+                                                        color: Colors.deepPurple
+                                                            .shade700),
+                                                    border: OutlineInputBorder(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(8)),
+                                                    filled: true,
+                                                    fillColor: Colors.white,
+                                                  ),
+                                                  onChanged: (value) =>
+                                                      _filterStudents(),
+                                                ),
+                                              ],
+                                            );
+                                          }
                                         },
-                                        isExpanded: true,
-                                        lastDate: DateTime.now(),
-                                        backgroundColor: Colors.white,
-                                        foregroundColor: Colors.deepPurple,
                                       ),
-                                    ),
-                                    SizedBox(width: 8),
-                                    Expanded(
-                                      child: TextField(
-                                        controller: searchController,
-                                        decoration: InputDecoration(
-                                          labelText: 'Search Student',
-                                          labelStyle: TextStyle(
-                                              color:
-                                                  Colors.deepPurple.shade700),
-                                          prefixIcon: Icon(Icons.search,
-                                              color:
-                                                  Colors.deepPurple.shade700),
-                                          border: OutlineInputBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8)),
-                                          filled: true,
-                                          fillColor: Colors.white,
-                                        ),
-                                        onChanged: (value) => _filterStudents(),
-                                      ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              if (errorMessage != null) ...[
+                                SizedBox(height: 12),
+                                Container(
+                                  padding: EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                      color: Colors.red.shade600,
+                                      borderRadius: BorderRadius.circular(8)),
+                                  child: Text(errorMessage!,
+                                      style: TextStyle(color: Colors.white)),
                                 ),
                               ],
-                            ),
-                          ),
-                        ),
-                        if (errorMessage != null) ...[
-                          SizedBox(height: 12),
-                          Container(
-                            padding: EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                                color: Colors.red.shade600,
-                                borderRadius: BorderRadius.circular(8)),
-                            child: Text(errorMessage!,
-                                style: TextStyle(color: Colors.white)),
-                          ),
-                        ],
-                        if (successMessage != null) ...[
-                          SizedBox(height: 12),
-                          Container(
-                            padding: EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                                color: Colors.green.shade600,
-                                borderRadius: BorderRadius.circular(8)),
-                            child: Text(successMessage!,
-                                style: TextStyle(color: Colors.white)),
-                          ),
-                        ],
-                        SizedBox(height: 12),
-                        isLoading
-                            ? Center(
-                                child: CircularProgressIndicator(
-                                    color: Colors.blue))
-                            : filteredStudents.isEmpty
-                                ? Card(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(16.0),
-                                      child: Text(
-                                        'No students found.',
-                                        style: TextStyle(
-                                            fontSize: 16,
-                                            color: Colors.grey.shade700),
-                                      ),
-                                    ),
-                                  )
-                                : Container(
-                                    constraints: BoxConstraints(
-                                        minHeight:
-                                            MediaQuery.of(context).size.height *
-                                                0.4),
-                                    child: ListView.separated(
-                                      shrinkWrap: true,
-                                      physics: NeverScrollableScrollPhysics(),
-                                      itemCount: filteredStudents.length,
-                                      separatorBuilder: (context, index) =>
-                                          SizedBox(height: 8),
-                                      itemBuilder: (context, index) {
-                                        final student = filteredStudents[index];
-                                        return Card(
-                                          elevation: 2,
-                                          shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(10)),
-                                          child: ListTile(
-                                            contentPadding:
-                                                EdgeInsets.symmetric(
-                                                    horizontal: 16,
-                                                    vertical: 8),
-                                            leading: CircleAvatar(
-                                              backgroundColor:
-                                                  Colors.deepPurple.shade100,
-                                              child: Text(
-                                                student.name.isNotEmpty
-                                                    ? student.name
-                                                        .substring(0, 1)
-                                                    : '?',
-                                                style: TextStyle(
-                                                    color: Colors
-                                                        .deepPurple.shade800),
-                                              ),
-                                            ),
-                                            title: Text(
-                                              student.name,
+                              if (successMessage != null) ...[
+                                SizedBox(height: 12),
+                                Container(
+                                  padding: EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                      color: Colors.green.shade600,
+                                      borderRadius: BorderRadius.circular(8)),
+                                  child: Text(successMessage!,
+                                      style: TextStyle(color: Colors.white)),
+                                ),
+                              ],
+                              SizedBox(height: 12),
+                              isLoading
+                                  ? Center(
+                                      child: CircularProgressIndicator(
+                                          color: Colors.blue))
+                                  : filteredStudents.isEmpty
+                                      ? Card(
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(16.0),
+                                            child: Text(
+                                              'No students found.',
                                               style: TextStyle(
-                                                  fontWeight: FontWeight.w500,
-                                                  color: Colors
-                                                      .deepPurple.shade900),
-                                            ),
-                                            subtitle: Text(
-                                              '${student.assignedClass} - ${student.assignedSection}',
-                                              style: TextStyle(
-                                                  color: Colors.grey.shade600),
-                                            ),
-                                            trailing: Transform.scale(
-                                              scale: 1.2,
-                                              child: Switch(
-                                                value: student.isPresent,
-                                                onChanged: (value) =>
-                                                    _toggleStudentAttendance(
-                                                        index),
-                                                activeColor: Colors.deepPurple,
-                                                activeTrackColor:
-                                                    Colors.deepPurple.shade200,
-                                              ),
+                                                  fontSize: 16,
+                                                  color: Colors.grey.shade700),
                                             ),
                                           ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                        SizedBox(height: 12),
-                        CustomButton(
+                                        )
+                                      : Container(
+                                          constraints:
+                                              BoxConstraints(minHeight: 200),
+                                          child: ListView.separated(
+                                            shrinkWrap: true,
+                                            physics:
+                                                NeverScrollableScrollPhysics(),
+                                            itemCount: filteredStudents.length,
+                                            separatorBuilder:
+                                                (context, index) =>
+                                                    SizedBox(height: 8),
+                                            itemBuilder: (context, index) {
+                                              final student =
+                                                  filteredStudents[index];
+                                              return Card(
+                                                elevation: 2,
+                                                shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10)),
+                                                child: ListTile(
+                                                  contentPadding:
+                                                      EdgeInsets.symmetric(
+                                                          horizontal: 16,
+                                                          vertical: 8),
+                                                  leading: CircleAvatar(
+                                                    backgroundColor: Colors
+                                                        .deepPurple.shade100,
+                                                    child: Text(
+                                                      student.name.isNotEmpty
+                                                          ? student.name
+                                                              .substring(0, 1)
+                                                          : '?',
+                                                      style: TextStyle(
+                                                          color: Colors
+                                                              .deepPurple
+                                                              .shade800),
+                                                    ),
+                                                  ),
+                                                  title: Text(
+                                                    student.name,
+                                                    style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        color: Colors.deepPurple
+                                                            .shade900),
+                                                  ),
+                                                  subtitle: Text(
+                                                    '${student.assignedClass} - ${student.assignedSection}',
+                                                    style: TextStyle(
+                                                        color: Colors
+                                                            .grey.shade600),
+                                                  ),
+                                                  trailing: Transform.scale(
+                                                    scale: 1.2,
+                                                    child: Switch(
+                                                      value: student.isPresent,
+                                                      onChanged: (value) =>
+                                                          _toggleStudentAttendance(
+                                                              index),
+                                                      activeColor:
+                                                          Colors.deepPurple,
+                                                      activeTrackColor: Colors
+                                                          .deepPurple.shade200,
+                                                    ),
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Fixed bottom section with save button
+                    // Fixed bottom section with save button (Left aligned, smaller width)
+                    Container(
+                      padding: EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withAlpha(77),
+                            spreadRadius: 1,
+                            blurRadius: 5,
+                            offset: Offset(0, -2),
+                          ),
+                        ],
+                      ),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: CustomButton(
                           text: isLoading ? 'Saving...' : 'Save',
-                          width: 120,
+                          width: 140,
                           onPressed: students.isEmpty || isLoading
                               ? null
                               : _saveAttendance,
                           isLoading: isLoading,
+                          icon: Icons.save_alt,
                         ),
-                        SizedBox(height: 12),
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
     );
   }

@@ -3,14 +3,13 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sms/pages/admin/admin_dashboard.dart';
 import 'package:sms/pages/principle/principle_dashboard.dart';
 import 'package:sms/pages/services/profile_service.dart';
 import 'dart:io';
-
-import 'package:sms/pages/stud_dashboard/student_dashboard.dart';
 import 'package:sms/widgets/button.dart';
 import 'package:sms/widgets/custom_appbar.dart';
+import 'package:sms/widgets/custom_snackbar.dart';
+import 'package:sms/widgets/custom_input_field.dart';
 
 class ProfileSetupPage extends StatefulWidget {
   const ProfileSetupPage({super.key});
@@ -26,15 +25,17 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
 
   XFile? _logoFile;
   Uint8List? _logoBytes;
-  String? logoUrlFull; // holds full logo image URL from API
+  String? logoUrlFull;
 
   bool isLoading = false;
   String error = '';
   String? token;
   String? userEmail;
 
-  // Change this to your actual backend base URL
   final String baseeUrl = "http://localhost:1000";
+
+  final Color primaryColor = Colors.deepPurple;
+  final Color inputFillColor = Colors.deepPurple.shade50;
 
   @override
   void initState() {
@@ -44,7 +45,6 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
 
   Future<void> _initialize() async {
     setState(() => isLoading = true);
-
     final prefs = await SharedPreferences.getInstance();
     token = prefs.getString('token');
     userEmail = prefs.getString('user_email');
@@ -78,8 +78,8 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
 
           setState(() {
             logoUrlFull = cleanBaseUrl + cleanLogoUrl;
-            _logoBytes = null; // Clear local bytes, show network image instead
-            _logoFile = null; // Clear picked file as well
+            _logoBytes = null;
+            _logoFile = null;
           });
         } else {
           setState(() {
@@ -105,27 +105,23 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
 
       if (pickedFile != null) {
         final bytes = await pickedFile.readAsBytes();
-
         if (bytes.length < 100) {
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Selected image is too small')),
-          );
+          showCustomSnackBar(context, 'Selected image is too small',
+              backgroundColor: Colors.red);
           return;
         }
 
         setState(() {
           _logoFile = pickedFile;
           _logoBytes = bytes;
-          logoUrlFull =
-              null; // Clear network image because user picked new image
+          logoUrlFull = null;
         });
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error picking image: $e')),
-      );
+      showCustomSnackBar(context, 'Error picking image: $e',
+          backgroundColor: Colors.red);
     }
   }
 
@@ -133,9 +129,8 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
     if (_instituteNameController.text.isEmpty ||
         _addressController.text.isEmpty ||
         (_logoBytes == null && _logoFile == null && logoUrlFull == null)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('All fields including logo are required')),
-      );
+      showCustomSnackBar(context, 'All fields including logo are required',
+          backgroundColor: Colors.red);
       return;
     }
 
@@ -143,49 +138,31 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
 
     try {
       final result = await ProfileService.saveProfile(
-          instituteName: _instituteNameController.text.trim(),
-          address: _addressController.text.trim(),
-          logo: _logoFile != null
-              ? (kIsWeb ? _logoBytes! : File(_logoFile!.path))
-              : null);
+        instituteName: _instituteNameController.text.trim(),
+        address: _addressController.text.trim(),
+        logo: _logoFile != null
+            ? (kIsWeb ? _logoBytes! : File(_logoFile!.path))
+            : null,
+      );
+
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result['message'] ?? 'Profile saved successfully'),
-          backgroundColor:
-              result['success'] == true ? Colors.green : Colors.red,
-        ),
+
+      showCustomSnackBar(
+        context,
+        result['message'] ?? 'Profile saved successfully!',
+        backgroundColor: result['success'] == true ? Colors.green : Colors.red,
       );
 
       if (result['success'] == true) {
-        final prefs = await SharedPreferences.getInstance();
-        final role = prefs.getString('role') ?? '';
-
-        // ✅ Navigate to appropriate dashboard
-        Widget nextPage;
-        switch (role.toLowerCase()) {
-          case 'student':
-            nextPage = const StudentDashboard();
-            break;
-          case 'principal':
-          case 'operator':
-            nextPage = const PrincipleDashboard();
-            break;
-          case 'admin':
-          default:
-            nextPage = const AdminDashboard();
-        }
-
-        if (!mounted) return;
+        // ✅ Directly navigate to PrincipleDashboard only
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => nextPage),
+          MaterialPageRoute(builder: (context) => const PrincipleDashboard()),
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error saving profile: $e')),
-      );
+      showCustomSnackBar(context, 'Error saving profile: $e',
+          backgroundColor: Colors.red);
     } finally {
       setState(() => isLoading = false);
     }
@@ -194,7 +171,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(title: 'Set Up Institue Profile'),
+      appBar: const CustomAppBar(title: 'Set Up Institute Profile'),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : error.isNotEmpty
@@ -206,12 +183,12 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                       GestureDetector(
                         onTap: _pickLogoImage,
                         child: Container(
-                          width: 120,
-                          height: 120,
+                          width: 130,
+                          height: 130,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: Border.all(
-                                color: Colors.blue.shade300, width: 2),
+                                color: primaryColor.withOpacity(0.5), width: 2),
                           ),
                           child: Stack(
                             children: [
@@ -219,25 +196,21 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                                 ClipOval(
                                   child: Image.memory(
                                     _logoBytes!,
-                                    width: 120,
-                                    height: 120,
+                                    width: 130,
+                                    height: 130,
                                     fit: BoxFit.cover,
                                   ),
                                 )
-                              else if (logoUrlFull != null &&
-                                  logoUrlFull!.isNotEmpty)
+                              else if (logoUrlFull != null)
                                 ClipOval(
                                   child: Image.network(
                                     logoUrlFull!,
-                                    width: 120,
-                                    height: 120,
+                                    width: 130,
+                                    height: 130,
                                     fit: BoxFit.cover,
-                                    errorBuilder:
-                                        (context, error, stackTrace) =>
-                                            const Center(
-                                      child: Icon(Icons.broken_image,
-                                          size: 40, color: Colors.grey),
-                                    ),
+                                    errorBuilder: (context, _, __) =>
+                                        const Icon(Icons.broken_image,
+                                            size: 40, color: Colors.grey),
                                   ),
                                 )
                               else
@@ -254,7 +227,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                                 child: Container(
                                   padding: const EdgeInsets.all(4),
                                   decoration: BoxDecoration(
-                                    color: Colors.blue.shade700,
+                                    color: primaryColor,
                                     shape: BoxShape.circle,
                                   ),
                                   child: const Icon(
@@ -268,38 +241,32 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 15),
                       Text(
-                        'Institute Logo',
+                        'Tap to select Institute Logo',
                         style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.blue.shade800,
-                          fontWeight: FontWeight.w500,
-                        ),
+                            fontSize: 16,
+                            color: primaryColor,
+                            fontWeight: FontWeight.w500),
                       ),
                       const SizedBox(height: 30),
-                      TextField(
+                      CustomInputField(
+                        label: 'Institute Name',
+                        icon: Icons.school,
                         controller: _instituteNameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Institute Name',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.school),
-                        ),
                       ),
                       const SizedBox(height: 20),
-                      TextField(
+                      CustomInputField(
+                        label: 'Institute Address',
+                        icon: Icons.location_on,
                         controller: _addressController,
-                        decoration: const InputDecoration(
-                          labelText: 'Institute Address',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.location_on),
-                        ),
                         maxLines: 3,
                       ),
                       const SizedBox(height: 30),
                       CustomButton(
                         text: 'Save Profile',
                         onPressed: _saveProfile,
+                        icon: Icons.save_alt,
                       ),
                     ],
                   ),

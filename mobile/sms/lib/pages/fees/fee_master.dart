@@ -47,20 +47,17 @@ class FeeMasterPageState extends State<FeeMasterPage> {
         };
       }).toList();
 
-      final success = await FeeMasterService.submitFeeFields(feeData);
+      final result = await FeeMasterService.submitFeeFields(feeData);
+      final success = result['success'];
+      final message = result['message'] ?? 'Something went wrong';
 
-      // ScaffoldMessenger.of(context).showSnackBar(
-      //   SnackBar(
-      //     content: Text(success
-      //         ? "Fees head define successfully!"
-      //         : "Submission failed!"),
-      //     backgroundColor: success ? Colors.green : Colors.red,
-      //   ),
-      // );
       if (!mounted) return;
-      showCustomSnackBar(context,
-          success ? "Fees head define successfully!" : "Submission failed!",
-          backgroundColor: success ? Colors.green : Colors.red);
+
+      showCustomSnackBar(
+        context,
+        message,
+        backgroundColor: success ? Colors.green : Colors.red,
+      );
 
       if (success) {
         Navigator.pushReplacement(
@@ -83,6 +80,33 @@ class FeeMasterPageState extends State<FeeMasterPage> {
           key: _formKey,
           child: Column(
             children: [
+              // 🔴 Red warning message
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  border: Border.all(color: Colors.red),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: const [
+                    Icon(Icons.warning_amber_rounded, color: Colors.red),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'You can create fee fields only once per session. Please review carefully before proceeding.',
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -125,7 +149,7 @@ class FeeMasterPageState extends State<FeeMasterPage> {
                                       fontWeight: FontWeight.bold,
                                       color: Colors.deepPurple),
                                 ),
-                                Spacer(),
+                                const Spacer(),
                                 if (feeFields.length > 1)
                                   IconButton(
                                     icon: Icon(Icons.delete,
@@ -154,7 +178,7 @@ class FeeMasterPageState extends State<FeeMasterPage> {
                             ),
                             const SizedBox(height: 10),
                             CheckboxListTile(
-                              title: Text("Is One Time?"),
+                              title: const Text("Is One Time?"),
                               value: feeFields[index].isOneTime,
                               onChanged: (val) {
                                 setState(() {
@@ -163,7 +187,7 @@ class FeeMasterPageState extends State<FeeMasterPage> {
                               },
                             ),
                             CheckboxListTile(
-                              title: Text("Same for All Classes?"),
+                              title: const Text("Same for All Classes?"),
                               value: feeFields[index].isCommonForAllClasses,
                               onChanged: (val) {
                                 setState(() {
@@ -219,9 +243,10 @@ class FeeMasterPageState extends State<FeeMasterPage> {
   }
 }
 
+// FeeField model
 class FeeField {
   String feeName = '';
   bool isOneTime = false;
   bool isCommonForAllClasses = false;
-  double? amount; // Only used when isCommonForAllClasses is true
+  double? amount;
 }

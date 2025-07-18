@@ -6,7 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class FeeStructureService {
   static final String baseUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
-  static Future<bool> submitFeeStructure({
+
+  static Future<FeeStructureResponse> submitFeeStructure({
     required String classId,
     required List<Map<String, dynamic>> structure,
   }) async {
@@ -15,22 +16,19 @@ class FeeStructureService {
       final token = prefs.getString('token');
 
       if (token == null) {
-        debugPrint('No token found');
-        return false;
+        return FeeStructureResponse(success: false, message: 'No token found');
       }
 
       final numericClassId = int.tryParse(classId);
       if (numericClassId == null) {
-        debugPrint('Invalid classId: $classId');
-        return false;
+        return FeeStructureResponse(
+            success: false, message: 'Invalid class ID');
       }
 
       final requestBody = {
         'class_id': numericClassId,
         'structure': structure,
       };
-
-      debugPrint('Sending fee structure data: $requestBody');
 
       final response = await http.post(
         Uri.parse('$baseUrl/api/registerfee'),
@@ -41,17 +39,19 @@ class FeeStructureService {
         body: jsonEncode(requestBody),
       );
 
+      final responseBody = jsonDecode(response.body);
+
       if (response.statusCode == 200 || response.statusCode == 201) {
-        debugPrint('✅ Fee structure submitted successfully: ${response.body}');
-        return true;
+        return FeeStructureResponse(
+            success: true, message: responseBody['message'] ?? 'Success');
       } else {
-        debugPrint(
-            '❌ Failed to submit fee structure: ${response.statusCode} - ${response.body}');
-        return false;
+        return FeeStructureResponse(
+            success: false,
+            message: responseBody['message'] ??
+                'Failed with status code ${response.statusCode}');
       }
     } catch (e) {
-      debugPrint('❌ Error submitting fee structure: $e');
-      return false;
+      return FeeStructureResponse(success: false, message: e.toString());
     }
   }
 
@@ -92,4 +92,11 @@ class FeeStructureService {
       return [];
     }
   }
+}
+
+class FeeStructureResponse {
+  final bool success;
+  final String message;
+
+  FeeStructureResponse({required this.success, required this.message});
 }

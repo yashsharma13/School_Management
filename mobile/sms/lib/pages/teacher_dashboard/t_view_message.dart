@@ -84,12 +84,7 @@ class _ViewSentMessagesPageState extends State<ViewSentMessagesPage> {
         setState(() {
           _messages.removeWhere((msg) => msg['id'] == id);
         });
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   SnackBar(
-        //     content: const Text('Message deleted successfully'),
-        //     backgroundColor: Colors.green,
-        //   ),
-        // );
+
         if (!mounted) return;
         showCustomSnackBar(context, 'Message deleted successfully',
             backgroundColor: Colors.green);
@@ -103,11 +98,6 @@ class _ViewSentMessagesPageState extends State<ViewSentMessagesPage> {
       setState(() => _isLoading = false);
     }
   }
-
-  // String _formatTimestamp(String ts) {
-  //   final dt = DateTime.parse(ts).toLocal();
-  //   return DateFormat('dd MMM yyyy, hh:mm a').format(dt);
-  // }
 
   @override
   Widget build(BuildContext context) {

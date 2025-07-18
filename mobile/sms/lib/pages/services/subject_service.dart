@@ -119,24 +119,4 @@ class SubjectService {
       rethrow;
     }
   }
-
-  // static Future<bool> deleteSubjectsByClass(String classId) async {
-  //   try {
-  //     final headers = await ApiBase.getHeaders(); // assumes token is added here
-
-  //     final response = await http.delete(
-  //       Uri.parse('$apiUrlDeleteSubjectsByClass/$classId'), // <-- New endpoint
-  //       headers: headers,
-  //     );
-
-  //     if (response.statusCode == 200) {
-  //       return true;
-  //     } else {
-  //       final errorData = json.decode(response.body);
-  //       throw Exception(errorData['message'] ?? 'Failed to delete subjects');
-  //     }
-  //   } catch (e) {
-  //     rethrow;
-  //   }
-  // }
 }

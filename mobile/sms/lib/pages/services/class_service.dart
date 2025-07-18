@@ -5,37 +5,6 @@ import 'api_base.dart';
 class ClassService {
   static final String apiUrlRegisterClass = '${ApiBase.baseUrl}/api/classes';
 
-  // static Future<bool> registerClass({
-  //   required String className,
-  //   required String section,
-  //   // required String tuitionFees,
-  //   required String teacherId,
-  // }) async {
-  //   try {
-  //     final headers = await ApiBase.getHeaders();
-
-  //     final response = await http.post(
-  //       Uri.parse(apiUrlRegisterClass),
-  //       headers: headers,
-  //       body: json.encode({
-  //         'class_name': className,
-  //         'section': section,
-  //         // 'tuition_fees': tuitionFees,
-  //         'teacher_id': teacherId,
-  //       }),
-  //     );
-
-  //     if (response.statusCode == 200 || response.statusCode == 201) {
-  //       return true;
-  //     } else {
-  //       final errorData = json.decode(response.body);
-  //       throw Exception(errorData['error'] ?? 'Failed to register class');
-  //     }
-  //   } catch (e) {
-  //     rethrow;
-  //   }
-  // }
-
   static Future<bool> registerClass({
     required String className,
     required String section,
@@ -88,35 +57,6 @@ class ClassService {
       throw Exception('Error fetching classes: $e');
     }
   }
-
-  // static Future<bool> updateClass({
-  //   required String classId,
-  //   required String className,
-  //   // required String tuitionFees,
-  //   required String teacherId,
-  // }) async {
-  //   try {
-  //     final headers = await ApiBase.getHeaders();
-
-  //     final response = await http.put(
-  //       Uri.parse('${ApiBase.baseUrl}/api/classes/$classId'),
-  //       headers: headers,
-  //       body: json.encode({
-  //         'class_name': className,
-  //         // 'tuition_fees': tuitionFees,
-  //         'teacher_id': teacherId,
-  //       }),
-  //     );
-
-  //     if (response.statusCode == 200) {
-  //       return true;
-  //     } else {
-  //       throw Exception('Update failed with status: ${response.statusCode}');
-  //     }
-  //   } catch (error) {
-  //     rethrow;
-  //   }
-  // }
 
   static Future<bool> updateClass({
     required String classId,

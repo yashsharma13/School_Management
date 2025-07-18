@@ -18,6 +18,7 @@ class TeacherDashboard extends StatefulWidget {
 
 class _TeacherDashboardState extends State<TeacherDashboard> {
   bool isLoading = false;
+  String instituteName = "Institute"; // Added for institute name
   String teacherName = "Teacher";
   String? profileImage;
   List<Map<String, dynamic>> assignedClasses = [];
@@ -48,6 +49,8 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
       final innerData = profile['data'];
       if (innerData != null) {
         setState(() {
+          instituteName =
+              innerData['institute_name'] ?? "Institute"; // Set institute name
           teacherName = innerData['teacher_name'] ?? 'Teacher';
           profileImage = innerData['teacher_photo_url'] != null
               ? _constructImageUrl(innerData['teacher_photo_url'])
@@ -289,12 +292,26 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
               padding: const EdgeInsets.all(16),
               child: ListView(
                 children: [
-                  Text(
-                    "Welcome, $teacherName",
-                    style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black),
+                  // Institute Name and Greeting
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Welcome to $instituteName",
+                        style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "Hello, $teacherName",
+                        style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black54),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 10),
                   Card(

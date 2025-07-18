@@ -22,7 +22,7 @@ class ProfilePhoto extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.blue[200]!, width: 2),
+          border: Border.all(color: Colors.deepPurple[200]!, width: 2),
         ),
         child: ClipOval(
           child: photoUrl.isNotEmpty
@@ -34,13 +34,13 @@ class ProfilePhoto extends StatelessWidget {
                   errorBuilder: (context, error, stackTrace) => Icon(
                     Icons.person,
                     size: size / 2.5,
-                    color: Colors.blue[900],
+                    color: Colors.deepPurple[900],
                   ),
                 )
               : Icon(
                   Icons.person,
                   size: size / 2.5,
-                  color: Colors.blue[900],
+                  color: Colors.deepPurple[900],
                 ),
         ),
       ),

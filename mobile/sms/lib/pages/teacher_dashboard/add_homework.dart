@@ -186,28 +186,6 @@ class _AddHomeworkPageState extends State<AddHomeworkPage> {
     }
   }
 
-  // Future<void> pickDate({required bool isEndDate}) async {
-  //   final DateTime initial = isEndDate ? (endDate ?? startDate) : startDate;
-  //   final DateTime? picked = await showDatePicker(
-  //     context: context,
-  //     initialDate: initial,
-  //     firstDate: DateTime(2023),
-  //     lastDate: DateTime(2100),
-  //   );
-  //   if (picked != null) {
-  //     setState(() {
-  //       if (isEndDate) {
-  //         endDate = picked;
-  //       } else {
-  //         startDate = picked;
-  //         if (endDate != null && endDate!.isBefore(picked)) {
-  //           endDate = null;
-  //         }
-  //       }
-  //     });
-  //   }
-  // }
-
   Future<void> pickDate({required bool isEndDate}) async {
     final DateTime today = DateTime.now();
     final DateTime initial = isEndDate

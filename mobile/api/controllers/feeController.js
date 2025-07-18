@@ -419,54 +419,54 @@ export const getPaidFees = async (req, res) => {
   }
 };
 
-export const getFeeStructure = async (req, res) => {
-  try {
-    const { classId, studentId } = req.query;
-    if (!classId || !studentId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Missing required parameters: classId, studentId',
-      });
-    }
+// export const getFeeStructure = async (req, res) => {
+//   try {
+//     const { classId, studentId } = req.query;
+//     if (!classId || !studentId) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Missing required parameters: classId, studentId',
+//       });
+//     }
 
-    const query = `
-      SELECT 
-        fm.id AS fee_master_id,
-        fm.fee_field_name AS fee_field_name,
-        COALESCE(fs.amount, fm.amount, 0) AS amount,
-        fm.is_one_time AS is_one_time,
-        fs.is_collectable AS is_collectable,
-        fs.installments_allowed AS is_mandatory,
-        CASE WHEN fs.frequency = 'monthly' THEN true ELSE false END AS is_monthly
-      FROM fee_master fm
-      LEFT JOIN fee_structure fs
-        ON fm.id = fs.fee_master_id AND fs.class_id = $1
-      LEFT JOIN fee_collections fc
-        ON fm.id = fc.fee_master_id AND fc.student_id = $2
-      WHERE (fm.is_common_for_all_classes = true OR fs.fee_master_id IS NOT NULL)
-        AND (fm.is_one_time = false OR fc.fee_master_id IS NULL OR fc.deposit = 0)
-    `;
-    const result = await pool.query(query, [classId, studentId]);
+//     const query = `
+//       SELECT 
+//         fm.id AS fee_master_id,
+//         fm.fee_field_name AS fee_field_name,
+//         COALESCE(fs.amount, fm.amount, 0) AS amount,
+//         fm.is_one_time AS is_one_time,
+//         fs.is_collectable AS is_collectable,
+//         fs.installments_allowed AS is_mandatory,
+//         CASE WHEN fs.frequency = 'monthly' THEN true ELSE false END AS is_monthly
+//       FROM fee_master fm
+//       LEFT JOIN fee_structure fs
+//         ON fm.id = fs.fee_master_id AND fs.class_id = $1
+//       LEFT JOIN fee_collections fc
+//         ON fm.id = fc.fee_master_id AND fc.student_id = $2
+//       WHERE (fm.is_common_for_all_classes = true OR fs.fee_master_id IS NOT NULL)
+//         AND (fm.is_one_time = false OR fc.fee_master_id IS NULL OR fc.deposit = 0)
+//     `;
+//     const result = await pool.query(query, [classId, studentId]);
 
-    const feeStructure = result.rows.map(row => ({
-      feeMasterId: row.fee_master_id,
-      feeFieldName: row.fee_field_name,
-      amount: parseFloat(row.amount).toFixed(2),
-      isOneTime: row.is_one_time,
-      isMonthly: row.is_monthly || false,
-      isMandatory: row.is_mandatory || false,
-      isCollectable: row.is_collectable || false,
-    }));
+//     const feeStructure = result.rows.map(row => ({
+//       feeMasterId: row.fee_master_id,
+//       feeFieldName: row.fee_field_name,
+//       amount: parseFloat(row.amount).toFixed(2),
+//       isOneTime: row.is_one_time,
+//       isMonthly: row.is_monthly || false,
+//       isMandatory: row.is_mandatory || false,
+//       isCollectable: row.is_collectable || false,
+//     }));
 
-    console.log(`getFeeStructure: Returning feeStructure for classId=${classId}, studentId=${studentId}:`, feeStructure);
+//     console.log(`getFeeStructure: Returning feeStructure for classId=${classId}, studentId=${studentId}:`, feeStructure);
 
-    res.status(200).json({ success: true, data: feeStructure });
-  } catch (err) {
-    console.error('Error fetching fee structure:', err);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch fee structure',
-      error: err.message,
-    });
-  }
-};
+//     res.status(200).json({ success: true, data: feeStructure });
+//   } catch (err) {
+//     console.error('Error fetching fee structure:', err);
+//     res.status(500).json({
+//       success: false,
+//       message: 'Failed to fetch fee structure',
+//       error: err.message,
+//     });
+//   }
+// };

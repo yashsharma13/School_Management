@@ -84,7 +84,8 @@ class ParentMessageModel {
   }
 
   // ✅ Get all parent messages for students assigned to this teacher's classes
-  async getMessagesForTeacher(signupId) {
+async getMessagesForTeacher(signupId) {
+    console.log('📥 Querying messages for teacher signupId:', signupId);
     try {
       const query = `
         SELECT
@@ -96,13 +97,17 @@ class ParentMessageModel {
           c.section
         FROM ParentSentMessages psm
         JOIN students s ON s.id = psm.student_id
+        JOIN signup stu_signup ON stu_signup.id = s.signup_id
         JOIN classes c ON c.class_name = s.assigned_class AND c.section = s.assigned_section
         JOIN teacher t ON t.id = c.teacher_id
+        JOIN signup teacher_signup ON teacher_signup.id = t.signup_id
         WHERE t.signup_id = $1
+          AND teacher_signup.school_id = stu_signup.school_id
         ORDER BY psm.created_at DESC
       `;
       const values = [signupId];
       const result = await pool.query(query, values);
+      console.log('📤 Messages returned from DB:', result.rows);
       return result.rows;
     } catch (error) {
       console.error("Database error in getMessagesForTeacher:", error.stack);
@@ -110,5 +115,4 @@ class ParentMessageModel {
     }
   }
 }
-
 export { ParentMessageModel };

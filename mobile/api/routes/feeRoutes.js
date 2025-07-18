@@ -7,8 +7,9 @@ import {
   getPreviousPaymentsForCurrentMonth,
   getAllPaymentStatusController,
   getYearlyFeeSummary,
-  getPaidFees, // Add this import
-  getFeeStructure
+  getPaidFees,
+  
+  
 } from '../controllers/feeController.js';
 
 import { verifyToken } from '../middlewares/auth.js';
@@ -57,6 +58,6 @@ router.get('/previous-payments/:studentId/:month', verifyToken, getPreviousPayme
 router.get('/payment-status/:studentId', verifyToken, getAllPaymentStatusController);
 router.get('/yearly-summary/:studentId', verifyToken, getYearlyFeeSummary);
 router.get('/fees/paid', verifyToken, getPaidFees); // Add this new route
-router.get('/structure', verifyToken, getFeeStructure);
-
+// router.get('/structure', verifyToken, getFeeStructure);
+// getFeeStructure
 export default router;

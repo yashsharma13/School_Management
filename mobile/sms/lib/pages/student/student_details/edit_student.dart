@@ -78,7 +78,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
 
   String _formatDate(String dateString) {
     try {
-      DateTime date = DateTime.parse(dateString);
+      DateTime date = DateTime.parse(dateString).toLocal();
       return "${date.day.toString().padLeft(2, '0')}-${date.month.toString().padLeft(2, '0')}-${date.year}";
     } catch (e) {
       return dateString;
@@ -300,14 +300,15 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                         ),
                       ),
                     ),
-
                     CustomDatePicker(
                       selectedDate:
                           DateTime.tryParse(_parseDate(_dobController.text)) ??
                               DateTime.now(),
                       onDateSelected: (DateTime newDate) {
-                        _dobController.text =
-                            "${newDate.day.toString().padLeft(2, '0')}-${newDate.month.toString().padLeft(2, '0')}-${newDate.year}";
+                        setState(() {
+                          _dobController.text =
+                              "${newDate.day.toString().padLeft(2, '0')}-${newDate.month.toString().padLeft(2, '0')}-${newDate.year}";
+                        });
                       },
                       labelText: 'Date of Birth',
                       isExpanded: true,
@@ -316,6 +317,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                       firstDate: DateTime(1900),
                       lastDate: DateTime.now(),
                     ),
+
                     SizedBox(height: 16),
                     _buildEditField(_genderController, 'Gender', true),
                     _buildEditField(_addressController, 'Address', true),

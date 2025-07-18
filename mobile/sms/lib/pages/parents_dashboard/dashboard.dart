@@ -106,8 +106,12 @@ class _ParentDashboardState extends State<ParentDashboard> {
               backgroundColor: Colors.grey[200],
             ),
             title: Text(student['student_name'] ?? 'Unnamed'),
-            subtitle: Text(
-              '${student['assigned_class'] ?? 'N/A'} - ${student['assigned_section'] ?? 'N/A'}',
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                    '${student['assigned_class'] ?? 'N/A'} - ${student['assigned_section'] ?? 'N/A'}'),
+              ],
             ),
           ),
           Padding(
@@ -128,6 +132,10 @@ class _ParentDashboardState extends State<ParentDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    final String instituteName = studentData.isNotEmpty
+        ? studentData[0]['institute_name'] ?? 'School Name Not Available'
+        : '';
+
     return Scaffold(
       appBar: CustomAppBar(title: ''),
       drawer: Sidebar(
@@ -155,10 +163,21 @@ class _ParentDashboardState extends State<ParentDashboard> {
                       style:
                           TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(height: 10),
+                    if (instituteName.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0, bottom: 10.0),
+                        child: Text(
+                          'Welcome in $instituteName',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ),
                     ...studentData.map(buildStudentCard),
                     const SizedBox(height: 20),
-                    const NoticeWidget(), // Add the NoticeWidget here
+                    const NoticeWidget(),
                   ],
                 ),
     );

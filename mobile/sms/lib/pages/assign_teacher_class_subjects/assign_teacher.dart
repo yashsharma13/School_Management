@@ -151,7 +151,6 @@ class _AssignTeacherPageState extends State<AssignTeacherPage> {
           subjects = [];
         });
       } else {
-        // ✅ Try to extract message from backend response
         String errorMessage = 'Failed to assign teacher (${resp.statusCode})';
         try {
           final data = json.decode(resp.body);
@@ -159,7 +158,6 @@ class _AssignTeacherPageState extends State<AssignTeacherPage> {
             errorMessage = data['message'];
           }
         } catch (_) {
-          // Use default error message if parsing fails
           'Already assigned this subject to another teacher';
         }
 
@@ -183,85 +181,215 @@ class _AssignTeacherPageState extends State<AssignTeacherPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const CustomAppBar(title: 'Assign Teacher to Class'),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Form(
-          key: _formKey,
-          child: isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      if (isFetchingTeachers)
-                        const CircularProgressIndicator()
-                      else
-                        DropdownButtonFormField<Teacher>(
-                          decoration: const InputDecoration(
-                            labelText: 'Select Teacher',
-                          ),
-                          items: teachers
-                              .map(
-                                (t) => DropdownMenuItem(
-                                  value: t,
-                                  child: Text(t.name),
-                                ),
-                              )
-                              .toList(),
-                          value: selectedTeacher,
-                          onChanged: (v) => setState(() => selectedTeacher = v),
-                          validator: (v) => v == null ? 'Select Teacher' : null,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final bool isWideScreen = constraints.maxWidth > 600;
+
+          return Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: isWideScreen ? 32.0 : 16.0,
+              vertical: 16.0,
+            ),
+            child: Form(
+              key: _formKey,
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : SingleChildScrollView(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: constraints.maxHeight,
                         ),
-                      const SizedBox(height: 16),
-                      ClassSectionSelector(
-                        onSelectionChanged: (ClassModel? cls, String? sec) {
-                          setState(() {
-                            selectedClass = cls;
-                            selectedSection = sec;
-                            if (cls != null && sec != null) {
-                              fetchSubjects(cls.id, sec);
-                            } else {
-                              subjects = [];
-                              selectedSubjectIds = [];
-                            }
-                          });
-                        },
-                        initialClass: selectedClass,
-                        initialSection: selectedSection,
-                      ),
-                      const SizedBox(height: 24),
-                      if (isFetchingSubjects)
-                        const CircularProgressIndicator()
-                      else if (subjects.isNotEmpty)
-                        Column(
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: subjects
-                              .map(
-                                (sub) => CheckboxListTile(
-                                  title: Text(sub.subjectName),
-                                  value: selectedSubjectIds.contains(sub.id),
-                                  onChanged: (v) {
-                                    setState(() {
-                                      if (v == true) {
-                                        selectedSubjectIds.add(sub.id);
-                                      } else {
-                                        selectedSubjectIds.remove(sub.id);
-                                      }
-                                    });
-                                  },
+                          children: [
+                            // Teacher Selection Card
+                            Card(
+                              elevation: 3,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Teacher Information',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context).primaryColor,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    if (isFetchingTeachers)
+                                      const Center(
+                                          child: CircularProgressIndicator())
+                                    else
+                                      DropdownButtonFormField<Teacher>(
+                                        decoration: InputDecoration(
+                                          labelText: 'Select Teacher',
+                                          border: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 12,
+                                          ),
+                                        ),
+                                        isExpanded: true,
+                                        items: teachers
+                                            .map(
+                                              (t) => DropdownMenuItem(
+                                                value: t,
+                                                child: Text(
+                                                  t.name,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            )
+                                            .toList(),
+                                        value: selectedTeacher,
+                                        onChanged: (v) =>
+                                            setState(() => selectedTeacher = v),
+                                        validator: (v) => v == null
+                                            ? 'Please select a teacher'
+                                            : null,
+                                      ),
+                                  ],
                                 ),
-                              )
-                              .toList(),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Class/Section Selection Card
+                            Card(
+                              elevation: 3,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Class & Section',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context).primaryColor,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    ClassSectionSelector(
+                                      onSelectionChanged:
+                                          (ClassModel? cls, String? sec) {
+                                        setState(() {
+                                          selectedClass = cls;
+                                          selectedSection = sec;
+                                          if (cls != null && sec != null) {
+                                            fetchSubjects(cls.id, sec);
+                                          } else {
+                                            subjects = [];
+                                            selectedSubjectIds = [];
+                                          }
+                                        });
+                                      },
+                                      initialClass: selectedClass,
+                                      initialSection: selectedSection,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Subjects Selection Card
+                            if (selectedClass != null &&
+                                selectedSection != null)
+                              Card(
+                                elevation: 3,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Select Subjects',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Theme.of(context).primaryColor,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      if (isFetchingSubjects)
+                                        const Center(
+                                            child: CircularProgressIndicator())
+                                      else if (subjects.isEmpty)
+                                        const Text(
+                                            'No subjects available for this class/section')
+                                      else
+                                        Column(
+                                          children: subjects
+                                              .map(
+                                                (sub) => CheckboxListTile(
+                                                  contentPadding:
+                                                      EdgeInsets.zero,
+                                                  title: Text(
+                                                    sub.subjectName,
+                                                    style: const TextStyle(
+                                                        fontSize: 14),
+                                                  ),
+                                                  value: selectedSubjectIds
+                                                      .contains(sub.id),
+                                                  onChanged: (v) {
+                                                    setState(() {
+                                                      if (v == true) {
+                                                        selectedSubjectIds
+                                                            .add(sub.id);
+                                                      } else {
+                                                        selectedSubjectIds
+                                                            .remove(sub.id);
+                                                      }
+                                                    });
+                                                  },
+                                                ),
+                                              )
+                                              .toList(),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            const SizedBox(height: 24),
+
+                            // Submit Button
+                            Center(
+                              child: CustomButton(
+                                text: 'Assign Teacher',
+                                isLoading: isLoading,
+                                width: isWideScreen ? 300 : double.infinity,
+                                onPressed: _submitForm,
+                                icon: Icons.save_alt,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
                         ),
-                      const SizedBox(height: 24),
-                      CustomButton(
-                        text: 'Assign Teacher',
-                        isLoading: isLoading,
-                        onPressed: _submitForm,
                       ),
-                    ],
-                  ),
-                ),
-        ),
+                    ),
+            ),
+          );
+        },
       ),
     );
   }

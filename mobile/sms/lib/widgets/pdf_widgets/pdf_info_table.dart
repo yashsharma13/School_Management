@@ -20,12 +20,12 @@ class InfoTable extends StatelessWidget {
       ),
       child: Container(
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.blue[100]!),
+          border: Border.all(color: Colors.purple[100]!),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Table(
           border: TableBorder.all(
-            color: Colors.blue[100]!,
+            color: Colors.deepPurple[100]!,
             borderRadius: BorderRadius.circular(12),
           ),
           columnWidths: const {
@@ -44,7 +44,7 @@ class InfoTable extends StatelessWidget {
 
             return TableRow(
               decoration: BoxDecoration(
-                color: isHeader ? Colors.blue[50] : Colors.white,
+                color: isHeader ? Colors.deepPurple[50] : Colors.white,
                 borderRadius: index == 0
                     ? const BorderRadius.only(
                         topLeft: Radius.circular(12),
@@ -84,7 +84,7 @@ class InfoTable extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isHeader ? Colors.blue[50] : Colors.white,
+        color: isHeader ? Colors.deepPurple[50] : Colors.white,
       ),
       child: Row(
         children: [
@@ -93,7 +93,8 @@ class InfoTable extends StatelessWidget {
               text,
               style: TextStyle(
                 fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
-                color: isHeader ? Colors.blue[900] : Colors.blue[800],
+                color:
+                    isHeader ? Colors.deepPurple[900] : Colors.deepPurple[800],
               ),
             ),
           ),
@@ -115,13 +116,13 @@ class InfoTable extends StatelessWidget {
             ),
           if (copyEnabled)
             IconButton(
-              icon: Icon(Icons.copy, size: 16, color: Colors.blue[800]),
+              icon: Icon(Icons.copy, size: 16, color: Colors.deepPurple[800]),
               onPressed: () {
                 Clipboard.setData(ClipboardData(text: text));
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: const Text('Copied to clipboard'),
-                    backgroundColor: Colors.blue[800],
+                    backgroundColor: Colors.deepPurple[800],
                     behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),

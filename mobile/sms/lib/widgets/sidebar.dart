@@ -102,18 +102,6 @@ class Sidebar extends StatelessWidget {
                           as ImageProvider,
                 ),
                 const SizedBox(height: 10),
-                // Text(
-                //   userName ?? userType == 'principal'
-                //       ? 'Principal'
-                //       : userType == 'teacher'
-                //           ? 'Teacher'
-                //           : 'Parent',
-                //   style: const TextStyle(
-                //     color: Colors.white,
-                //     fontSize: 18,
-                //     fontWeight: FontWeight.bold,
-                //   ),
-                // ),
                 Text(
                   userName ??
                       (userType == 'principal'
@@ -127,7 +115,6 @@ class Sidebar extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 if (instituteName != null) ...[
                   const SizedBox(height: 5),
                   Text(

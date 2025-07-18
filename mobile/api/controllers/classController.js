@@ -2,27 +2,6 @@ import pool from '../config/db.js';
 import { createClass, getClassesBySchoolId, updateClass, deleteClass , getClassByTeacherId,getClassCountBySchoolId } from '../models/classModel.js';
 
 // // Register class
-// export const registerClass = async (req, res) => {
-//   try {
-//     const { class_name, section, teacher_id } = req.body;
-//     const signup_id = req.signup_id; // ✅ Extract from token/session
-
-//     if (!class_name || !section  || !teacher_id || !signup_id) {
-//       return res.status(400).json({ message: 'Missing required fields' });
-//     }
-
-//     const result = await createClass({ class_name, section, teacher_id, signup_id });
-
-//     res.status(201).json({
-//       success: true,
-//       message: 'Class registered successfully',
-//       classId: result.id,
-//     });
-//   } catch (err) {
-//     console.error('Error registering class:', err);
-//     res.status(500).json({ message: 'Error registering class' });
-//   }
-// };
 export const registerClass = async (req, res) => {
   try {
     const { class_name, section, teacher_id } = req.body;
@@ -73,30 +52,6 @@ export const getAllClasses = async (req, res) => {
 };
 
 // // Update class details
-// export const updateClassDetails = async (req, res) => {
-//   try {
-//     const classId = req.params.id;
-//     const { class_name, teacher_id } = req.body;
-
-//     if (!classId || !class_name  || !teacher_id) {
-//       return res.status(400).json({ message: 'Missing required fields' });
-//     }
-
-//     const results = await updateClass(classId, { class_name, teacher_id });
-    
-//     if (results.rowCount === 0) {
-//       return res.status(404).json({ message: 'Class not found' });
-//     }
-    
-//     res.status(200).json({ 
-//       success: true,
-//       message: 'Class updated successfully'
-//     });
-//   } catch (err) {
-//     console.error('Error updating class:', err);
-//     res.status(500).json({ message: 'Error updating class' });
-//   }
-// };
 export const updateClassDetails = async (req, res) => {
   try {
     const classId = req.params.id;

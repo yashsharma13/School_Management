@@ -1,4 +1,3 @@
-// ==============================================================
 import pool from '../config/db.js';
 export const createTeacher = async (teacherData) => {
   const {
@@ -139,6 +138,7 @@ export const getTeacherBySignupId = async (signup_id) => {
       t.teacher_photo,
       t.created_at,
       t.session_id,
+      ip.institute_name,
       COALESCE(
         json_agg(
           json_build_object(
@@ -156,6 +156,9 @@ export const getTeacherBySignupId = async (signup_id) => {
         '[]'::json
       ) AS students
     FROM teacher t
+    JOIN signup teacher_signup ON teacher_signup.id = t.signup_id
+    JOIN signup school_signup ON school_signup.school_id = teacher_signup.school_id
+    JOIN institute_profiles ip ON ip.signup_id = school_signup.id
     LEFT JOIN SubjectAggregates sa ON t.id = sa.teacher_id
     LEFT JOIN classes c ON sa.class_id = c.id
     LEFT JOIN StudentAggregates sta 
@@ -174,11 +177,11 @@ export const getTeacherBySignupId = async (signup_id) => {
       t.experience,
       t.salary,
       t.address,
-
       t.qualification_certificate,
       t.teacher_photo,
       t.created_at,
-      t.session_id
+      t.session_id,
+      ip.institute_name
     ORDER BY t.id;
   `;
   try {

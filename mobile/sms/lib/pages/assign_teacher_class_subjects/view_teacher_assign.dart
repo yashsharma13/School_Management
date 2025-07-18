@@ -358,24 +358,6 @@ class _EditAssignmentDialogState extends State<EditAssignmentDialog> {
                     _buildReadOnlyField('Section', widget.assignment.section),
                     const SizedBox(height: 12),
 
-                    // Teacher Dropdown
-                    // DropdownButtonFormField<String>(
-                    //   value: selectedTeacherId,
-                    //   items: widget.availableTeachers
-                    //       .map((teacher) => DropdownMenuItem<String>(
-                    //             value: teacher.id,
-                    //             child: Text(teacher.name),
-                    //           ))
-                    //       .toList(),
-                    //   onChanged: (value) => setState(() {
-                    //     selectedTeacherId = value;
-                    //   }),
-                    //   decoration: InputDecoration(
-                    //     labelText: 'Assign Teacher',
-                    //     labelStyle: TextStyle(color: Colors.deepPurple[900]),
-                    //     border: const OutlineInputBorder(),
-                    //   ),
-                    // ),
                     TextFormField(
                       initialValue: widget.availableTeachers
                           .firstWhere(
@@ -540,56 +522,6 @@ class _EditAssignmentDialogState extends State<EditAssignmentDialog> {
     );
   }
 
-//   Future<void> _updateAssignment() async {
-//     setState(() => isLoading = true);
-
-//     try {
-//       final prefs = await SharedPreferences.getInstance();
-//       final token = prefs.getString('token');
-
-//       // Convert Set to List for JSON encoding
-//       final response = await http.put(
-//         Uri.parse('$baseUrl/api/teacher-assignment/${widget.assignment.id}'),
-//         headers: {
-//           'Accept': 'application/json',
-//           'Authorization': 'Bearer $token',
-//           'Content-Type': 'application/json',
-//         },
-//         body: json.encode({
-//           'teacher_id': selectedTeacherId,
-//           'subjects': selectedSubjects.toList(), // Convert Set to List
-//         }),
-//       );
-//       if (!mounted) return;
-//       if (response.statusCode == 200) {
-//         showCustomSnackBar(
-//           context,
-//           'Assignment updated successfully!',
-//           backgroundColor: Colors.green,
-//         );
-//         Navigator.pop(context);
-//         widget.onUpdate(widget.assignment);
-//       } else {
-//         showCustomSnackBar(
-//           context,
-//           'Failed to update assignment (${response.statusCode})',
-//           // 'This Subject is already assigned',
-//           backgroundColor: Colors.red,
-//         );
-//       }
-//     } catch (e) {
-//       showCustomSnackBar(
-//         context,
-//         'Error updating assignment: $e',
-//         backgroundColor: Colors.red,
-//       );
-//     } finally {
-//       if (mounted) {
-//         setState(() => isLoading = false);
-//       }
-//     }
-//   }
-// }
   Future<void> _updateAssignment() async {
     setState(() => isLoading = true);
 

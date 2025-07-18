@@ -6,56 +6,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 class SessionService {
   static final String baseUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
 
-  // /// Create a new session
-  // static Future<Map<String, dynamic>> createSession({
-  //   required String sessionName,
-  //   required String startDate,
-  //   required String endDate,
-  // }) async {
-  //   try {
-  //     final prefs = await SharedPreferences.getInstance();
-  //     final token = prefs.getString('token');
-
-  //     if (token == null) {
-  //       throw Exception('No token found. Please log in.');
-  //     }
-
-  //     final url = Uri.parse('$baseUrl/api/create');
-  //     final response = await http.post(
-  //       url,
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //         'Authorization': 'Bearer $token',
-  //       },
-  //       body: jsonEncode({
-  //         'session_name': sessionName,
-  //         'start_date': startDate,
-  //         'end_date': endDate,
-  //       }),
-  //     );
-
-  //     final responseData = jsonDecode(response.body);
-
-  //     if (response.statusCode == 200 && responseData['success'] == true) {
-  //       return {
-  //         'success': true,
-  //         'message': responseData['message'] ?? 'Session created successfully',
-  //         'data': responseData['data'],
-  //       };
-  //     } else {
-  //       return {
-  //         'success': false,
-  //         'message': responseData['message'] ?? 'Failed to create session',
-  //       };
-  //     }
-  //   } catch (e) {
-  //     return {
-  //       'success': false,
-  //       'message': e.toString(),
-  //     };
-  //   }
-  // }
-
   static Future<Map<String, dynamic>> createSession({
     required String sessionName,
     required String startDate,

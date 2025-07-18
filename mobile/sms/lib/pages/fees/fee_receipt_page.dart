@@ -131,7 +131,7 @@ class _FeeReceiptPageState extends State<FeeReceiptPage> {
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: Colors.blue[900],
+                      color: Colors.deepPurple[900],
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -256,7 +256,7 @@ class _FeeReceiptPageState extends State<FeeReceiptPage> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.blue[50],
+                        color: Colors.deepPurple[50],
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Text(
@@ -265,7 +265,7 @@ class _FeeReceiptPageState extends State<FeeReceiptPage> {
                         style: TextStyle(
                           fontSize: 14,
                           fontStyle: FontStyle.italic,
-                          color: Colors.blue,
+                          color: Colors.deepPurple,
                         ),
                       ),
                     ),
@@ -309,7 +309,7 @@ class _FeeReceiptPageState extends State<FeeReceiptPage> {
                   style: pw.TextStyle(
                     fontSize: 16, // Reduced from 18
                     fontWeight: pw.FontWeight.bold,
-                    color: PdfColors.blue900,
+                    color: PdfColors.deepPurple900,
                   ),
                 ),
               ),
@@ -317,12 +317,12 @@ class _FeeReceiptPageState extends State<FeeReceiptPage> {
               // Student information
               pw.Container(
                 decoration: pw.BoxDecoration(
-                  border: pw.Border.all(color: PdfColors.blue100),
+                  border: pw.Border.all(color: PdfColors.deepPurple100),
                   borderRadius: pw.BorderRadius.circular(6),
                 ),
                 child: pw.Table(
                   border: pw.TableBorder.symmetric(
-                    inside: const pw.BorderSide(color: PdfColors.blue100),
+                    inside: const pw.BorderSide(color: PdfColors.deepPurple100),
                   ),
                   columnWidths: const {
                     0: pw.FlexColumnWidth(1.3), // Slightly more compact
@@ -343,12 +343,12 @@ class _FeeReceiptPageState extends State<FeeReceiptPage> {
               // Payment details
               pw.Container(
                 decoration: pw.BoxDecoration(
-                  border: pw.Border.all(color: PdfColors.blue100),
+                  border: pw.Border.all(color: PdfColors.deepPurple100),
                   borderRadius: pw.BorderRadius.circular(6),
                 ),
                 child: pw.Table(
                   border: pw.TableBorder.symmetric(
-                    inside: const pw.BorderSide(color: PdfColors.blue100),
+                    inside: const pw.BorderSide(color: PdfColors.deepPurple100),
                   ),
                   columnWidths: const {
                     0: pw.FlexColumnWidth(1.3),
@@ -378,18 +378,18 @@ class _FeeReceiptPageState extends State<FeeReceiptPage> {
                 style: pw.TextStyle(
                   fontSize: 12, // Reduced from 14
                   fontWeight: pw.FontWeight.bold,
-                  color: PdfColors.blue900,
+                  color: PdfColors.deepPurple900,
                 ),
               ),
               pw.SizedBox(height: 4),
               pw.Container(
                 decoration: pw.BoxDecoration(
-                  border: pw.Border.all(color: PdfColors.blue100),
+                  border: pw.Border.all(color: PdfColors.deepPurple100),
                   borderRadius: pw.BorderRadius.circular(6),
                 ),
                 child: pw.Table(
                   border: pw.TableBorder.symmetric(
-                    inside: const pw.BorderSide(color: PdfColors.blue100),
+                    inside: const pw.BorderSide(color: PdfColors.deepPurple100),
                   ),
                   columnWidths: const {
                     0: pw.FlexColumnWidth(1.3),
@@ -412,18 +412,18 @@ class _FeeReceiptPageState extends State<FeeReceiptPage> {
                 style: pw.TextStyle(
                   fontSize: 12, // Reduced from 14
                   fontWeight: pw.FontWeight.bold,
-                  color: PdfColors.blue900,
+                  color: PdfColors.deepPurple900,
                 ),
               ),
               pw.SizedBox(height: 4),
               pw.Container(
                 decoration: pw.BoxDecoration(
-                  border: pw.Border.all(color: PdfColors.blue100),
+                  border: pw.Border.all(color: PdfColors.deepPurple100),
                   borderRadius: pw.BorderRadius.circular(6),
                 ),
                 child: pw.Table(
                   border: pw.TableBorder.symmetric(
-                    inside: const pw.BorderSide(color: PdfColors.blue100),
+                    inside: const pw.BorderSide(color: PdfColors.deepPurple100),
                   ),
                   columnWidths: const {
                     0: pw.FlexColumnWidth(1.3),
@@ -460,7 +460,7 @@ class _FeeReceiptPageState extends State<FeeReceiptPage> {
                 width: double.infinity,
                 padding: const pw.EdgeInsets.all(6), // Reduced padding
                 decoration: pw.BoxDecoration(
-                  color: PdfColors.lightBlue50,
+                  color: PdfColors.deepPurple50,
                   borderRadius: pw.BorderRadius.circular(6),
                 ),
                 child: pw.Text(
@@ -469,7 +469,7 @@ class _FeeReceiptPageState extends State<FeeReceiptPage> {
                   style: pw.TextStyle(
                     fontSize: 9, // Reduced from 10
                     fontStyle: pw.FontStyle.italic,
-                    color: PdfColors.blue,
+                    color: PdfColors.deepPurple,
                   ),
                 ),
               ),

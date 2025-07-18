@@ -2,7 +2,6 @@ import {
   recordStudentAttendance,
   recordTeacherAttendance,
   getStudentAttendanceByClassIdAndDate,
-  getClassIdByNameAndSection,
   getTeacherAttendanceByDate,
   getStudentAttendanceBySignupIdAndDate,
   getStudentAttendanceBySignupIdAndMonth 

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:sms/pages/services/session_service.dart';
-import 'package:sms/pages/session/manage_session.dart'; // for Session model
 import 'package:intl/intl.dart'; // For date formatting
 import 'package:sms/widgets/button.dart';
 import 'package:sms/widgets/date_picker.dart'; // Import the custom date picker
+import 'package:sms/models/session_model.dart';
 
 class EditSessionDialog extends StatefulWidget {
   final Session session;
@@ -61,7 +61,8 @@ class _EditSessionDialogState extends State<EditSessionDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Edit Session', style: TextStyle(color: Colors.blue[900])),
+      title:
+          Text('Edit Session', style: TextStyle(color: Colors.deepPurple[900])),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -90,7 +91,7 @@ class _EditSessionDialogState extends State<EditSessionDialog> {
               labelText: 'Start Date',
               isExpanded: true,
               backgroundColor: Colors.white,
-              foregroundColor: Colors.blue[900],
+              foregroundColor: Colors.deepPurple[900],
               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               firstDate: DateTime(2000),
               lastDate: DateTime(2100),
@@ -106,7 +107,7 @@ class _EditSessionDialogState extends State<EditSessionDialog> {
               labelText: 'End Date',
               isExpanded: true,
               backgroundColor: Colors.white,
-              foregroundColor: Colors.blue[900],
+              foregroundColor: Colors.deepPurple[900],
               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               firstDate: _startDate, // Can't be before start date
               lastDate: DateTime(2100),
@@ -117,7 +118,8 @@ class _EditSessionDialogState extends State<EditSessionDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text('Cancel', style: TextStyle(color: Colors.blue[900])),
+          child:
+              Text('Cancel', style: TextStyle(color: Colors.deepPurple[900])),
         ),
         CustomButton(
           text: 'Save',
@@ -125,7 +127,7 @@ class _EditSessionDialogState extends State<EditSessionDialog> {
           isLoading: false,
           icon: Icons.save_alt,
           height: 45,
-          width: 100,
+          width: 120,
         ),
       ],
       shape: RoundedRectangleBorder(

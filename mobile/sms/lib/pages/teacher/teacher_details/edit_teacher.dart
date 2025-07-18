@@ -8,7 +8,7 @@ import 'package:sms/pages/services/teacher_service.dart';
 import 'package:sms/widgets/button.dart';
 import 'package:sms/widgets/user_photo_widget.dart';
 import 'package:sms/widgets/date_picker.dart';
-import '../../../models/teacher_model.dart';
+import 'package:sms/models/teacher_model.dart';
 
 final String baseeUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
 final String uploadBaseUrl = '$baseeUrl/uploads';
@@ -68,7 +68,7 @@ class _EditTeacherDialogState extends State<EditTeacherDialog> {
 
   String _formatDate(String dateString) {
     try {
-      DateTime date = DateTime.parse(dateString);
+      DateTime date = DateTime.parse(dateString).toLocal();
       return "${date.day.toString().padLeft(2, '0')}-${date.month.toString().padLeft(2, '0')}-${date.year}";
     } catch (e) {
       return dateString;
@@ -254,13 +254,16 @@ class _EditTeacherDialogState extends State<EditTeacherDialog> {
                     ),
                     SizedBox(height: 20),
                     _buildEditField(_nameController, 'Name', true),
+
                     CustomDatePicker(
                       selectedDate:
                           DateTime.tryParse(_parseDate(_dobController.text)) ??
                               DateTime.now(),
                       onDateSelected: (DateTime newDate) {
-                        _dobController.text =
-                            "${newDate.day.toString().padLeft(2, '0')}-${newDate.month.toString().padLeft(2, '0')}-${newDate.year}";
+                        setState(() {
+                          _dobController.text =
+                              "${newDate.day.toString().padLeft(2, '0')}-${newDate.month.toString().padLeft(2, '0')}-${newDate.year}";
+                        });
                       },
                       labelText: 'Date of Birth',
                       isExpanded: true,
@@ -269,14 +272,18 @@ class _EditTeacherDialogState extends State<EditTeacherDialog> {
                       firstDate: DateTime(1900),
                       lastDate: DateTime.now(),
                     ),
+
                     SizedBox(height: 16),
+
                     CustomDatePicker(
                       selectedDate:
                           DateTime.tryParse(_parseDate(_dojController.text)) ??
                               DateTime.now(),
                       onDateSelected: (DateTime newDate) {
-                        _dojController.text =
-                            "${newDate.day.toString().padLeft(2, '0')}-${newDate.month.toString().padLeft(2, '0')}-${newDate.year}";
+                        setState(() {
+                          _dojController.text =
+                              "${newDate.day.toString().padLeft(2, '0')}-${newDate.month.toString().padLeft(2, '0')}-${newDate.year}";
+                        });
                       },
                       labelText: 'Date of Joining',
                       isExpanded: true,
@@ -285,6 +292,7 @@ class _EditTeacherDialogState extends State<EditTeacherDialog> {
                       firstDate: DateTime(2000),
                       lastDate: DateTime.now(),
                     ),
+
                     SizedBox(height: 16),
                     _buildEditField(_genderController, 'Gender', true),
                     _buildEditField(_guardianController, 'Guardian Name', true),

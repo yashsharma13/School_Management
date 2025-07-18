@@ -7,7 +7,7 @@ class PdfTables {
     double fontSize = 10,
   }) {
     return pw.TableRow(
-      decoration: const pw.BoxDecoration(color: PdfColors.blue50),
+      decoration: const pw.BoxDecoration(color: PdfColors.deepPurple50),
       children: cells.map((cell) {
         return pw.Container(
           padding: const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 6),
@@ -16,7 +16,7 @@ class PdfTables {
             style: pw.TextStyle(
               fontSize: fontSize,
               fontWeight: pw.FontWeight.bold,
-              color: PdfColors.blue800,
+              color: PdfColors.deepPurple800,
             ),
           ),
         );
@@ -41,7 +41,7 @@ class PdfTables {
               fontSize: fontSize,
               color: index == 1 && valueColor != null
                   ? valueColor
-                  : PdfColors.blue800,
+                  : PdfColors.deepPurple800,
             ),
           ),
         );
@@ -62,7 +62,7 @@ class PdfTables {
             field,
             style: pw.TextStyle(
               fontSize: fontSize,
-              color: PdfColors.blue800,
+              color: PdfColors.deepPurple800,
             ),
           ),
         ),
@@ -74,7 +74,7 @@ class PdfTables {
                 value,
                 style: pw.TextStyle(
                   fontSize: fontSize,
-                  color: PdfColors.blue800,
+                  color: PdfColors.deepPurple800,
                 ),
               ),
               pw.SizedBox(width: 4),

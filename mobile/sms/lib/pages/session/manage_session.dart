@@ -2,44 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:sms/pages/services/session_service.dart';
 import 'package:sms/pages/session/edit_session.dart';
 import 'package:sms/widgets/custom_appbar.dart'; // ✅ Make sure this path is correct
-
-// ----------------- MODEL -----------------
-class Session {
-  final int id;
-  final String sessionName;
-  final String startDate;
-  final String endDate;
-  final bool isActive;
-
-  Session({
-    required this.id,
-    required this.sessionName,
-    required this.startDate,
-    required this.endDate,
-    required this.isActive,
-  });
-
-  factory Session.fromJson(Map<String, dynamic> json) {
-    String formatDate(String rawDate) {
-      try {
-        return DateTime.parse(rawDate)
-            .toLocal()
-            .toIso8601String()
-            .split('T')[0];
-      } catch (e) {
-        return rawDate; // fallback
-      }
-    }
-
-    return Session(
-      id: json['id'],
-      sessionName: json['session_name'],
-      startDate: formatDate(json['start_date']),
-      endDate: formatDate(json['end_date']),
-      isActive: json['is_active'],
-    );
-  }
-}
+import 'package:sms/models/session_model.dart';
+import 'package:sms/widgets/custom_snackbar.dart';
 
 // ----------------- PAGE -----------------
 class ManageSessionsPage extends StatefulWidget {
@@ -74,17 +38,22 @@ class _ManageSessionsPageState extends State<ManageSessionsPage> {
     if (!mounted) return;
 
     if (result['success'] == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Session deleted successfully')),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(content: Text('Session deleted successfully')),
+      // );
+      showCustomSnackBar(context, 'Session deleted successfully',
+          backgroundColor: Colors.red);
       setState(() {
         futureSessions = loadSessions();
       });
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(result['message'] ?? 'Failed to delete session')),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //       content: Text(result['message'] ?? 'Failed to delete session')),
+      // );
+      showCustomSnackBar(
+          context, result['message'] ?? 'Failed to delete session',
+          backgroundColor: Colors.red);
     }
   }
 

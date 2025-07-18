@@ -88,17 +88,23 @@ class _FeeStructurePageState extends State<FeeStructurePage> {
     }
 
     setState(() => isLoading = true);
+
     try {
-      final success = await FeeStructureService.submitFeeStructure(
+      // Now submitFeeStructure returns FeeStructureResponse instead of bool
+      final response = await FeeStructureService.submitFeeStructure(
         classId: selectedClass!.id.toString(),
         structure: feeStructure,
       );
 
-      if (success) {
-        if (!mounted) return;
-        showCustomSnackBar(context, 'Fee Structure saved successfully',
-            backgroundColor: Colors.green);
+      if (!mounted) return;
 
+      showCustomSnackBar(
+        context,
+        response.message, // Show backend message here
+        backgroundColor: response.success ? Colors.green : Colors.red,
+      );
+
+      if (response.success) {
         Future.delayed(const Duration(milliseconds: 500), () {
           if (!mounted) return;
           Navigator.pushReplacement(
@@ -108,16 +114,16 @@ class _FeeStructurePageState extends State<FeeStructurePage> {
             ),
           );
         });
-      } else {
-        if (!mounted) return;
-        showCustomSnackBar(context, "Failed to save Fee Structure",
-            backgroundColor: Colors.red);
       }
     } catch (e) {
-      showCustomSnackBar(context, "Error saving Fee Structure: ${e.toString()}",
-          backgroundColor: Colors.red);
+      if (!mounted) return;
+      showCustomSnackBar(
+        context,
+        "Error saving Fee Structure: ${e.toString()}",
+        backgroundColor: Colors.red,
+      );
     } finally {
-      setState(() => isLoading = false);
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
@@ -133,6 +139,31 @@ class _FeeStructurePageState extends State<FeeStructurePage> {
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red.shade700),
+                    ),
+                    child: Row(
+                      children: const [
+                        Icon(Icons.warning, color: Colors.red),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Warning: You can create the fee structure for a class only once per session. Please proceed carefully.',
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   ClassSectionSelector(
                     onSelectionChanged: (ClassModel? cls, String? sec) {
                       setState(() {
@@ -140,7 +171,6 @@ class _FeeStructurePageState extends State<FeeStructurePage> {
                       });
                     },
                     initialClass: selectedClass,
-                    // apiEndpoint: '$baseUrl/api/classes',
                     showSectionDropdown: false, // Hide section dropdown
                   ),
                   const SizedBox(height: 20),

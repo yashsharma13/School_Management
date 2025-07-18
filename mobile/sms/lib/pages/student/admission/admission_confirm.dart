@@ -110,7 +110,7 @@ class _AdmissionConfirmationPageState extends State<AdmissionConfirmationPage> {
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: Colors.blue[900],
+                      color: Colors.deepPurple[900],
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -214,7 +214,7 @@ class _AdmissionConfirmationPageState extends State<AdmissionConfirmationPage> {
                 style: pw.TextStyle(
                   fontSize: 22,
                   fontWeight: pw.FontWeight.bold,
-                  color: PdfColors.blue900,
+                  color: PdfColors.deepPurple900,
                 ),
               ),
               pw.SizedBox(height: 20),
@@ -224,7 +224,8 @@ class _AdmissionConfirmationPageState extends State<AdmissionConfirmationPage> {
                 height: 120,
                 decoration: pw.BoxDecoration(
                   shape: pw.BoxShape.circle,
-                  border: pw.Border.all(color: PdfColors.blue200, width: 2),
+                  border:
+                      pw.Border.all(color: PdfColors.deepPurple200, width: 2),
                 ),
                 child: studentImage != null
                     ? pw.ClipOval(
@@ -235,12 +236,12 @@ class _AdmissionConfirmationPageState extends State<AdmissionConfirmationPage> {
               // Student information table
               pw.Container(
                 decoration: pw.BoxDecoration(
-                  border: pw.Border.all(color: PdfColors.blue100),
+                  border: pw.Border.all(color: PdfColors.deepPurple100),
                   borderRadius: pw.BorderRadius.circular(12),
                 ),
                 child: pw.Table(
                   border: pw.TableBorder.symmetric(
-                    inside: const pw.BorderSide(color: PdfColors.blue100),
+                    inside: const pw.BorderSide(color: PdfColors.deepPurple100),
                   ),
                   columnWidths: const {
                     0: pw.FlexColumnWidth(1.2),
@@ -268,7 +269,7 @@ class _AdmissionConfirmationPageState extends State<AdmissionConfirmationPage> {
                 width: double.infinity,
                 padding: const pw.EdgeInsets.all(10),
                 decoration: pw.BoxDecoration(
-                  color: PdfColors.lightBlue50,
+                  color: PdfColors.deepPurple50,
                   borderRadius: pw.BorderRadius.circular(8),
                 ),
                 child: pw.Column(
@@ -277,13 +278,13 @@ class _AdmissionConfirmationPageState extends State<AdmissionConfirmationPage> {
                       'Important Note:',
                       style: pw.TextStyle(
                           fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.blue900),
+                          color: PdfColors.deepPurple900),
                     ),
                     pw.SizedBox(height: 5),
                     pw.Text(
                       'Please keep this admission letter for your records...',
                       textAlign: pw.TextAlign.center,
-                      style: const pw.TextStyle(color: PdfColors.blue900),
+                      style: const pw.TextStyle(color: PdfColors.deepPurple900),
                     ),
                   ],
                 ),

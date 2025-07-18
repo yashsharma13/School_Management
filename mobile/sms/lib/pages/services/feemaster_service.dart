@@ -7,13 +7,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 class FeeMasterService {
   static final String baseUrl = dotenv.env['NEXT_PUBLIC_API_BASE_URL'] ?? '';
 
-  static Future<bool> submitFeeFields(
+  static Future<Map<String, dynamic>> submitFeeFields(
       List<Map<String, dynamic>> feeFields) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
 
-      if (token == null) return false;
+      if (token == null) {
+        return {'success': false, 'message': 'Unauthorized: No token found'};
+      }
 
       final response = await http.post(
         Uri.parse('$baseUrl/api/createfee'),
@@ -24,10 +26,18 @@ class FeeMasterService {
         body: jsonEncode({'fee_fields': feeFields}),
       );
 
-      return response.statusCode == 200;
+      final json = jsonDecode(response.body);
+
+      return {
+        'success': response.statusCode == 200,
+        'message': json['message'] ?? 'Something went wrong',
+      };
     } catch (e) {
       debugPrint('Error submitting fees: $e');
-      return false;
+      return {
+        'success': false,
+        'message': 'Network error. Please try again.',
+      };
     }
   }
 
